@@ -51,12 +51,15 @@ class DirectoryData
     public static function person(Person $person): array
     {
         $profile = $person->person_type->value === 'student' ? $person->studentProfile : $person->employeeProfile;
+        $assignment = $person->relationLoaded('activeCredentialAssignment') ? $person->activeCredentialAssignment : null;
+        $credential = $assignment && ! $assignment->ended_at ? $assignment->credential : null;
 
         return ['id' => $person->id, 'kind' => $person->person_type->value, 'campus_number' => $person->campus_number, 'full_name' => $person->full_name,
             'status' => $person->status->value, 'record_version' => (int) $person->record_version, 'archived_at' => $person->archived_at?->toIso8601String(),
             'photo_url' => $person->photo_path ? '/admin/'.($person->person_type->value === 'student' ? 'students' : 'employees').'/'.$person->id.'/photo?v='.$person->record_version : null,
             'program' => $profile?->program, 'year_level' => $profile?->year_level, 'academic_term' => $profile?->academic_term, 'department' => $profile?->department, 'position' => $profile?->position,
-            'access_active' => (bool) ($person->access_active ?? false)];
+            'access_active' => (bool) ($person->access_active ?? false),
+            'nfc_credential' => $credential?->effectiveStatus() === 'active' ? ['label' => $credential->label, 'status' => 'active'] : null];
     }
 
     public static function gate(Gate $gate): array

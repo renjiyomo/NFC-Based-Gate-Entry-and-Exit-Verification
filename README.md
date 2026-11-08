@@ -10,6 +10,8 @@ The [isolated NFC simulator](http://localhost:8002/login) uses its own schema, k
 
 For actual phone/tag tests, use the separate [hardware workspace](http://localhost:8003/login). Run `scripts/dev.ps1 hardware`, enable USB debugging and authorize this laptop on the phone, then run `scripts/connect-phone.ps1 Connect`. Open the same URL in **phone Chrome**, sign in with the private hardware account from `.tools/secrets/hardware-accounts.json`, and open **NFC setup**. File Transfer alone does not authorize debugging. Setup preserves main/simulator records; mock/browser emulation checks do not count as physical NFC evidence. See [Phase 6 status and test procedure](docs/phase-6-report.md).
 
+Issuance now follows **check coin → choose person → write checked coin → matching read-back → activate**. A coin carrying an active/pending reference must be explicitly retired before reuse. The writer checks the presented destination again before writing. The registry defaults to current references, with closed records under **View all history**; people lists show NFC status separately. Writing or erasing a coin outside NFCheck cannot update its database record automatically. See [coin handling and recovery](docs/nfc-integration.md#coin-handling-and-recovery).
+
 The three requested local administrators are **alexi@nfcheck.test**, **pauleen@nfcheck.test**, and **zaidy@nfcheck.test**. Each has a different generated initial password in the ignored, Windows-access-restricted `.tools/secrets/initial-accounts.json`. A personal password is required on first sign-in. Passwords are never committed or printed in reports.
 
 Recovery messages arrive only in the [local mail inbox](http://127.0.0.1:8025). There is no external email relay.

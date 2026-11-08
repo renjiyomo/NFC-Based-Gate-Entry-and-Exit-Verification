@@ -1,6 +1,6 @@
 # NFC integration and credential lifecycle
 
-Status: **Phase 6 software/USB, first-coin issuance and staged guard Entry/Exit verified; remaining physical acceptance pending**. The current phone is **vivo V2318 / Android 16 / Chrome 156.0.8078.79**. The user reports NFC access, coin write/read-back/activation, Entry/Exit and blank-coin rejection with no identity. The hardware database independently confirms HW-TAG-01 active/physical/selected for HW-STUDENT-01, confirmed Entry/Exit at HW-GATE-01, and expired/cancelled reviews without linked passage. The campus-document method was used for a synthetic lab comparison, not institutional identity validation. RF actions were user-reported; the earlier Samsung access result remains a separate probe. See [Phase 6 status](phase-6-report.md) for checkpoint counts and remaining cases.
+Status: **Phase 6 software/USB and initial staged NFC flow verified; safer coin reuse implemented, physical retest pending**. The current phone is **vivo V2318 / Android 16 / Chrome 156.0.8078.79**. The user reports NFC access, coin write/read-back/activation, Entry/Exit and blank-coin rejection. Initial HW-TAG-01 student passages are retained, but that credential is now revoked/withdrawn after the user reported overwriting its physical coin with an employee reference. Only employee HW-TAG-08 is currently active. The campus-document method was a synthetic lab comparison, not institutional identity validation. RF actions were user-reported; the earlier Samsung access result remains a separate probe. See [Phase 6 status](phase-6-report.md) for checkpoints and remaining cases.
 
 ## Supported target and limits
 
@@ -22,16 +22,28 @@ Only the random reference is written. No name, campus number, photo, authorizati
 
 | Step | Implemented operation | Failure behavior |
 | --- | --- | --- |
-| 1 | Authorized administrator selects a valid person; server generates pending credential and permanent assignment | Validation/authorization failure produces no usable token |
-| 2 | Plaintext is returned once into the issuance page's transient memory with no-store responses | Lost response/reload requires cancellation and new issuance; no plaintext recovery endpoint |
-| 3 | Deliberate write action requests NFC permission and writes the NDEF text | Permission denied, abort, incompatible/locked tag or network loss leaves credential unusable |
-| 4 | Separate read-back compares the exact expected secret in the same issuance session | Wrong tag/mismatch/interruption prevents activation |
-| 5 | Server validates pending issuance, ownership, expiry and authorized completion under person lock; activate new token and update active assignment atomically | Activation retry is idempotent; failed activation cannot leave two active assignments |
-| 6 | Clear secret from UI memory; retain redacted issuance/activation audit | No localStorage, URL, console, analytics or long-lived plaintext storage |
+| 1 | Administrator taps Check NFC coin; backend classifies its reference without changing the coin | Active/pending reference is blocked with owner shown; unknown/unrelated data is blocked; empty or retired/expired reference is allowed |
+| 2 | Choose a valid person; server creates a pending credential and permanent assignment, returning plaintext once into transient memory | Validation failure produces no usable credential; lost receipt/reload requires cancellation and new issuance |
+| 3 | Deliberate Write checked NFC coin action scans again, compares contents and available serial with the checked destination, then writes one NDEF text record | Different/changed destination stops before native write; interruption leaves pending issuance unusable |
+| 4 | Separate read-back compares the exact reference and saves the match in the issuing session | New write or failed/cancelled read-back clears local readiness; another successful match is required |
+| 5 | Server validates issuer, session, nonce, pending expiry, saved match and person revision under lock; activate and select assignment atomically | Retry is idempotent; replacement cannot leave two selected active assignments |
+| 6 | Clear secret from UI memory; retain redacted audit and closed history | No reference in localStorage, URL, console, analytics or long-lived plaintext storage |
 
 The browser reports read-back completion; this is software workflow evidence, not cryptographic attestation of an authentic or uncloned physical tag. Server authorization alone cannot observe the RF write. Pending issuance expires after **10 minutes**, including at the exact boundary. Completion requires the issuing actor, auth revision, session digest, completion nonce, matching reference and unchanged person revision. Hiding/leaving issuance clears the receipt. The expiry command closes rows/pointers; validation already checks time without relying on that command. Do not automatically make a tag permanently read-only during development.
 
 Lost credentials are revoked immediately, the active pointer is cleared and assignment ended, independently of replacement success. Normal replacement may keep the old credential valid until the fresh tag is ready, then atomically revoke old/activate new. A revoked token never becomes active again. Existing credential ownership never moves to another person. See [database invariants](database.md).
+
+## Coin handling and recovery
+
+Keep one clearly labeled physical coin per person. Check it before issuance. When NFCheck identifies a live credential, use another coin or open that credential and revoke it as **Withdrawn** before reusing the coin. Recheck after retirement, choose the new person, use a fresh label, write only the checked coin, remove it, read it back separately, and activate after the matching result. Preserve closed records; do not relabel an old credential as another person's credential.
+
+For a lost coin, revoke as **Lost** immediately and issue onto a different empty/retired coin. For ordinary replacement, check a different destination and choose **Replace the current credential**; the old reference is retired when the replacement activates. Reusing the same physical coin requires retiring its live reference first. If writing fails, keep issuance pending and retry that checked coin. If the receipt is lost, cancel the pending record and start with a fresh label.
+
+The registry's **Current: active and pending** filter shows live references. **View all history** includes revoked/cancelled/expired records. **Refresh list** fetches current server state. A person's record status and campus grant are separate from their selected NFC credential; an active person can have **No active NFC credential**.
+
+If a coin was overwritten or erased externally, the server cannot discover that automatically. Identify and retire the old reference, then issue a fresh one onto the intended coin. A scan during read-back checks the data currently on the coin: writing an employee reference onto a student coin and then reading it back will match that employee issuance. That is different from presenting an unchanged student's reference during an employee read-back, which must fail.
+
+The pre-write check reduces accidental overwrites in this flow. Any browser-provided serial stays transient and is only an additional destination-change check; it is not trusted authentication or a permanent coin identity. Web NFC cannot attest a physical write, prevent an external app from overwriting data, or prevent reference copying. Writing from a reading event is supported by the [Web NFC specification](https://w3c-cg.github.io/web-nfc/). Physical retesting of this guarded writer is still required.
 
 ## Implemented scan and passage flow — Phase 5
 
@@ -46,7 +58,7 @@ UI error states need actionable distinctions: unsupported API/device, NFC disabl
 The implemented simulator invokes **the same `CredentialVerifier`** as normal credential inspection. Middleware requires local/testing environment, loopback, explicit flag and `nfcheck_simulator`/`nfcheck_testing`; production rejects it. Routes fix the source server-side and normal verification rejects simulated references. The lab uses its own runtime account, key, cookie and synthetic people. Credential inspection records no passage; the separate Phase 5 guard workflow records labeled simulated attempts/passages only in the lab schema.
 
 1. Run `scripts/dev.ps1 simulator`; open **http://localhost:8002/login**. Read the disposable operator credentials privately from `.tools/secrets/simulator-account.json`. Keep the main app at **127.0.0.1:8000** so the browsers' XSRF cookies use separate hosts.
-2. Open NFC credentials → Issue credential. Choose a synthetic person, a unique inventory label and purpose. Prepare the pending credential.
+2. Open NFC credentials → Issue credential → **Check virtual coin**. Use an empty or retired reference; live references are blocked. Choose a synthetic person, a unique label and purpose, then prepare the pending credential.
 3. Select **Simulate write**, then **Simulate matching read-back**, then **Activate simulated credential**. The raw reference is never rendered or copied.
 4. Select **Check simulated tag** → **Check virtual tag**. Repeat to show checks do not create passage. Use unknown/malformed probes to exercise rejections.
 5. From the eligible result open the credential, revoke as lost, return to the simulator through in-app navigation and check again: it must reject as revoked. Issue replacement uses a fresh reference and retained history.
@@ -56,7 +68,7 @@ The physical issuance adapter writes exactly one UTF-8 NDEF text record. Separat
 
 Unit/feature/browser tests can validate parsing, permissions UI, token lifecycle, business rules and race conditions. They cannot establish RF range, actual phone permissions behavior, physical writing or read-back reliability. Keep separate simulated and physical evidence.
 
-## Physical acceptance checklist — not performed
+## Physical acceptance checklist — partially performed
 
 Record model, Android build, Chrome version, tag type/supplier, NDEF state, app build, secure origin and connection method. Using only authorized synthetic identities:
 
@@ -67,7 +79,7 @@ Record model, Android build, Chrome version, tag type/supplier, NDEF state, app 
 5. Interrupt network before verification and during confirmation; prove the same operation produces at most one passage after recovery.
 6. Compare recorded server outcomes with guard observations; record failures and latency without claiming perfect identity assurance.
 
-Hardware availability is unknown. Phase 6 may complete software integration with physical evidence explicitly outstanding, but physical readiness cannot be marked successful until these device/tag tests pass.
+The vivo and four repurposed NTAG215 coins are available. Initial issuance, staged Entry/Exit, blank rejection and saved revocation denials have evidence in the Phase 6 report. The guarded writer and remaining interruption/device cases still require physical acceptance; mock/browser checks do not establish RF readiness.
 
 ### Guard simulator handoff — Phase 5
 

@@ -48,6 +48,7 @@ export default function PeopleIndex({
                         student ? 'Program / year' : 'Department / position',
                         'Record status',
                         'Campus access',
+                        'NFC credential',
                         'Details',
                     ]}
                     empty={`No ${directory} match these filters`}
@@ -88,6 +89,13 @@ export default function PeopleIndex({
                                 </Badge>
                             </td>
                             <td>
+                                <Badge tone={person.nfc_credential ? 'success' : 'neutral'}>
+                                    {person.nfc_credential
+                                        ? `Active · ${person.nfc_credential.label}`
+                                        : 'No active NFC credential'}
+                                </Badge>
+                            </td>
+                            <td>
                                 <Link
                                     href={`${base}/${person.id}`}
                                     className="row-link"
@@ -102,8 +110,9 @@ export default function PeopleIndex({
                 <Pagination records={records} />
             </Panel>
             <p className="availability-note">
-                An active person record and a current access grant are separate requirements. NFC
-                issuance and gate verification become available in later phases.
+                Person status, campus access and NFC credential status are separate. An active
+                person may have no NFC credential. Check the physical coin before issuing or reusing
+                it.
             </p>
         </ManagementPage>
     );

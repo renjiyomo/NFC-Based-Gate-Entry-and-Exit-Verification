@@ -35,7 +35,7 @@ class PersonController
         $filters = DirectoryData::filters($request);
         $type = $this->type($directory);
         $relation = $type === PersonType::Student ? 'studentProfile' : 'employeeProfile';
-        $query = DirectoryData::records(Person::where('person_type', $type)->with($relation), $filters)
+        $query = DirectoryData::records(Person::where('person_type', $type)->with([$relation, 'activeCredentialAssignment.credential']), $filters)
             ->withExists(['authorizations as access_active' => fn ($q) => $q->effective()]);
         if ($filters['q'] !== '') {
             $like = DirectoryData::like($filters['q']);

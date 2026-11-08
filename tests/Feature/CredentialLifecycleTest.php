@@ -119,6 +119,49 @@ class CredentialLifecycleTest extends ManagementTestCase
         $this->rejects(fn () => $service->readBack($this->admin, $credential, 'lab-session', $receipt['payload'], $receipt['completion_nonce'], 'physical'), 'issuance');
     }
 
+    public function test_another_persons_valid_tag_cannot_complete_a_pending_http_issuance(): void
+    {
+        $this->signIn($this->admin);
+        $issue = function (Person $person): array {
+            $response = $this->postJson('/admin/credentials/issue', [
+                'person_id' => $person->id,
+                'record_version' => $person->fresh()->record_version,
+                'label' => 'CROSS-'.Str::uuid(),
+                'mode' => 'new',
+                'request_id' => (string) Str::uuid(),
+            ])->assertCreated();
+            $this->withCredentials()->withCookie(config('session.cookie'), app('session')->getId());
+
+            return $response->json();
+        };
+        $student = $this->makePerson();
+        $employee = $this->makePerson('employees');
+        $first = $issue($student);
+        $firstBase = '/admin/credentials/'.$first['credential']['id'];
+        $firstCompletion = ['payload' => $first['payload'], 'completion_nonce' => $first['completion_nonce']];
+        $this->postJson($firstBase.'/read-back', $firstCompletion)->assertOk();
+        $this->postJson($firstBase.'/activate', $firstCompletion)->assertOk();
+        $studentAssignment = $student->fresh()->active_credential_assignment_id;
+
+        $second = $issue($employee);
+        $secondBase = '/admin/credentials/'.$second['credential']['id'];
+        $this->assertNotSame($first['payload'], $second['payload']);
+        $this->postJson($secondBase.'/read-back', ['payload' => $first['payload'], 'completion_nonce' => $second['completion_nonce']])
+            ->assertUnprocessable()->assertJsonValidationErrors('payload');
+        $this->assertNull($this->credential($second)->read_back_at);
+        $this->assertNull($employee->fresh()->active_credential_assignment_id);
+        $this->assertSame($studentAssignment, $student->fresh()->active_credential_assignment_id);
+
+        $secondCompletion = ['payload' => $second['payload'], 'completion_nonce' => $second['completion_nonce']];
+        $this->postJson($secondBase.'/activate', $secondCompletion)->assertUnprocessable()->assertJsonValidationErrors('issuance');
+        $this->assertSame('pending', $this->credential($second)->status);
+        $this->postJson($secondBase.'/read-back', $secondCompletion)->assertOk();
+        $this->postJson($secondBase.'/activate', $secondCompletion)->assertOk()->assertJsonPath('credential.selected', true);
+        $this->assertSame('active', $this->credential($first)->status);
+        $this->assertSame($studentAssignment, $student->fresh()->active_credential_assignment_id);
+        $this->assertSame(0, DB::table('access_events')->count());
+    }
+
     public function test_duplicate_pending_stale_records_and_request_replays_cannot_issue_again(): void
     {
         $person = $this->makePerson();

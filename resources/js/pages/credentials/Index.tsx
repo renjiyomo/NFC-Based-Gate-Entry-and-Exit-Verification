@@ -1,4 +1,4 @@
-import { Link, useForm } from '@inertiajs/react';
+import { Link, router, useForm } from '@inertiajs/react';
 import {
     AddLink,
     DataTable,
@@ -57,7 +57,8 @@ export default function Index({
                         value={form.data.status}
                         onChange={(e) => form.setData('status', e.target.value)}
                     >
-                        <option value="">All statuses</option>
+                        <option value="current">Current: active and pending</option>
+                        <option value="all">All history</option>
                         {['pending', 'active', 'revoked', 'cancelled', 'expired'].map((s) => (
                             <option key={s} value={s}>
                                 {s}
@@ -94,11 +95,24 @@ export default function Index({
                     <Link href="/admin/credentials" className="button button-quiet">
                         Clear filters
                     </Link>
+                    <Button
+                        disabled={form.processing}
+                        onClick={() => router.reload({ only: ['records'] })}
+                    >
+                        Refresh list
+                    </Button>
+                    <Link href="/admin/credentials?status=all" className="button button-quiet">
+                        View all history
+                    </Link>
                 </div>
             </form>
             <Panel
-                title="Credential registry"
-                subtitle="Raw NFC references are never displayed or recoverable here."
+                title={
+                    filters.status === 'current'
+                        ? 'Current NFC credentials'
+                        : 'NFC credential history'
+                }
+                subtitle="These statuses describe credential references, not whether a physical coin still contains them. Check a coin before reuse."
             >
                 <DataTable
                     caption="Credential registry"
@@ -142,8 +156,8 @@ export default function Index({
                 <Pagination records={records} />
             </Panel>
             <p className="availability-note">
-                Only the selected active credential can be eligible. A current campus access grant
-                is checked separately. Guard operations are introduced in Phase 5.
+                Only the selected active credential can be eligible. Person record status and campus
+                access are separate checks. Closed references remain in history.
             </p>
         </ManagementPage>
     );

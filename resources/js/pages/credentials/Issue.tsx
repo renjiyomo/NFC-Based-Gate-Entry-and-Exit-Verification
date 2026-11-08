@@ -11,9 +11,19 @@ import {
     type CredentialRecord,
     type IssuanceReceipt,
     type PersonChoice,
+    type DestinationCheck,
 } from '../../lib/credentials';
 import { manilaTime } from '../../lib/management';
-import { NdefAdapter, nfcAvailable, readVirtualTag, writeVirtualTag } from '../../lib/nfc';
+import {
+    NdefAdapter,
+    ReadBackConfirmation,
+    nfcAvailable,
+    readVirtualTag,
+    writeVirtualTag,
+    sameDestination,
+    type TagSnapshot,
+    NfcError,
+} from '../../lib/nfc';
 
 export default function Issue({
     selectedPerson,
@@ -41,12 +51,18 @@ export default function Issue({
     const requestId = useRef(crypto.randomUUID());
     const operation = useRef<AbortController | null>(null);
     const mounted = useRef(true);
+    const readBack = useRef(new ReadBackConfirmation());
+    const destinationRef = useRef<TagSnapshot | null>(null);
+    const [destination, setDestination] = useState<DestinationCheck | null>(null);
     const base = simulated ? '/simulator' : '/admin/credentials';
     const endpoint = (action: string, id: string) =>
         simulated ? `/simulator/credentials/${id}/${action}` : `/admin/credentials/${id}/${action}`;
     useEffect(() => {
         mounted.current = true;
         const discard = () => {
+            destinationRef.current = null;
+            setDestination(null);
+            readBack.current.invalidate();
             operation.current?.abort();
             receipt.current = null;
             if (mounted.current) {
@@ -63,13 +79,64 @@ export default function Issue({
         document.addEventListener('visibilitychange', hidden);
         return () => {
             mounted.current = false;
+            destinationRef.current = null;
+            readBack.current.invalidate();
             operation.current?.abort();
             receipt.current = null;
             window.removeEventListener('pagehide', discard);
             document.removeEventListener('visibilitychange', hidden);
         };
     }, []);
+    function virtualSnapshot(): TagSnapshot {
+        const reference = readVirtualTag();
+        return { kind: reference ? 'reference' : 'empty', reference, serial: null };
+    }
+    async function checkCoin() {
+        if (busy || record) return;
+        setBusy(true);
+        setErrors({});
+        setDestination(null);
+        destinationRef.current = null;
+        const controller = new AbortController();
+        operation.current = controller;
+        setRadio(!simulated);
+        setMessage('Present the coin you intend to write. This check does not change it.');
+        try {
+            const snapshot = simulated
+                ? virtualSnapshot()
+                : await new NdefAdapter().inspect(controller.signal);
+            setRadio(false);
+            const result = await credentialPost<DestinationCheck>(
+                `${base}/destination`,
+                {
+                    kind: snapshot.kind,
+                    ...(snapshot.reference ? { payload: snapshot.reference } : {}),
+                },
+                controller.signal,
+            );
+            if (controller.signal.aborted || !mounted.current) return;
+            setDestination(result);
+            if (result.allowed) destinationRef.current = snapshot;
+            setMessage(result.message);
+        } catch (error) {
+            if (mounted.current)
+                setErrors(
+                    error instanceof NfcError ? { nfc: error.message } : credentialErrors(error),
+                );
+        } finally {
+            controller.abort();
+            if (mounted.current) {
+                setBusy(false);
+                setRadio(false);
+            }
+        }
+    }
     async function prepare() {
+        readBack.current.invalidate();
+        if (!destination?.allowed || !destinationRef.current) {
+            setErrors({ coin: 'Check an empty or retired coin before preparing an issuance.' });
+            return;
+        }
         if (!person) {
             setErrors({ person_id: 'Choose an active person.' });
             return;
@@ -117,6 +184,11 @@ export default function Issue({
             setErrors({ issuance: 'The one-time receipt is unavailable. Cancel and start again.' });
             return;
         }
+        if (action === 'activate' && (!readBack.current.verified || !record.read_back_at)) {
+            setErrors({ nfc: 'Complete a fresh matching read-back before activation.' });
+            return;
+        }
+        if (action !== 'activate') readBack.current.invalidate();
         setBusy(true);
         setErrors({});
         setMessage(
@@ -134,8 +206,13 @@ export default function Issue({
             // Hardware calls start directly from this button gesture, before a network await.
             if (action === 'write') {
                 setRadio(!simulated);
-                if (simulated) writeVirtualTag(current.payload, current.credential.label);
-                else await new NdefAdapter().write(current.payload, signal);
+                const checked = destinationRef.current;
+                if (!checked) throw new NfcError('wrong_destination');
+                if (simulated) {
+                    if (!sameDestination(checked, virtualSnapshot(), current.payload))
+                        throw new NfcError('wrong_destination');
+                    writeVirtualTag(current.payload, current.credential.label);
+                } else await new NdefAdapter().write(current.payload, signal, checked);
                 setRadio(false);
                 if (signal.aborted || !mounted.current) return;
                 setWritten(true);
@@ -145,24 +222,38 @@ export default function Issue({
                         : 'Write finished. Remove the tag, then use the separate read-back step.',
                 );
             } else {
-                let payload = current.payload;
+                let updated: CredentialRecord;
                 if (action === 'read-back') {
                     setRadio(!simulated);
-                    payload = simulated
-                        ? (readVirtualTag() ?? '')
-                        : await new NdefAdapter().read(signal);
-                    setRadio(false);
-                    if (!payload) throw new Error('Write the virtual tag before reading it back.');
+                    updated = await readBack.current.confirm(
+                        current.payload,
+                        () =>
+                            simulated ? (readVirtualTag() ?? '') : new NdefAdapter().read(signal),
+                        async (scanned) => {
+                            setRadio(false);
+                            const result = await credentialPost<{ credential: CredentialRecord }>(
+                                endpoint('read-back', record.id),
+                                { payload: scanned, completion_nonce: current.completion_nonce },
+                                signal,
+                            );
+                            return result.credential;
+                        },
+                        signal,
+                    );
+                } else {
+                    const result = await credentialPost<{ credential: CredentialRecord }>(
+                        endpoint('activate', record.id),
+                        { payload: current.payload, completion_nonce: current.completion_nonce },
+                        signal,
+                    );
+                    updated = result.credential;
                 }
-                const result = await credentialPost<{ credential: CredentialRecord }>(
-                    endpoint(action, record.id),
-                    { payload, completion_nonce: current.completion_nonce },
-                    signal,
-                );
                 if (signal.aborted || !mounted.current) return;
-                setRecord(result.credential);
+                setRecord(updated);
                 if (action === 'activate') {
                     receipt.current = null;
+                    destinationRef.current = null;
+                    readBack.current.invalidate();
                     setMessage('Credential activated. Its permanent assignment is now selected.');
                 } else
                     setMessage('Matching read-back saved. Review the assignment, then activate.');
@@ -186,16 +277,71 @@ export default function Issue({
         <ManagementPage
             page="credentials"
             title={simulated ? 'Issue a simulated credential' : 'Issue an NFC credential'}
-            description="Prepare → write → matching read-back → activate"
+            description="Check coin → choose person → write checked coin → read back → activate"
             back="/admin/credentials"
         >
             {simulated && <SimulatorNotice />}
             {!simulated && <NfcStatus />}
+            {!simulated && (
+                <p className="credential-notice">
+                    Use the intended writable coin. Writing replaces whatever reference is on that
+                    coin. If it already holds an NFCheck credential, retire that credential before
+                    reusing the coin; writing alone does not revoke the old database record.
+                </p>
+            )}
             <FormErrors errors={errors} />
+            {!record && (
+                <Panel
+                    className="credential-panel"
+                    title="1. Check the destination coin"
+                    subtitle="Read the coin first. Active or pending references cannot be overwritten through this flow."
+                >
+                    <div className="form-actions">
+                        <Button
+                            disabled={busy || (!simulated && !nfcAvailable())}
+                            onClick={() => void checkCoin()}
+                        >
+                            {simulated ? 'Check virtual coin' : 'Check NFC coin'}
+                        </Button>
+                        {radio && (
+                            <Button onClick={() => operation.current?.abort()}>
+                                Cancel NFC check
+                            </Button>
+                        )}
+                    </div>
+                    {destination && (
+                        <div className="credential-notice" role="status">
+                            <strong>
+                                {destination.allowed
+                                    ? 'Coin ready for issuance'
+                                    : 'Coin not ready for overwrite'}
+                            </strong>
+                            <p>{destination.message}</p>
+                            {destination.credential && (
+                                <p>
+                                    {destination.credential.label} ·{' '}
+                                    {destination.credential.person.name} ·{' '}
+                                    {destination.credential.person.number} ·{' '}
+                                    {destination.credential.status}
+                                </p>
+                            )}
+                            {!destination.allowed && destination.credential && (
+                                <Link href={`/admin/credentials/${destination.credential.id}`}>
+                                    Open credential to retire it before reuse
+                                </Link>
+                            )}
+                        </div>
+                    )}
+                    <p className="field-hint">
+                        Remove the checked coin and keep it separate. Only that checked coin should
+                        be presented when writing starts. Keep other coins away from the phone.
+                    </p>
+                </Panel>
+            )}
             {!record ? (
                 <Panel
                     className="credential-panel"
-                    title="1. Prepare the assignment"
+                    title="2. Choose the person and prepare"
                     subtitle="Fields marked * are required."
                 >
                     <div className="management-form">
@@ -248,7 +394,7 @@ export default function Issue({
                         <div className="form-actions">
                             <Button
                                 variant="primary"
-                                disabled={busy || !person}
+                                disabled={busy || !person || !destination?.allowed}
                                 onClick={() => void prepare()}
                             >
                                 {busy ? 'Preparing…' : 'Prepare pending credential'}
@@ -275,9 +421,13 @@ export default function Issue({
                             <div>
                                 <dt>Read-back</dt>
                                 <dd>
-                                    {record.read_back_at
-                                        ? `Matched ${manilaTime(record.read_back_at)}`
-                                        : 'Not matched'}
+                                    {record.status === 'pending' &&
+                                    record.read_back_at &&
+                                    !readBack.current.verified
+                                        ? 'Earlier match recorded; repeat matching read-back in this tab.'
+                                        : record.read_back_at
+                                          ? `Matched ${manilaTime(record.read_back_at)}`
+                                          : 'Not matched'}
                                 </dd>
                             </div>
                             <div>
@@ -295,8 +445,8 @@ export default function Issue({
                             className="credential-panel"
                             title={
                                 simulated
-                                    ? '2. Write and read the virtual tag'
-                                    : '2. Write and read the NFC tag'
+                                    ? '3. Write and read the virtual tag'
+                                    : '3. Write and read the checked NFC coin'
                             }
                         >
                             {!simulated && !nfcAvailable() && (
@@ -316,7 +466,7 @@ export default function Issue({
                                     disabled={busy || (!simulated && !nfcAvailable())}
                                     onClick={() => void operate('write')}
                                 >
-                                    {simulated ? 'Simulate write' : 'Write NFC tag'}
+                                    {simulated ? 'Simulate write' : 'Write checked NFC coin'}
                                 </Button>
                                 <Button
                                     disabled={busy || !written}
@@ -328,7 +478,9 @@ export default function Issue({
                                 </Button>
                                 <Button
                                     variant="primary"
-                                    disabled={busy || !record.read_back_at}
+                                    disabled={
+                                        busy || !record.read_back_at || !readBack.current.verified
+                                    }
                                     onClick={() => void operate('activate')}
                                 >
                                     {busy
@@ -342,7 +494,9 @@ export default function Issue({
                                 Writing replaces the intended tag’s NDEF contents. Keep the tag
                                 writable. Keep this page visible. Each NFC operation stops after 30
                                 seconds. A read-back is software evidence of the reference; it does
-                                not attest hardware identity or prevent copying a tag.
+                                not attest hardware identity or prevent copying a tag. A new write
+                                or failed read-back requires another matching read-back before
+                                activation.
                             </p>
                         </Panel>
                     )}

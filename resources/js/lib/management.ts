@@ -14,6 +14,7 @@ export interface PersonRecord {
     department: string | null;
     position: string | null;
     access_active: boolean;
+    nfc_credential?: { label: string; status: 'active' } | null;
 }
 export interface GateRecord {
     id: number;

@@ -1,10 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { canonicalReference, referenceFromMessage, NdefAdapter, NfcError, nfcCapabilities, writeVirtualTag, readVirtualTag, clearVirtualTag, unknownReference, holdVirtualTagForHandoff, acceptVirtualTagHandoff } from '../../resources/js/lib/nfc.ts';
+import { canonicalReference, referenceFromMessage, tagSnapshot, NdefAdapter, NfcError, ReadBackConfirmation, nfcCapabilities, writeVirtualTag, readVirtualTag, clearVirtualTag, unknownReference, holdVirtualTagForHandoff, acceptVirtualTagHandoff } from '../../resources/js/lib/nfc.ts';
 import { getEventListeners } from 'node:events';
 
 const payload = 'nfcheck:v1:' + 'A'.repeat(43);
 const textRecord = (text, encoding = 'utf-8') => ({ recordType: 'text', encoding, data: new DataView(new TextEncoder().encode(text).buffer) });
+const emptyDestination = { kind: 'empty', reference: null, serial: 'fixture-coin' };
+function reading(reader, records = [], serial = 'fixture-coin') {
+    const event = new Event('reading'); event.message = { records }; event.serialNumber = serial; reader.dispatchEvent(event);
+}
+function writerReader(write) {
+    const reader = new EventTarget(); reader.scan = async () => reading(reader); reader.write = write; return reader;
+}
 
 test('only exact canonical 256-bit references are accepted', () => {
     assert.equal(canonicalReference(payload), true);
@@ -18,13 +25,13 @@ test('NDEF parsing rejects URLs, extra records, invalid encoding and oversized d
 test('NDEF write uses one text record and releases its owned radio signal', async () => {
     let captured;
     const signal = new AbortController().signal;
-    const adapter = new NdefAdapter(() => ({ write: async (...args) => { captured = args; } }));
-    await adapter.write(payload, signal);
+    const adapter = new NdefAdapter(() => writerReader(async (...args) => { captured = args; }));
+    await adapter.write(payload, signal, emptyDestination);
     assert.deepEqual(captured[0], { records: [{ recordType: 'text', data: payload, encoding: 'utf-8', lang: 'en' }] });
     assert.equal(captured[1].overwrite, true);
     assert.equal(captured[1].signal.aborted, true);
     assert.equal(signal.aborted, false);
-    await assert.rejects(adapter.write('invalid', signal));
+    await assert.rejects(adapter.write('invalid', signal, emptyDestination));
 });
 test('separate read-back resolves one matching text record', async () => {
     const reader = new EventTarget();
@@ -67,14 +74,14 @@ test('timeout ends a native read even when the native promise ignores abort', as
 
 test('external cancellation stops a pending write and pre-aborted calls never start native NFC', async () => {
     let calls = 0; let nativeSignal;
-    const adapter = new NdefAdapter(() => ({ write: ({}, { signal }) => { calls++; nativeSignal = signal; return new Promise(() => {}); } }));
+    const adapter = new NdefAdapter(() => writerReader(({}, { signal }) => { calls++; nativeSignal = signal; return new Promise(() => {}); }));
     const controller = new AbortController();
-    const write = adapter.write(payload, controller.signal);
+    const write = adapter.write(payload, controller.signal, emptyDestination);
     assert.equal(calls, 1); // Starts inside the original gesture, before any await.
     controller.abort();
     await assert.rejects(write, { code: 'aborted' });
     assert.equal(nativeSignal.aborted, true);
-    await assert.rejects(adapter.write(payload, controller.signal), { code: 'aborted' });
+    await assert.rejects(adapter.write(payload, controller.signal, emptyDestination), { code: 'aborted' });
     assert.equal(calls, 1);
 });
 
@@ -101,8 +108,8 @@ test('access probe stops scanning and never consumes tag contents', async () => 
 
 test('native error details are redacted and failure categories remain distinct', async () => {
     for (const [name, code] of [['NotAllowedError', 'permission'], ['NotReadableError', 'unavailable'], ['NotSupportedError', 'incompatible'], ['InvalidStateError', 'busy'], ['NetworkError', 'write_failed']]) {
-        const adapter = new NdefAdapter(() => ({ write: async () => { throw new DOMException(payload, name); } }));
-        await assert.rejects(adapter.write(payload, new AbortController().signal), (error) => error instanceof NfcError && error.code === code && !error.message.includes(payload));
+        const adapter = new NdefAdapter(() => writerReader(async () => { throw new DOMException(payload, name); }));
+        await assert.rejects(adapter.write(payload, new AbortController().signal, emptyDestination), (error) => error instanceof NfcError && error.code === code && !error.message.includes(payload));
     }
 });
 
@@ -127,6 +134,105 @@ test('capability detection distinguishes insecure, embedded and unsupported cont
         if (previousWindow === undefined) delete globalThis.window; else globalThis.window = previousWindow;
         if (previousDocument === undefined) delete globalThis.document; else globalThis.document = previousDocument;
     }
+});
+
+test('read-back passes the actual native reference to the server and requires its acknowledgement', async () => {
+    const reader = new EventTarget();
+    reader.scan = async () => { const event = new Event('reading'); event.message = { records: [textRecord(payload)] }; reader.dispatchEvent(event); };
+    const confirmation = new ReadBackConfirmation(); let saved = false;
+    await confirmation.confirm(payload, () => new NdefAdapter(() => reader).read(new AbortController().signal), async (scanned) => {
+        saved = scanned === payload;
+        assert.equal(confirmation.verified, false);
+        return { read_back_at: '2026-11-09T00:00:00Z' };
+    }, new AbortController().signal);
+    assert.equal(saved, true);
+    assert.equal(confirmation.verified, true);
+});
+
+test('coin inspection distinguishes empty, NFCheck and unrelated contents without writing', async () => {
+    assert.equal(tagSnapshot([{recordType:'empty'}]).kind, 'empty');
+    assert.equal(tagSnapshot([textRecord(payload)]).kind, 'reference');
+    assert.equal(tagSnapshot([textRecord('unrelated fixture')]).kind, 'other');
+    const reader = new EventTarget(); reader.scan = async () => reading(reader, [textRecord(payload)]);
+    reader.write = () => { throw new Error('Inspection must not write'); };
+    const snapshot = await new NdefAdapter(() => reader).inspect(new AbortController().signal);
+    assert.equal(snapshot.reference === payload, true);
+    assert.equal(snapshot.serial, 'fixture-coin');
+});
+
+test('guarded write refuses a registered reference when an empty coin was checked', async () => {
+    const reader = new EventTarget(); let writes = 0;
+    reader.scan = async () => reading(reader, [textRecord('nfcheck:v1:' + Buffer.alloc(32, 1).toString('base64url'))]);
+    reader.write = async () => { writes++; };
+    await assert.rejects(new NdefAdapter(() => reader).write(payload, new AbortController().signal, emptyDestination), {code:'wrong_destination'});
+    assert.equal(writes, 0);
+    assert.equal(getEventListeners(reader, 'reading').length, 0);
+});
+
+test('guarded write checks the actual destination again and writes once from its reading event', async () => {
+    const retired = 'nfcheck:v1:' + Buffer.alloc(32, 2).toString('base64url');
+    const checked = {kind:'reference',reference:retired,serial:'fixture-coin'};
+    const reader = new EventTarget(); let writes = 0;
+    reader.scan = async () => { reading(reader, [textRecord(retired)]); reading(reader, [textRecord(retired)]); };
+    reader.write = async (message) => { writes++; assert.equal(message.records[0].data === payload, true); };
+    await new NdefAdapter(() => reader).write(payload, new AbortController().signal, checked);
+    assert.equal(writes, 1);
+    reader.scan = async () => reading(reader, [textRecord(retired)], 'different-coin');
+    await assert.rejects(new NdefAdapter(() => reader).write(payload, new AbortController().signal, checked), {code:'wrong_destination'});
+    assert.equal(writes, 1);
+});
+
+test('an interrupted write can retry its own pending reference only on the checked coin', async () => {
+    const reader = new EventTarget(); let writes = 0;
+    reader.scan = async () => reading(reader, [textRecord(payload)]);
+    reader.write = async () => { writes++; };
+    await new NdefAdapter(() => reader).write(payload, new AbortController().signal, emptyDestination);
+    assert.equal(writes, 1);
+    reader.scan = async () => reading(reader, [textRecord(payload)], 'different-coin');
+    await assert.rejects(new NdefAdapter(() => reader).write(payload, new AbortController().signal, emptyDestination), {code:'wrong_destination'});
+    assert.equal(writes, 1);
+});
+
+test('wrong valid native tag blocks saving and clears a previous successful read-back', async () => {
+    const confirmation = new ReadBackConfirmation(); const controller = new AbortController();
+    await confirmation.confirm(payload, () => payload, async () => ({ read_back_at: '2026-11-09T00:00:00Z' }), controller.signal);
+    assert.equal(confirmation.verified, true);
+    const other = 'nfcheck:v1:' + Buffer.alloc(32, 1).toString('base64url');
+    const reader = new EventTarget();
+    reader.scan = async () => { const event = new Event('reading'); event.message = { records: [textRecord(other)] }; reader.dispatchEvent(event); };
+    let saved = false;
+    await assert.rejects(confirmation.confirm(payload, () => new NdefAdapter(() => reader).read(controller.signal), async () => { saved = true; return { read_back_at: 'old' }; }, controller.signal), { code: 'mismatch' });
+    assert.equal(saved, false);
+    assert.equal(confirmation.verified, false);
+});
+
+test('read errors, missing server acknowledgement and server rejection never retain old confirmation', async () => {
+    const confirmation = new ReadBackConfirmation(); const signal = new AbortController().signal;
+    for (const failure of ['read', 'server', 'missing']) {
+        await confirmation.confirm(payload, () => payload, async () => ({ read_back_at: 'old' }), signal);
+        await assert.rejects(confirmation.confirm(payload,
+            () => { if (failure === 'read') throw new NfcError('read_failed'); return payload; },
+            async () => { if (failure === 'server') throw new Error('Server rejected fixture'); return { read_back_at: null }; }, signal));
+        assert.equal(confirmation.verified, false);
+    }
+});
+
+test('a new write or a hidden page invalidates confirmation and late server success cannot restore it', async () => {
+    const confirmation = new ReadBackConfirmation(); let finish; let started;
+    const saving = new Promise((resolve) => { started = resolve; });
+    const read = confirmation.confirm(payload, () => payload, () => { started(); return new Promise((resolve) => { finish = resolve; }); }, new AbortController().signal);
+    await saving;
+    confirmation.invalidate();
+    finish({ read_back_at: '2026-11-09T00:00:00Z' });
+    await assert.rejects(read, { code: 'aborted' });
+    assert.equal(confirmation.verified, false);
+});
+
+test('cancellation between native reading and saving prevents server submission', async () => {
+    const controller = new AbortController(); const confirmation = new ReadBackConfirmation(); let saved = false;
+    await assert.rejects(confirmation.confirm(payload, () => { controller.abort(); return payload; }, async () => { saved = true; return { read_back_at: 'old' }; }, controller.signal), { code: 'aborted' });
+    assert.equal(saved, false);
+    assert.equal(confirmation.verified, false);
 });
 test('virtual tag is memory-only and explicitly clearable', () => {
     clearVirtualTag(); assert.equal(readVirtualTag(), null);

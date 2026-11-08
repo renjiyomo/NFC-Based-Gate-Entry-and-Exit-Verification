@@ -6,6 +6,35 @@ export interface NfcRecord {
 }
 interface NfcReading extends Event {
     message: { records: NfcRecord[] };
+    serialNumber?: string;
+}
+// Serial is only a transient guard against choosing a different destination.
+// It is never an identity credential, server authorization input or stored value.
+export interface TagSnapshot {
+    kind: 'empty' | 'reference' | 'other';
+    reference: string | null;
+    serial: string | null;
+}
+export function tagSnapshot(records: NfcRecord[], serial?: string): TagSnapshot {
+    const id = serial && serial.length <= 128 ? serial.toLowerCase() : null;
+    if (records.length === 0 || (records.length === 1 && records[0].recordType === 'empty'))
+        return { kind: 'empty', reference: null, serial: id };
+    try {
+        return { kind: 'reference', reference: referenceFromMessage(records), serial: id };
+    } catch {
+        return { kind: 'other', reference: null, serial: id };
+    }
+}
+export function sameDestination(
+    expected: TagSnapshot,
+    seen: TagSnapshot,
+    writing: string,
+): boolean {
+    if (expected.kind === 'other' || (expected.serial && seen.serial !== expected.serial))
+        return false;
+    // Retrying an interrupted write on the checked coin may find our own pending reference.
+    if (seen.kind === 'reference' && seen.reference === writing) return true;
+    return expected.kind === seen.kind && expected.reference === seen.reference;
 }
 export interface NfcReader extends EventTarget {
     scan(options: { signal: AbortSignal }): Promise<void>;
@@ -29,6 +58,9 @@ export type NfcErrorCode =
     | 'read_failed'
     | 'write_failed'
     | 'invalid_record'
+    | 'mismatch'
+    | 'confirmation_failed'
+    | 'wrong_destination'
     | 'timeout'
     | 'aborted';
 const messages: Record<NfcErrorCode, string> = {
@@ -51,6 +83,11 @@ const messages: Record<NfcErrorCode, string> = {
         'The write did not finish. The tag may be locked, incompatible or removed too soon. Keep issuance pending and retry the intended tag.',
     invalid_record:
         'Use a tag containing exactly one correctly encoded NFCheck text record. Unrelated, malformed or oversized records are rejected.',
+    mismatch: 'Read-back does not match this pending credential. Read the intended tag again.',
+    confirmation_failed:
+        'The server did not confirm this read-back. Review the issuance before retrying.',
+    wrong_destination:
+        'A different coin or changed contents were detected. Nothing was written. Present the checked coin, or check another coin first.',
     timeout:
         'No NFC operation completed within 30 seconds. Remove the tag and tap the button to retry.',
     aborted: 'NFC operation cancelled. Tap the button again when you are ready.',
@@ -131,6 +168,42 @@ function nativeError(error: unknown, mode: string): NfcError {
                         : 'read_failed',
     );
 }
+// This gates the current tab's activation button; Laravel independently validates
+// the reference, issuer/session, nonce and saved matching read-back.
+export class ReadBackConfirmation {
+    private generation = 0;
+    private matched = false;
+    get verified(): boolean {
+        return this.matched;
+    }
+    invalidate(): void {
+        this.generation++;
+        this.matched = false;
+    }
+    async confirm<T extends { read_back_at: string | null }>(
+        expected: string,
+        read: () => Promise<string> | string,
+        save: (scanned: string) => Promise<T>,
+        signal: AbortSignal,
+    ): Promise<T> {
+        this.invalidate();
+        const generation = this.generation;
+        const checkCurrent = () => {
+            if (signal.aborted || generation !== this.generation) throw new NfcError('aborted');
+        };
+        checkCurrent();
+        if (!canonicalReference(expected)) throw new NfcError('invalid_record');
+        const scanned = await read();
+        checkCurrent();
+        if (scanned !== expected) throw new NfcError('mismatch');
+        const record = await save(scanned);
+        checkCurrent();
+        if (!record.read_back_at) throw new NfcError('confirmation_failed');
+        this.matched = true;
+        return record;
+    }
+}
+
 let radioOwner: AbortController | null = null;
 export class NdefAdapter {
     private create: () => NfcReader;
@@ -151,9 +224,13 @@ export class NdefAdapter {
                 return new Reader();
             });
     }
-    async write(payload: string, signal: AbortSignal): Promise<void> {
+    async write(payload: string, signal: AbortSignal, destination: TagSnapshot): Promise<void> {
         if (!canonicalReference(payload)) throw new NfcError('invalid_record');
-        return this.perform('write', signal, payload);
+        if (!destination || destination.kind === 'other') throw new NfcError('wrong_destination');
+        return this.perform('write', signal, payload, destination);
+    }
+    inspect(signal: AbortSignal): Promise<TagSnapshot> {
+        return this.perform('tag', signal);
     }
     read(signal: AbortSignal): Promise<string> {
         return this.perform('read', signal);
@@ -162,16 +239,19 @@ export class NdefAdapter {
         return this.perform('probe', signal);
     }
     private perform(mode: 'read', external: AbortSignal, payload?: string): Promise<string>;
+    private perform(mode: 'tag', external: AbortSignal): Promise<TagSnapshot>;
     private perform(
         mode: 'write' | 'probe',
         external: AbortSignal,
         payload?: string,
+        destination?: TagSnapshot,
     ): Promise<void>;
     private perform(
-        mode: 'read' | 'write' | 'probe',
+        mode: 'read' | 'tag' | 'write' | 'probe',
         external: AbortSignal,
         payload?: string,
-    ): Promise<string | void> {
+        destination?: TagSnapshot,
+    ): Promise<string | TagSnapshot | void> {
         return new Promise((resolve, reject) => {
             if (radioOwner) {
                 reject(new NfcError('busy'));
@@ -188,7 +268,7 @@ export class NdefAdapter {
             const disposers: (() => void)[] = [];
             let settled = false;
             let timer: ReturnType<typeof setTimeout> | undefined;
-            const finish = (error?: NfcError, value?: string) => {
+            const finish = (error?: NfcError, value?: string | TagSnapshot) => {
                 if (settled) return;
                 settled = true;
                 if (timer !== undefined) clearTimeout(timer);
@@ -207,13 +287,45 @@ export class NdefAdapter {
             timer = setTimeout(() => finish(new NfcError('timeout')), this.timeoutMs);
             try {
                 const reader = this.create();
-                if (mode === 'read') {
+                if (mode !== 'probe') {
+                    let writing = false;
                     const reading = (event: Event) => {
+                        if (writing) return;
                         try {
-                            finish(
-                                undefined,
-                                referenceFromMessage((event as NfcReading).message.records),
-                            );
+                            const input = event as NfcReading;
+                            if (mode === 'read')
+                                finish(undefined, referenceFromMessage(input.message.records));
+                            else {
+                                const seen = tagSnapshot(input.message.records, input.serialNumber);
+                                if (mode === 'tag') finish(undefined, seen);
+                                else {
+                                    if (!sameDestination(destination!, seen, payload!)) {
+                                        finish(new NfcError('wrong_destination'));
+                                        return;
+                                    }
+                                    writing = true;
+                                    // Web NFC supports writing from a reading event. Check the
+                                    // actual destination again immediately before starting the write.
+                                    Promise.resolve(
+                                        reader.write(
+                                            {
+                                                records: [
+                                                    {
+                                                        recordType: 'text',
+                                                        data: payload!,
+                                                        encoding: 'utf-8',
+                                                        lang: 'en',
+                                                    },
+                                                ],
+                                            },
+                                            { signal: internal.signal, overwrite: true },
+                                        ),
+                                    ).then(
+                                        () => finish(),
+                                        (error: unknown) => finish(nativeError(error, 'write')),
+                                    );
+                                }
+                            }
                         } catch (error) {
                             finish(nativeError(error, mode));
                         }
@@ -227,25 +339,10 @@ export class NdefAdapter {
                     );
                 }
                 // Start within the button gesture; no network or permission-query await comes first.
-                const native =
-                    mode === 'write'
-                        ? reader.write(
-                              {
-                                  records: [
-                                      {
-                                          recordType: 'text',
-                                          data: payload!,
-                                          encoding: 'utf-8',
-                                          lang: 'en',
-                                      },
-                                  ],
-                              },
-                              { signal: internal.signal, overwrite: true },
-                          )
-                        : reader.scan({ signal: internal.signal });
+                const native = reader.scan({ signal: internal.signal });
                 Promise.resolve(native).then(
                     () => {
-                        if (mode !== 'read') finish();
+                        if (mode === 'probe') finish();
                     },
                     (error: unknown) => finish(nativeError(error, mode)),
                 );

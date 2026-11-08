@@ -49,6 +49,7 @@ Route::middleware(['auth', 'auth.session', EnsurePasswordChanged::class])->group
     Route::get('/guard/activity/feed', [ActivityController::class, 'feed'])->middleware(['can:guard.workspace', 'throttle:gate-read'])->name('operations.activity.feed');
     Route::get('/guard/gates/{gate}/activity', [ActivityController::class, 'feed'])->whereNumber('gate')->middleware(['can:guard.workspace', 'can:operate,gate', 'throttle:gate-read'])->name('operations.station.activity');
     Route::prefix('admin/credentials')->middleware('can:admin.workspace')->name('credentials.')->group(function (): void {
+        Route::post('/destination', [CredentialController::class, 'destination'])->middleware('throttle:credential-check')->name('destination');
         Route::get('/', [CredentialController::class, 'index'])->name('index');
         Route::get('/create', [CredentialController::class, 'create'])->name('create');
         Route::get('/people', [CredentialController::class, 'people'])->name('people');
@@ -61,6 +62,7 @@ Route::middleware(['auth', 'auth.session', EnsurePasswordChanged::class])->group
         Route::post('/{credential}/revoke', [CredentialController::class, 'revoke'])->middleware('throttle:credential-write')->whereUuid('credential')->name('revoke');
     });
     Route::prefix('simulator')->middleware([EnsureNfcSimulator::class, 'can:admin.workspace'])->name('simulator.')->group(function (): void {
+        Route::post('/destination', [CredentialController::class, 'destination'])->middleware('throttle:credential-check')->name('destination');
         Route::get('/', [CredentialController::class, 'simulator'])->name('index');
         Route::get('/issue', [CredentialController::class, 'create'])->name('create');
         Route::post('/issue', [CredentialController::class, 'issue'])->middleware('throttle:credential-write')->name('issue');

@@ -1,3 +1,14 @@
+export interface DestinationCheck {
+    allowed: boolean;
+    reason: string;
+    message: string;
+    credential: {
+        id: string;
+        label: string;
+        status: string;
+        person: { name: string; number: string };
+    } | null;
+}
 export interface CredentialPerson {
     id: number;
     name: string;

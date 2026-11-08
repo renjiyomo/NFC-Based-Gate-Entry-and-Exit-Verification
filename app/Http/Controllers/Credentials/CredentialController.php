@@ -7,6 +7,7 @@ use App\Models\NfcCredential;
 use App\Models\Person;
 use App\Services\AuditLogger;
 use App\Services\Credentials\CredentialData;
+use App\Services\Credentials\CredentialDestination;
 use App\Services\Credentials\CredentialLifecycle;
 use App\Services\Credentials\CredentialVerifier;
 use App\Support\DirectoryData;
@@ -22,12 +23,25 @@ use Inertia\Response;
 
 class CredentialController
 {
+    public function destination(Request $request, CredentialDestination $destination, AuditLogger $audit): JsonResponse
+    {
+        Gate::authorize('viewAny', NfcCredential::class);
+        $data = $request->validate(['kind' => ['required', Rule::in(['empty', 'reference', 'other'])], 'payload' => ['nullable', 'required_if:kind,reference', 'string', 'max:256']]);
+        $source = $request->routeIs('simulator.*') ? 'simulated' : 'physical';
+        abort_if($source === 'physical' && config('database.connections.mysql.database') === 'nfcheck_simulator', 403);
+        $result = $destination->inspect($data['kind'], $data['payload'] ?? null, $source);
+        $audit->record('credential.destination_checked', $request->user(), metadata: ['reason' => $result['reason'], 'source' => $source]);
+
+        return response()->json($result);
+    }
+
     public function index(Request $request): Response
     {
         Gate::authorize('viewAny', NfcCredential::class);
-        $validator = Validator::make($request->query(), ['q' => ['nullable', 'string', 'max:100', 'not_regex:/nfcheck:v[0-9]+:/i'], 'status' => ['nullable', Rule::in(['pending', 'active', 'revoked', 'cancelled', 'expired'])], 'source' => ['nullable', Rule::in(['physical', 'simulated'])], 'per_page' => ['nullable', Rule::in([15, 30, 50])], 'page' => ['nullable', 'integer', 'min:1', 'max:100000']]);
+        $validator = Validator::make($request->query(), ['q' => ['nullable', 'string', 'max:100', 'not_regex:/nfcheck:v[0-9]+:/i'], 'status' => ['nullable', Rule::in(['current', 'all', 'pending', 'active', 'revoked', 'cancelled', 'expired'])], 'source' => ['nullable', Rule::in(['physical', 'simulated'])], 'per_page' => ['nullable', Rule::in([15, 30, 50])], 'page' => ['nullable', 'integer', 'min:1', 'max:100000']]);
         abort_if($validator->fails(), 422, 'Invalid credential filters.');
         $filters = $validator->validated();
+        $filters['status'] = $filters['status'] ?? 'current';
         $query = NfcCredential::with(['assignment.person', 'replaces']);
         if (! empty($filters['q'])) {
             $like = DirectoryData::like($filters['q']);
@@ -37,9 +51,12 @@ class CredentialController
             $query->where('source', $filters['source']);
         }
         $status = $filters['status'] ?? '';
-        if ($status === 'expired') {
+        if ($status === 'current') {
+            $query->where(fn ($q) => $q->where(fn ($pending) => $pending->where('status', 'pending')->where('pending_expires_at', '>', now()))
+                ->orWhere(fn ($active) => $active->where('status', 'active')->where(fn ($valid) => $valid->whereNull('valid_until')->orWhere('valid_until', '>', now()))));
+        } elseif ($status === 'expired') {
             $query->where(fn ($q) => $q->where('status', 'expired')->orWhere(fn ($p) => $p->where('status', 'pending')->where('pending_expires_at', '<=', now()))->orWhere(fn ($p) => $p->where('status', 'active')->where('valid_until', '<=', now())));
-        } elseif ($status) {
+        } elseif ($status && $status !== 'all') {
             $query->where('status', $status);
             if ($status === 'pending') {
                 $query->where('pending_expires_at', '>', now());
