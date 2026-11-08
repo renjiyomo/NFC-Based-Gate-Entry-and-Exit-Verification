@@ -1,6 +1,6 @@
-# NFC integration and credential lifecycle proposal
+# NFC integration and credential lifecycle
 
-Status: **design and official capability research only**. No NFC code or physical tag test has been performed.
+Status: **Phase 4 software implemented and verified with mocks/simulation**. Credential lifecycle, NDEF adapter and shared verifier are connected. No physical tag test has been performed. Operational guard scanning/passage is Phase 5; hardware acceptance is Phase 6. See [the Phase 4 report](phase-4-report.md).
 
 ## Supported target and limits
 
@@ -10,7 +10,7 @@ Chrome's Web NFC implementation is NDEF-only: no low-level ISO-DEP, peer-to-peer
 
 Do not purchase a reader or phone merely because it advertises NFC. First establish model, Android/Chrome versions, NFC read/write support, NDEF tag compatibility and trusted HTTPS access to the application. A generic USB NFC reader is not automatically usable by Web NFC. This integration does not implement a native smart-card challenge-response protocol.
 
-## Proposed versioned NDEF payload
+## Implemented versioned NDEF payload
 
 One NDEF **text** record containing `nfcheck:v1:<base64url-secret>`. Generate exactly 32 cryptographically random bytes in PHP; canonical unpadded base64url yields 43 characters. The text is 54 ASCII bytes before NDEF/text overhead. The placeholder here is a format description, not a live credential.
 
@@ -20,7 +20,7 @@ Only the random reference is written. No name, campus number, photo, authorizati
 
 ## Issuance, activation and replacement
 
-| Step | Planned operation | Failure behavior |
+| Step | Implemented operation | Failure behavior |
 | --- | --- | --- |
 | 1 | Authorized administrator selects a valid person; server generates pending credential and permanent assignment | Validation/authorization failure produces no usable token |
 | 2 | Plaintext is returned once into the issuance page's transient memory with no-store responses | Lost response/reload requires cancellation and new issuance; no plaintext recovery endpoint |
@@ -29,11 +29,11 @@ Only the random reference is written. No name, campus number, photo, authorizati
 | 5 | Server validates pending issuance, ownership, expiry and authorized completion under person lock; activate new token and update active assignment atomically | Activation retry is idempotent; failed activation cannot leave two active assignments |
 | 6 | Clear secret from UI memory; retain redacted issuance/activation audit | No localStorage, URL, console, analytics or long-lived plaintext storage |
 
-The browser reports read-back completion; this is software workflow evidence, not cryptographic attestation of an authentic or uncloned physical tag. Server authorization alone cannot observe the RF write. Pending issuance expires; exact issuance expiry will be chosen and tested in Phase 4. Do not automatically make a tag permanently read-only during development.
+The browser reports read-back completion; this is software workflow evidence, not cryptographic attestation of an authentic or uncloned physical tag. Server authorization alone cannot observe the RF write. Pending issuance expires after **10 minutes**, including at the exact boundary. Completion requires the issuing actor, auth revision, session digest, completion nonce, matching reference and unchanged person revision. Hiding/leaving issuance clears the receipt. The expiry command closes rows/pointers; validation already checks time without relying on that command. Do not automatically make a tag permanently read-only during development.
 
 Lost credentials are revoked immediately, the active pointer is cleared and assignment ended, independently of replacement success. Normal replacement may keep the old credential valid until the fresh tag is ready, then atomically revoke old/activate new. A revoked token never becomes active again. Existing credential ownership never moves to another person. See [database invariants](database.md).
 
-## Scan and passage flow
+## Future scan and passage flow — Phase 5
 
 Explicit Entry/Exit and assigned gate are fixed into the attempt. Browser reading submits to the authenticated Laravel verification service. Display authorized credential + necessary identity details, then require guard comparison and observed-passage confirmation. A failed/missing backend response is not a successful verification. Guard rejection/cancellation/expiry are audited terminal review states and create no passage.
 
@@ -43,7 +43,16 @@ UI error states need actionable distinctions: unsupported API/device, NFC disabl
 
 ## Controlled simulator
 
-Phase 4 introduces a development-only transport that invokes the **same backend verification action** as NFC. Server restrictions must require local/test environment plus explicit simulator enablement, and production must reject simulator routes/source flags. Label the page and stored source as simulated; exclude simulated data from operational reports by default. A client cannot choose to bypass authorization by changing its source flag.
+The implemented simulator invokes **the same `CredentialVerifier`** as normal credential inspection. Middleware requires local/testing environment, loopback, explicit flag and `nfcheck_simulator`/`nfcheck_testing`; production rejects it. Routes fix the source server-side and normal verification rejects simulated references. The lab uses its own runtime account, key, cookie and synthetic people. It has no passage tables and records no operational decision.
+
+1. Run `scripts/dev.ps1 simulator`; open **http://localhost:8002/login**. Read the disposable operator credentials privately from `.tools/secrets/simulator-account.json`. Keep the main app at **127.0.0.1:8000** so the browsers' XSRF cookies use separate hosts.
+2. Open NFC credentials → Issue credential. Choose a synthetic person, a unique inventory label and purpose. Prepare the pending credential.
+3. Select **Simulate write**, then **Simulate matching read-back**, then **Activate simulated credential**. The raw reference is never rendered or copied.
+4. Select **Check simulated tag** → **Check virtual tag**. Repeat to show checks do not create passage. Use unknown/malformed probes to exercise rejections.
+5. From the eligible result open the credential, revoke as lost, return to the simulator through in-app navigation and check again: it must reject as revoked. Issue replacement uses a fresh reference and retained history.
+6. Clear the virtual tag or sign out. A reload/page hide also clears the memory-only tag; returning to issuance cannot recover a lost receipt. Cancel any pending issuance before starting a fresh one.
+
+The physical issuance adapter writes exactly one UTF-8 NDEF text record. Separate read-back accepts only one bounded text record using supported UTF-8/UTF-16 decoding and canonical reference validation. Listeners attach before `scan()`, and navigation/hiding/timeout abort operations. API presence, permission errors, malformed data and interruption are tested with mock readers, without asserting RF behavior. Text record data/encoding follow the browser NDEF record interface. [MDN NDEFRecord](https://developer.mozilla.org/en-US/docs/Web/API/NDEFRecord), [Chrome Web NFC](https://developer.chrome.com/docs/capabilities/nfc).
 
 Unit/feature/browser tests can validate parsing, permissions UI, token lifecycle, business rules and race conditions. They cannot establish RF range, actual phone permissions behavior, physical writing or read-back reliability. Keep separate simulated and physical evidence.
 

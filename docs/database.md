@@ -1,6 +1,14 @@
 # NFCheck database and ERD proposal
 
-Status: **Phase 3 management implemented** on the Phase 2 core schema in isolated Oracle MySQL 8.4.13. The larger ERD below remains a future design. See [database setup](database-setup.md) for instances/permissions and [the Phase 3 report](phase-3-report.md) for current verification.
+Status: **Phase 4 credential management implemented** on the Phase 2/3 schema in isolated Oracle MySQL 8.4.13. The larger ERD below remains a future design. See [database setup](database-setup.md) for instances/permissions and [the Phase 4 report](phase-4-report.md) for current verification.
+
+## Implemented Phase 4 additions
+
+Migration 13 creates `nfc_credentials` and `credential_assignments`, and adds `persons.active_credential_assignment_id`. Credential states are pending/active/revoked/cancelled/expired. References are 32 random bytes encoded as versioned NDEF text; only unique BINARY(32) SHA-256 digests of the decoded secret are stored. Completion/session digests, issuer auth revision, 10-minute pending deadline and person revision bind completion to the issuing session and unchanged assignment.
+
+Each credential has one permanent person assignment. Unique `(person_id,id)` plus a composite person/pointer foreign key prevents selecting someone else's assignment. New activation and normal replacement serialize on the person row and commit audit/selection/old revocation atomically. Lost revocation occurs in a separate committed operation before replacement. Closed references cannot be reused, reactivated or reassigned through the application. Expired references are denied by the clock before the optional cleanup command closes their rows. Inactive/archived people and missing effective access grants override otherwise active credentials.
+
+Verification locks person, credential and assignment before reading current access authorization. The simulator uses the same verifier in a separate schema, with a server-fixed simulated source; normal inspection rejects simulated references. No attempt, passage, presence or reporting tables were added in Phase 4.
 
 ## Implemented Phase 2 subset
 

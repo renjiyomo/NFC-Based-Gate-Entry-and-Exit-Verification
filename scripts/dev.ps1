@@ -1,6 +1,6 @@
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('serve', 'vite', 'build', 'typecheck', 'test', 'format', 'composer', 'npm', 'git', 'check', 'artisan', 'services', 'migrate')]
+    [ValidateSet('serve', 'vite', 'build', 'typecheck', 'test', 'format', 'composer', 'npm', 'git', 'check', 'artisan', 'services', 'migrate', 'simulator')]
     [string]$Action = 'serve',
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$ToolArguments = @()
@@ -37,6 +37,7 @@ try {
     switch ($Action) {
         'serve' { Invoke-Checked $phpPath @('artisan', 'serve', '--host=127.0.0.1', '--port=8000', '--tries=1') }
         'services' { & (Join-Path $PSScriptRoot 'start-services.ps1') }
+        'simulator' { & (Join-Path $PSScriptRoot 'start-simulator.ps1') }
         'migrate' { Invoke-Checked $phpPath @('scripts/migrate-database.php') }
         'artisan' { Invoke-Checked $phpPath (@('artisan') + $ToolArguments) }
         'vite' { Invoke-Checked $npmPath @('run', 'dev') }
@@ -53,6 +54,7 @@ try {
             Invoke-Checked $npmPath @('audit')
             Invoke-Checked $npmPath @('run', 'format:check')
             Invoke-Checked $npmPath @('run', 'build')
+            Invoke-Checked $npmPath @('run', 'test:nfc')
             Invoke-Checked $phpPath @('vendor/bin/pint', '--test')
             Invoke-Checked $phpPath @('artisan', 'test')
         }

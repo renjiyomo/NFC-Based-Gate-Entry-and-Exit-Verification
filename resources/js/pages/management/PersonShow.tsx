@@ -1,4 +1,7 @@
-import { useForm } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
+import { CredentialBadge } from '../../components/credentials/Shared';
+import type { CredentialRecord } from '../../lib/credentials';
+import { useWorkspace } from '../../lib/workspace';
 import { Badge, Button, Panel } from '../../components/ui';
 import {
     ArchiveActions,
@@ -26,11 +29,17 @@ export default function PersonShow({
     directory,
     record,
     grants,
+    credentials = [],
 }: {
     directory: PersonDirectory;
     record: PersonRecord;
     grants: Paginated<Grant>;
+    credentials: CredentialRecord[];
 }) {
+    const { simulator } = useWorkspace();
+    const currentCredential = credentials.find(
+        (credential) => credential.selected && credential.status === 'active',
+    );
     const base = `/admin/${directory}/${record.id}`;
     const form = useForm({
         starts_at: manilaInput(),
@@ -81,7 +90,15 @@ export default function PersonShow({
                         </div>
                         <div>
                             <dt>NFC credential</dt>
-                            <dd>Issuance pending a later phase</dd>
+                            <dd>
+                                {currentCredential ? (
+                                    <Link href={`/admin/credentials/${currentCredential.id}`}>
+                                        {currentCredential.label}
+                                    </Link>
+                                ) : (
+                                    'No selected credential'
+                                )}
+                            </dd>
                         </div>
                     </dl>
                 </Panel>
@@ -149,6 +166,46 @@ export default function PersonShow({
                 </Panel>
             </div>
             <Panel
+                title="NFC credentials"
+                subtitle="Most recent 10 assignments. The registry contains the full retained history."
+                action={
+                    !record.archived_at && record.status === 'active' ? (
+                        <Link
+                            className="button button-secondary"
+                            href={`${simulator ? '/simulator/issue' : '/admin/credentials/create'}?person_id=${record.id}${currentCredential ? `&mode=replace&replaces_id=${currentCredential.id}` : ''}`}
+                        >
+                            Issue credential
+                        </Link>
+                    ) : undefined
+                }
+            >
+                <DataTable
+                    caption="Person credential history"
+                    columns={['Credential', 'State / source', 'Selected', 'Action']}
+                    count={credentials.length}
+                    empty="No credentials assigned yet"
+                    emptyDescription="Issue to this active person, write the tag and match read-back before activation."
+                >
+                    {credentials.map((credential) => (
+                        <tr key={credential.id}>
+                            <td>{credential.label}</td>
+                            <td>
+                                <CredentialBadge record={credential} />
+                            </td>
+                            <td>{credential.selected ? 'Yes' : 'No'}</td>
+                            <td>
+                                <Link href={`/admin/credentials/${credential.id}`}>
+                                    View credential
+                                </Link>
+                            </td>
+                        </tr>
+                    ))}
+                </DataTable>
+                <Link href="/admin/credentials" className="management-back">
+                    Open full credential registry
+                </Link>
+            </Panel>
+            <Panel
                 title="Access grant history"
                 subtitle="Grant periods include their start and exclude their end. Times shown in Asia/Manila."
             >
@@ -189,8 +246,9 @@ export default function PersonShow({
                 <Pagination records={grants} />
             </Panel>
             <p className="availability-note">
-                A current grant and active record do not verify physical identity or passage.
-                Credential issuance and verification history are added in later phases.
+                A current grant and active record do not verify physical identity or passage. A
+                selected active credential is checked separately. Guard verification history begins
+                in Phase 5.
             </p>
         </ManagementPage>
     );

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\PersonType;
 use App\Models\Person;
 use App\Models\User;
+use App\Services\Credentials\CredentialLifecycle;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -61,6 +62,7 @@ class PersonManagement
             if ($restore) {
                 $person->restore();
             } else {
+                app(CredentialLifecycle::class)->archivePerson($person, $actor);
                 $person->authorizations()->where('status', 'active')->whereNull('revoked_at')->update(['status' => 'revoked', 'revoked_at' => now(), 'revoked_by' => $actor->id, 'updated_at' => now()]);
                 $person->delete();
             }

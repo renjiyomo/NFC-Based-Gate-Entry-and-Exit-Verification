@@ -1,4 +1,4 @@
-# Local development — Phase 3
+# Local development — Phase 4
 
 Authentication, student/employee management, private photos, gates, guards, access grants and gate assignments are implemented. Credential issuance, scanning and passage recording require later phase approvals. Follow [AGENTS.md](../AGENTS.md) and [the current report](phase-3-report.md).
 
@@ -95,6 +95,18 @@ The launcher restores PATH/Composer environment changes after use. MySQL/Mailpit
 - Guards: `/guard/scanner`, `/guard/activity`; `/guard/gates/{gate}/scanner` additionally requires the exact effective assignment and active gate. NFC actions remain unavailable.
 - Optional previews: `/preview/login`, `/preview/{page}`, disabled by default. Production always rejects previews.
 - `/up`: lightweight application health, not database readiness.
+
+## Credential management and simulator
+
+The main administrator registry is `/admin/credentials`. Issue to an active person, choose an inventory label, and optionally set a validity end in Asia/Manila. Preparation returns an unrecoverable one-time JSON receipt. Write the NDEF text, perform a separate matching read-back, then activate within the 10-minute pending window. Hiding, reloading or leaving the issuance page clears the receipt; cancel the pending entry and issue again if it is lost. Never copy references into URLs, logs or files.
+
+Normal replacement keeps the current tag until the new one activates. For loss, use **Revoke credential → Lost tag** first; revocation survives any subsequent replacement failure. Credential ownership and closed history are permanent. Person archives also close active/pending credentials. Expiry is enforced immediately during validation; `scripts/dev.ps1 artisan nfcheck:expire-credentials` additionally closes expired rows and clears selected pointers.
+
+Run `scripts/dev.ps1 simulator` to prepare/reuse `nfcheck_simulator` and start the public-only listener on loopback port 8002. Open **http://localhost:8002/login** using the disposable account in ignored `.tools/secrets/simulator-account.json`. This account is unrelated to the three main administrators. Synthetic people/grants are created only in this schema; setup preserves existing lab records and never resets a schema. Two loopback hosts separate browser cookies: keep the main app on **127.0.0.1:8000**, lab on **localhost:8002**. Opening both on the same hostname can overwrite the common XSRF cookie; reload the affected workspace before a JSON write. Issuance receipts cannot survive such a reload.
+
+Simulator routes require local/testing environment, loopback, the explicit flag and a simulation/testing schema. Production rejects them even with the flag. Routes fix the source server-side; normal verification rejects simulated references. The virtual tag lives only in tab memory across Inertia navigation and clears on reload, page hide, sign-out or explicit clearing. Only digests are stored in the database. Both transports call `CredentialVerifier`; neither Phase 4 inspection endpoint records a gate decision or passage.
+
+`npm run test:nfc` checks the NDEF adapter using mock readers. These are software checks; a real NFC phone/tag and trusted HTTPS are still needed for physical acceptance. The full Phase 4 pipeline passed **109 tests / 1,193 assertions**, plus **6 adapter tests**. See [Phase 4 evidence and limits](phase-4-report.md).
 
 ## Troubleshooting and limits
 

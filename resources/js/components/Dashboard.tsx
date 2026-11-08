@@ -145,10 +145,12 @@ export default function Dashboard() {
                                 <KeyRound size={18} aria-hidden="true" />
                             </span>
                             <span>
-                                <strong>NFC verification</strong>
-                                <small>Registered campus credentials</small>
+                                <strong>NFC credentials</strong>
+                                <small>Issuance, read-back and lifecycle</small>
                             </span>
-                            <span className="readiness-status">Pending</span>
+                            <span className="readiness-status">
+                                {preview ? 'Pending' : 'Available'}
+                            </span>
                         </div>
                     </div>
                     <div className="readiness-foot">

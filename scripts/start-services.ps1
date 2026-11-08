@@ -56,7 +56,7 @@ if ($Initialize) {
     & $servicePhp (Join-Path $PSScriptRoot 'provision-database.php')
     if ($LASTEXITCODE -ne 0) { throw 'Database/account provisioning failed.' }
 }
-foreach ($privateFile in @('.env', '.env.testing')) {
+foreach ($privateFile in @('.env', '.env.testing', '.env.simulator')) {
     $privatePath = Join-Path $serviceRoot $privateFile
     if (Test-Path -LiteralPath $privatePath) {
         $privateInfo = [IO.FileInfo]::new($privatePath)

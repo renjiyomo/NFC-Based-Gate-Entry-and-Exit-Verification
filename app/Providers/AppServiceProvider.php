@@ -44,9 +44,11 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perMinute(3)->by('recovery-subject:'.$audit->fingerprint(is_string($email) ? mb_strtolower(trim($email)) : ''))];
         });
         RateLimiter::for('reset', fn (Request $request) => Limit::perMinute(10)->by(app(AuditLogger::class)->fingerprint((string) $request->ip())));
-        RateLimiter::for('password-change', fn (Request $request) => Limit::perMinute(5)->by((string) $request->user()->id));
-        RateLimiter::for('management', fn (Request $request) => Limit::perMinute(60)->by((string) $request->user()->id));
-        RateLimiter::for('guard-setup', fn (Request $request) => Limit::perMinute(5)->by((string) $request->user()->id));
+        RateLimiter::for('password-change', fn (Request $request) => Limit::perMinute(5)->by(config('database.connections.mysql.database').':'.$request->user()->id));
+        RateLimiter::for('management', fn (Request $request) => Limit::perMinute(60)->by(config('database.connections.mysql.database').':'.$request->user()->id));
+        RateLimiter::for('credential-write', fn (Request $request) => Limit::perMinute(30)->by(config('database.connections.mysql.database').':'.$request->user()->id));
+        RateLimiter::for('credential-check', fn (Request $request) => Limit::perMinute(60)->by(config('database.connections.mysql.database').':'.$request->user()->id));
+        RateLimiter::for('guard-setup', fn (Request $request) => Limit::perMinute(5)->by(config('database.connections.mysql.database').':'.$request->user()->id));
         ResetPassword::createUrlUsing(fn (User $user, string $token): string => rtrim(config('app.url'), '/').'/reset-password/'.rawurlencode($token).'?email='.rawurlencode($user->email));
     }
 }

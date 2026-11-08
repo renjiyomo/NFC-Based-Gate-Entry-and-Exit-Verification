@@ -15,15 +15,18 @@ Pinned URLs/hashes are in `scripts/service-artifacts.json`. The MySQL ZIP came f
 | Account | Scope |
 | --- | --- |
 | Private root | New private instance; bootstrap only, never used by the web app |
-| nfcheck_migrator | Schema/data privileges only in nfcheck and nfcheck_testing |
+| nfcheck_migrator | Schema/data privileges only in nfcheck, nfcheck_testing and the optional nfcheck_simulator |
 | nfcheck_app | Main per-table SELECT/INSERT/UPDATE/DELETE; audit SELECT/INSERT only; migrations SELECT only |
 | nfcheck_test | Equivalent restricted grants only in nfcheck_testing |
+| nfcheck_simulator | Equivalent restricted grants only in nfcheck_simulator |
 
 Runtime accounts cannot create/alter/drop tables, modify/delete audit rows, grant privileges or read the other schema. A privileged database administrator still controls audit data; no tamper-proof external audit store is claimed.
 
-Both schemas have ten application tables plus Laravel's migration ledger: persons, users, student_profiles, employee_profiles, gates, access_authorizations, guard_gate_assignments, audit_logs, sessions and password_reset_tokens. Later NFC/verification/passage/reporting tables are deferred. See [database design](database.md).
+Each schema has the ten core application tables plus `nfc_credentials`, `credential_assignments` and Laravel's migration ledger. Verification/passage/reporting tables are deferred. See [database design](database.md).
 
-Phase 3 brings the ledger to 12 applied migrations. Persons/gates/users support retained archives and edit versions; access/assignment schedule columns use UTC DATETIME(6). Archive operations deactivate records and revoke related permissions; restoration leaves them inactive. The main schema has no development people/gates. Transaction fixtures and disposable browser QA were confined to `nfcheck_testing` and removed after checks.
+Phase 4 brings the ledger to 13 applied migrations in all three project schemas. Persons/gates/users support retained archives and edit versions; access/assignment schedule columns use UTC DATETIME(6). Credential records store unique binary digests, permanent assignments and an owner-qualified selected-assignment pointer. Archive operations deactivate records and revoke related permissions; restoration leaves them inactive. Existing main records are preserved. Transaction fixtures roll back in `nfcheck_testing`; Phase 4 browser QA uses only `nfcheck_simulator`.
+
+`scripts/dev.ps1 simulator` adds the fixed `nfcheck_simulator` schema/runtime user and a distinct random secret in the protected database handoff. Its environment/key/session cookie live in ignored `.env.simulator`. The migrator receives DDL only within this additional schema; simulator runtime grants remain per-table DML, audit SELECT/INSERT, migrations SELECT. MySQL version/data-directory checks run before provisioning and migration. The runtime cannot query the main/test schemas. A CLI-only guarded seed creates one disposable lab administrator and two explicitly simulated people/grants, idempotently; no credential references are seeded or stored in plaintext. Existing lab records are preserved.
 
 ## Setup
 

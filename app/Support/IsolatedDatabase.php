@@ -10,7 +10,7 @@ class IsolatedDatabase
     {
         $connection = DB::connection();
         if ($connection->getDriverName() !== 'mysql' || $connection->getConfig('host') !== '127.0.0.1'
-            || (int) $connection->getConfig('port') !== 3307 || ! in_array($connection->getDatabaseName(), ['nfcheck', 'nfcheck_testing'], true)) {
+            || (int) $connection->getConfig('port') !== 3307 || ! in_array($connection->getDatabaseName(), ['nfcheck', 'nfcheck_testing', 'nfcheck_simulator'], true)) {
             throw new \RuntimeException('Migrations require an isolated NFCheck schema on loopback port 3307.');
         }
         $identity = $connection->selectOne('SELECT VERSION() version, @@datadir data_directory');

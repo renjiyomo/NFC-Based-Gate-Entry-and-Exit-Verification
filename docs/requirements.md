@@ -1,6 +1,6 @@
 # Requirements and scope proposal
 
-Status: **Requirements baseline created in Phase 0.** Authentication and Phase 3 management are now implemented as recorded in [the Phase 3 report](phase-3-report.md); later modules remain planned. Source: the supplied NFCheck master development prompt, especially Parts 1, 6–8, 10–12, and 16. The revised gate monitoring direction is authoritative over the old-title manuscript.
+Status: **Requirements baseline created in Phase 0.** Authentication, Phase 3 management and Phase 4 credential lifecycles are implemented as recorded in [the Phase 4 report](phase-4-report.md); later modules remain planned. Physical NFC behavior remains untested. Source: the supplied NFCheck master development prompt, especially Parts 1, 6–8, 10–12, and 16. The revised gate monitoring direction is authoritative over the old-title manuscript.
 
 ## Research objective
 

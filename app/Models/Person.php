@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\PersonType;
 use App\Enums\RecordStatus;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -21,7 +22,7 @@ class Person extends Model
 
     protected function casts(): array
     {
-        return ['person_type' => PersonType::class, 'status' => RecordStatus::class, 'record_version' => 'integer', 'archived_at' => 'immutable_datetime'];
+        return ['person_type' => PersonType::class, 'status' => RecordStatus::class, 'record_version' => 'integer', 'archived_at' => 'immutable_datetime', 'active_credential_assignment_id' => 'integer'];
     }
 
     protected static function booted(): void
@@ -51,5 +52,15 @@ class Person extends Model
     public function operator(): HasOne
     {
         return $this->hasOne(User::class);
+    }
+
+    public function credentialAssignments(): HasMany
+    {
+        return $this->hasMany(CredentialAssignment::class);
+    }
+
+    public function activeCredentialAssignment(): BelongsTo
+    {
+        return $this->belongsTo(CredentialAssignment::class, 'active_credential_assignment_id');
     }
 }

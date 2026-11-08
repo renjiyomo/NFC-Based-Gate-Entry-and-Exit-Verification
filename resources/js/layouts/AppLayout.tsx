@@ -3,6 +3,7 @@ import { ArrowLeft, ChevronRight, CircleHelp, Menu, ShieldCheck, X } from 'lucid
 import { useEffect, useRef, type ReactNode } from 'react';
 import { type PageId } from '../lib/navigation';
 import { useWorkspace } from '../lib/workspace';
+import { clearVirtualTag } from '../lib/nfc';
 import { Badge, Button } from '../components/ui';
 
 function Brand() {
@@ -129,6 +130,7 @@ export default function AppLayout({ page, children }: { page: PageId; children: 
                                 method="post"
                                 as="button"
                                 className="button button-quiet"
+                                onClick={clearVirtualTag}
                             >
                                 Sign out
                             </Link>
@@ -210,7 +212,7 @@ export default function AppLayout({ page, children }: { page: PageId; children: 
                 <p>
                     {preview
                         ? 'Explore the navigation, layouts, and gate direction controls. No operational data is saved from this preview.'
-                        : 'Account security, people and gate management, access grants, and guard assignments are connected. NFC issuance and gate operations await later development phases.'}
+                        : 'Account security, people and gate management, access grants, guard assignments and credential lifecycles are connected. Guard gate operations begin in Phase 5.'}
                 </p>
                 <div className="dialog-note">
                     <strong>Before gate operations</strong>

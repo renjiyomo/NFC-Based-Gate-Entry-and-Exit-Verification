@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\SessionController;
+use App\Http\Controllers\Credentials\CredentialController;
 use App\Http\Controllers\Management\AssignmentController;
 use App\Http\Controllers\Management\AuthorizationController;
 use App\Http\Controllers\Management\ChoiceController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Management\PersonController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Middleware\EnsureLocalPreview;
+use App\Http\Middleware\EnsureNfcSimulator;
 use App\Http\Middleware\EnsurePasswordChanged;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +33,26 @@ Route::middleware('auth')->group(function (): void {
     Route::put('/account/password', [PasswordController::class, 'update'])->middleware('throttle:password-change')->name('password.change');
 });
 Route::middleware(['auth', 'auth.session', EnsurePasswordChanged::class])->group(function (): void {
+    Route::prefix('admin/credentials')->middleware('can:admin.workspace')->name('credentials.')->group(function (): void {
+        Route::get('/', [CredentialController::class, 'index'])->name('index');
+        Route::get('/create', [CredentialController::class, 'create'])->name('create');
+        Route::get('/people', [CredentialController::class, 'people'])->name('people');
+        Route::post('/issue', [CredentialController::class, 'issue'])->middleware('throttle:credential-write')->name('issue');
+        Route::post('/check', [CredentialController::class, 'check'])->middleware('throttle:credential-check')->name('check');
+        Route::get('/{credential}', [CredentialController::class, 'show'])->whereUuid('credential')->name('show');
+        Route::post('/{credential}/read-back', [CredentialController::class, 'readBack'])->middleware('throttle:credential-write')->whereUuid('credential')->name('read-back');
+        Route::post('/{credential}/activate', [CredentialController::class, 'activate'])->middleware('throttle:credential-write')->whereUuid('credential')->name('activate');
+        Route::post('/{credential}/cancel', [CredentialController::class, 'cancel'])->middleware('throttle:credential-write')->whereUuid('credential')->name('cancel');
+        Route::post('/{credential}/revoke', [CredentialController::class, 'revoke'])->middleware('throttle:credential-write')->whereUuid('credential')->name('revoke');
+    });
+    Route::prefix('simulator')->middleware([EnsureNfcSimulator::class, 'can:admin.workspace'])->name('simulator.')->group(function (): void {
+        Route::get('/', [CredentialController::class, 'simulator'])->name('index');
+        Route::get('/issue', [CredentialController::class, 'create'])->name('create');
+        Route::post('/issue', [CredentialController::class, 'issue'])->middleware('throttle:credential-write')->name('issue');
+        Route::post('/check', [CredentialController::class, 'check'])->middleware('throttle:credential-check')->name('check');
+        Route::post('/credentials/{credential}/read-back', [CredentialController::class, 'readBack'])->middleware('throttle:credential-write')->whereUuid('credential')->name('read-back');
+        Route::post('/credentials/{credential}/activate', [CredentialController::class, 'activate'])->middleware('throttle:credential-write')->whereUuid('credential')->name('activate');
+    });
     Route::prefix('admin')->middleware('can:admin.workspace')->name('admin.')->group(function (): void {
         Route::get('/choices/{kind}', ChoiceController::class)->whereIn('kind', ['gates', 'guards'])->name('choices');
         Route::get('/{directory}', [PersonController::class, 'index'])->whereIn('directory', ['students', 'employees'])->name('people.index');

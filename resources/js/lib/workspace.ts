@@ -3,7 +3,13 @@ import { navigation, type PageId } from './navigation';
 
 export interface WorkspaceProps {
     [key: string]: unknown;
-    app: { name: string; phase: number; preview: boolean; testWorkspace?: boolean };
+    app: {
+        name: string;
+        phase: number;
+        preview: boolean;
+        testWorkspace?: boolean;
+        simulator?: boolean;
+    };
     auth?: {
         user: {
             id: number;
@@ -39,6 +45,7 @@ export function useWorkspace() {
     return {
         preview: app.preview,
         testWorkspace: app.testWorkspace ?? false,
+        simulator: app.simulator ?? false,
         user,
         flash,
         station,

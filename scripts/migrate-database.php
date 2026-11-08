@@ -20,7 +20,11 @@ $testing = Dotenv\Dotenv::parse(file_get_contents($testingPath));
 if (empty($testing['APP_KEY'])) {
     file_put_contents($testingPath, preg_replace('/^APP_KEY=.*/m', 'APP_KEY=base64:'.base64_encode(random_bytes(32)), file_get_contents($testingPath)));
 }
-foreach (['nfcheck' => 'local', 'nfcheck_testing' => 'testing'] as $schema => $environment) {
+$schemas = ['nfcheck' => 'local', 'nfcheck_testing' => 'testing'];
+if (isset($secrets['simulator'])) {
+    $schemas['nfcheck_simulator'] = 'local';
+}
+foreach ($schemas as $schema => $environment) {
     $process = new Process([PHP_BINARY, $root.'/artisan', 'migrate', '--no-interaction'], $root, [
         'APP_ENV' => $environment, 'DB_CONNECTION' => 'mysql', 'DB_HOST' => '127.0.0.1', 'DB_PORT' => '3307',
         'DB_DATABASE' => $schema, 'DB_USERNAME' => 'nfcheck_migrator', 'DB_PASSWORD' => $secrets['migrator'],
@@ -33,7 +37,9 @@ foreach (['nfcheck' => 'local', 'nfcheck_testing' => 'testing'] as $schema => $e
     if (! $process->isSuccessful()) {
         throw new RuntimeException('Scoped migrations failed.');
     }
-    $user = $schema === 'nfcheck' ? 'nfcheck_app' : 'nfcheck_test';
+    $user = match ($schema) {
+        'nfcheck' => 'nfcheck_app', 'nfcheck_testing' => 'nfcheck_test', 'nfcheck_simulator' => 'nfcheck_simulator'
+    };
     $tables = $db->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA='$schema'")->fetchAll(PDO::FETCH_COLUMN);
     foreach ($tables as $table) {
         if (! preg_match('/^[a-z_]+$/D', $table)) {

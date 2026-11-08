@@ -1,6 +1,6 @@
 # Phase-by-phase implementation strategy
 
-Status: **Phase 0 planning and Phase 1 foundation completed. Phase 2 awaits explicit approval.** Every phase ends with a completion report and an explicit stop. Successful tests do not authorize the next phase. See the [Phase 1 report](phase-1-report.md) for this checkpoint; the table retains the complete acceptance roadmap.
+Status: **Phases 0–4 completed for their approved scopes. Phase 5 awaits explicit approval.** Every phase ends with a completion report and an explicit stop. Successful tests do not authorize the next phase. See the [Phase 4 report](phase-4-report.md) for this checkpoint; the table retains the complete acceptance roadmap. Physical NFC acceptance remains outstanding for Phase 6.
 
 ## Phase acceptance gates
 

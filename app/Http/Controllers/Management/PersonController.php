@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Management;
 use App\Enums\PersonType;
 use App\Http\Requests\ManagementRequest;
 use App\Models\Person;
+use App\Services\Credentials\CredentialData;
 use App\Services\PersonManagement;
 use App\Support\DirectoryData;
 use Illuminate\Http\RedirectResponse;
@@ -72,6 +73,7 @@ class PersonController
         $person->load(['studentProfile', 'employeeProfile'])->loadExists(['authorizations as access_active' => fn ($q) => $q->effective()]);
 
         return Inertia::render('management/PersonShow', ['directory' => $directory, 'record' => DirectoryData::person($person),
+            'credentials' => $person->credentialAssignments()->with('credential.assignment.person', 'credential.replaces')->latest('id')->limit(10)->get()->map(fn ($assignment) => CredentialData::one($assignment->credential)),
             'grants' => $person->authorizations()->latest('id')->paginate(10)->through(fn ($grant) => ['id' => $grant->id, 'starts_at' => $grant->valid_from->toIso8601String(), 'ends_at' => $grant->valid_until?->toIso8601String(), 'reason' => $grant->reason, 'state' => DirectoryData::intervalState($grant->valid_from, $grant->valid_until, $grant->revoked_at), 'revoked_at' => $grant->revoked_at?->toIso8601String()])]);
     }
 

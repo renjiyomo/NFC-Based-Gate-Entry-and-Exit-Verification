@@ -1,6 +1,6 @@
 # NFCheck architecture proposal
 
-Status: Phase 0 design, awaiting approval. No application or services described here have been implemented. Consult [environment-audit.md](environment-audit.md) for the runtime decision and unresolved environment findings.
+Status: **Phases 1–4 implemented locally**: foundation, authentication, people/gates/assignments and credential lifecycles. The scanning/passage/reporting sections below remain future design. See [the Phase 4 report](phase-4-report.md) for delivered scope and verification. Guard operations require Phase 5 approval; physical NFC is untested.
 
 ## Purpose and boundaries
 
