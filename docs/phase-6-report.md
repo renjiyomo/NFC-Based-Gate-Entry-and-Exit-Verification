@@ -1,6 +1,6 @@
 # Phase 6 — Physical NFC integration
 
-Status: **software implemented and verified; physical acceptance pending**. The user has a Samsung A52 and ten NTAG215 tags and selected USB testing. File Transfer and USB debugging were reported enabled. ADB detects the phone but currently reports **unauthorized**. Android/Chrome versions, NFC radio operation, tag writing/read-back and real guard scans are not yet verified. Phase 7 is not started.
+Status: **software integration and USB connection verified; physical acceptance pending**. The user has a Samsung A52 and ten NTAG215 tags and selected USB testing. The user approved the debugging prompt after troubleshooting its absence; the exact change that made the prompt appear was not independently observed. On 2026-11-08 at 22:48 Asia/Manila, the helper verified USB authorization and established reverse forwarding for port 8003 to the loopback-only hardware workspace. Read-only device metadata identifies **SM-A525F, Android 14, security patch 2025-03-01**, installed Chrome **147.0.7727.111**, and advertised Android NFC hardware features. The separate hidden system Chrome package is 126.0.6478.110; it is not the installed update used for the recorded version. Browser NFC access, RF operation, tag writing/read-back and real guard scans are still pending. Phase 7 is not started.
 
 ## Implemented
 
@@ -37,7 +37,7 @@ Chrome supports Web NFC in a top-level secure context with a user gesture and pe
 
 | Scenario | Required result | Actual evidence |
 | --- | --- | --- |
-| Authorized USB / Chrome / NFC access | Phone can load private app; access check succeeds | Pending: ADB unauthorized |
+| Authorized USB / Chrome / NFC access | Phone can load private app; access check succeeds | USB authorization and owned port 8003 forwarding verified; phone Chrome page/access probe pending |
 | Actual tag write → separate read-back → activate | Intended tag matches; activation only after read-back | Not performed |
 | Guard Entry and Exit | Backend authorizes; scan alone creates no passage; explicit review confirms each | Not performed |
 | Wrong/read-only/locked/unrelated tag and early removal | Actionable failure; no unjustified activation/passage | Not performed; mock/parser tests only |
@@ -50,4 +50,4 @@ Chrome supports Web NFC in a top-level secure context with a user gesture and pe
 
 No RF range, antenna placement, tag capacity/formatting/lock state, native permission prompt behavior, physical write reliability, phone-browser compatibility or end-to-end physical passage result is claimed. Web NFC supplies NDEF data, not cryptographic identity or anti-cloning protection. A mock read-back is never hardware evidence. Development defaults remain 30-second review and 10-second duplicate window pending campus validation.
 
-Complete the phone authorization and physical matrix before declaring Phase 6 accepted. Keep all failed/unperformed outcomes explicit. Stop before Phase 7; dashboards, exports, analytics and AI are outside this phase.
+Complete the phone Chrome access check and physical matrix before declaring Phase 6 accepted. Keep all failed/unperformed outcomes explicit. Stop before Phase 7; dashboards, exports, analytics and AI are outside this phase.

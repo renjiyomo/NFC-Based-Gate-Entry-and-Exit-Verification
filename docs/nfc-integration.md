@@ -1,6 +1,6 @@
 # NFC integration and credential lifecycle
 
-Status: **Phase 6 software implemented and verified; physical Samsung A52/NTAG215 tests remain pending**. Credential lifecycle, NDEF adapter, shared verifier and assigned-guard review/passage service are connected. The user has ten NTAG215 tags and a USB-connected Samsung A52. Debugging authorization has not yet succeeded; no physical tag test has been performed. See [Phase 6 status](phase-6-report.md).
+Status: **Phase 6 software and USB connection verified; physical Samsung A52/NTAG215 tests remain pending**. Credential lifecycle, NDEF adapter, shared verifier and assigned-guard review/passage service are connected. USB debugging authorization and port 8003 forwarding are verified on the user's SM-A525F with Android 14 and installed Chrome 147.0.7727.111. Android reports NFC hardware features; actual browser access and tag tests are still pending. See [Phase 6 status](phase-6-report.md).
 
 ## Supported target and limits
 
