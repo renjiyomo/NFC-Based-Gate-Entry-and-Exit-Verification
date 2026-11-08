@@ -157,11 +157,11 @@ export default function Setup() {
             </Panel>
             <Panel
                 className="nfc-setup-panel"
-                title="Prepare the Samsung A52"
+                title="Prepare your NFC phone"
                 subtitle="Use an updated Chrome browser on Android."
             >
                 <ol className="nfc-instructions">
-                    <li>Turn on NFC in Settings → Connections → NFC and contactless payments.</li>
+                    <li>Open the phone’s Settings, search for NFC and turn it on.</li>
                     <li>
                         For USB testing, enable USB debugging and approve this laptop. Open{' '}
                         <strong>http://localhost:8003/login</strong> in phone Chrome after

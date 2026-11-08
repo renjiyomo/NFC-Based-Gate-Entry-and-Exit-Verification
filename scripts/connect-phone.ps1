@@ -42,7 +42,9 @@ if ($Action -eq 'Connect') {
         Invoke-PhoneAdb @('-s', $phoneSerial, 'reverse', '--no-rebind', 'tcp:8003', 'tcp:8003') | Out-Null
         @{ deviceHash = $phoneHash; port = 8003; connectedAt = [DateTime]::UtcNow.ToString('o') } | ConvertTo-Json | Set-Content -LiteralPath $phoneReceiptPath -Encoding utf8NoBOM
     }
-    Write-Host 'Open Chrome on the phone: http://localhost:8003/login . Keep USB connected. Only port 8003 is forwarded; Wi-Fi exposure is not enabled.'
+    $phoneVerifiedMappings = @(Invoke-PhoneAdb @('-s', $phoneSerial, 'reverse', '--list'))
+    if (@($phoneVerifiedMappings | Where-Object { $_ -match '\stcp:8003\s+tcp:8003\s*$' }).Count -ne 1) { throw 'The USB mapping did not stay active. Keep the cable connected, then run Connect again. No Wi-Fi exposure was enabled.' }
+    Write-Host 'USB port 8003 forwarding verified. Open Chrome on the phone: http://localhost:8003/login . Keep USB connected. Wi-Fi exposure is not enabled.'
 } elseif ($Action -eq 'Disconnect') {
     if ($phoneExisting.Count) { Invoke-PhoneAdb @('-s', $phoneSerial, 'reverse', '--remove', 'tcp:8003') | Out-Null }
     Write-Host 'The owned USB port 8003 mapping is disconnected. Other mappings and the ADB server were left running.'
