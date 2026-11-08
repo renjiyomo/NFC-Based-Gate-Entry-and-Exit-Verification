@@ -87,7 +87,7 @@ const definitions: Record<DirectoryId, DirectoryDefinition> = {
         search: 'Search name or account',
         filter: 'All gate stations',
         columns: ['Security personnel', 'Account', 'Gate assignments', 'Account status'],
-        emptyTitle: 'Security accounts are not connected',
+        emptyTitle: 'Security personnel management is pending',
         emptyDescription:
             'Security personnel and their permitted stations will appear here after account management is available.',
         icon: ShieldCheck,
@@ -125,9 +125,9 @@ export default function DirectoryPage({ page }: { page: DirectoryId }) {
                     </Button>
                 }
             />
-            <Notice title="Directory preview" icon={Info}>
-                Record management, search, and filters will become available after secure access and
-                storage are connected.
+            <Notice title="Directory management pending" icon={Info}>
+                Record management, search, and filters will become available in the later management
+                phases.
             </Notice>
             <Panel
                 title={definition.panel}

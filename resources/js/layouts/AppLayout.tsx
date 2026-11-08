@@ -1,12 +1,14 @@
 import { Link } from '@inertiajs/react';
 import { ArrowLeft, ChevronRight, CircleHelp, Menu, ShieldCheck, X } from 'lucide-react';
 import { useEffect, useRef, type ReactNode } from 'react';
-import { navigation, pageUrl, type PageId } from '../lib/navigation';
+import { type PageId } from '../lib/navigation';
+import { useWorkspace } from '../lib/workspace';
 import { Badge, Button } from '../components/ui';
 
 function Brand() {
+    const { home } = useWorkspace();
     return (
-        <Link href={pageUrl('dashboard')} className="brand" aria-label="NFCheck overview">
+        <Link href={home} className="brand" aria-label="NFCheck workspace">
             <img src="/images/nfcheck-logo.png" alt="" width="44" height="44" />
             <span>
                 <strong>NFCheck</strong>
@@ -17,6 +19,7 @@ function Brand() {
 }
 
 function Navigation({ page, close }: { page: PageId; close?: () => void }) {
+    const { navigation, pageUrl } = useWorkspace();
     const groups = [...new Set(navigation.map((item) => item.group))];
     return (
         <nav aria-label="Main navigation" className="main-navigation">
@@ -47,6 +50,7 @@ function Navigation({ page, close }: { page: PageId; close?: () => void }) {
 }
 
 export default function AppLayout({ page, children }: { page: PageId; children: ReactNode }) {
+    const { navigation, preview, user, flash } = useWorkspace();
     const drawer = useRef<HTMLDialogElement>(null);
     const information = useRef<HTMLDialogElement>(null);
     const current = navigation.find((item) => item.id === page) ?? navigation[0];
@@ -97,26 +101,47 @@ export default function AppLayout({ page, children }: { page: PageId; children: 
                         </nav>
                     </div>
                     <div className="topbar-right">
-                        <Badge tone="blue">
-                            <span className="status-dot" />
-                            <span className="preview-label">Interface preview</span>
-                            <span className="preview-short">Preview</span>
-                        </Badge>
+                        {preview ? (
+                            <Badge tone="blue">
+                                <span className="status-dot" />
+                                <span className="preview-label">Interface preview</span>
+                                <span className="preview-short">Preview</span>
+                            </Badge>
+                        ) : (
+                            <span className="account-label">
+                                <strong>{user?.name}</strong>
+                                <span>
+                                    {user?.role === 'admin' ? 'Administrator' : 'Security guard'}
+                                </span>
+                            </span>
+                        )}
                         <Button
                             variant="quiet"
                             onClick={() => information.current?.showModal()}
-                            aria-label="About this preview"
+                            aria-label={preview ? 'About this preview' : 'About this workspace'}
                             aria-haspopup="dialog"
                         >
                             <CircleHelp size={20} aria-hidden="true" />
                         </Button>
-                        <span className="workspace-avatar" aria-hidden="true">
-                            <ShieldCheck size={19} />
-                        </span>
+                        {!preview && (
+                            <Link
+                                href="/logout"
+                                method="post"
+                                as="button"
+                                className="button button-quiet"
+                            >
+                                Sign out
+                            </Link>
+                        )}
                     </div>
                 </header>
                 <main id="main-content" tabIndex={-1} aria-label={`${current.label} content`}>
                     <div className="content-container">
+                        {flash?.status && (
+                            <p className="auth-status" role="status">
+                                {flash.status}
+                            </p>
+                        )}
                         {children}
                         <footer className="content-footer">
                             <span>NFCheck · Campus gate verification & monitoring</span>
@@ -147,8 +172,12 @@ export default function AppLayout({ page, children }: { page: PageId; children: 
                 </div>
                 <Navigation page={page} close={() => drawer.current?.close()} />
                 <div className="drawer-footer">
-                    <Link href="/login" onClick={() => drawer.current?.close()}>
-                        <ArrowLeft size={16} aria-hidden="true" /> View sign-in screen
+                    <Link
+                        href={preview ? '/preview/login' : '/account/password'}
+                        onClick={() => drawer.current?.close()}
+                    >
+                        <ArrowLeft size={16} aria-hidden="true" />{' '}
+                        {preview ? 'View sign-in screen' : 'Change password'}
                     </Link>
                 </div>
             </dialog>
@@ -170,24 +199,28 @@ export default function AppLayout({ page, children }: { page: PageId; children: 
                         <X size={20} aria-hidden="true" />
                     </Button>
                 </div>
-                <h2 id="preview-title">A preview of your workspace</h2>
+                <h2 id="preview-title">
+                    {preview ? 'A preview of your workspace' : 'Your account workspace'}
+                </h2>
                 <p>
-                    Explore the navigation, layouts, and gate direction controls. Identity records
-                    and gate activity are not connected, and no operational data is saved.
+                    {preview
+                        ? 'Explore the navigation, layouts, and gate direction controls. No operational data is saved from this preview.'
+                        : 'Sign-in, password recovery, role restrictions, and account audit records are connected. People management and gate operations are awaiting later development phases.'}
                 </p>
                 <div className="dialog-note">
                     <strong>Before gate operations</strong>
                     <p>
-                        Secure sign-in, assigned gates, and credential verification must be
-                        connected. This preview cannot authorize campus access.
+                        Assigned gates and credential verification must be connected before gate
+                        operations can begin. This screen cannot authorize campus access.
                     </p>
                 </div>
                 <Link
-                    href="/login"
+                    href={preview ? '/preview/login' : '/account/password'}
                     className="button button-secondary"
                     onClick={() => information.current?.close()}
                 >
-                    <ArrowLeft size={16} aria-hidden="true" /> View sign-in screen
+                    <ArrowLeft size={16} aria-hidden="true" />{' '}
+                    {preview ? 'View sign-in screen' : 'Change password'}
                 </Link>
             </dialog>
         </div>

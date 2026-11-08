@@ -1,0 +1,11 @@
+{
+  "checked_at_utc": "2026-11-08T04:40:09.3809902Z",
+  "mysql_version": "8.4.13",
+  "mysql_sha256": "E9CD98B1D23F122987B1AFCA26AD942EFEC5891481103D48AE3CDE237FA3EA54",
+  "mysql_detached_signature_valid": true,
+  "mysql_signing_fingerprint": "BCA43417C3B485DD128EC6D4B7B3B788A8D3785C",
+  "mailpit_version": "1.33.1",
+  "mailpit_sha256": "0BCF8F1E7C21005B30C206064FF2F37DAC602EF66774E558379D326F5673D652",
+  "executable_verification": "bootstrap-services.ps1 -VerifyOnly passed",
+  "shared_xampp_modified": false
+}

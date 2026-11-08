@@ -1,90 +1,95 @@
-# Local development — Phase 1
+# Local development — Phase 2
 
-The application provides local UI previews. Operational authentication, database workflows and NFC actions begin only in their approved later phases. Follow [AGENTS.md](../AGENTS.md) and the phase roadmap.
+Authentication and the database foundation are implemented. People/gate CRUD, credential issuance, scanning and passage recording require later phase approvals. Follow [AGENTS.md](../AGENTS.md).
 
 ## Current workstation
 
-Isolated tools, dependencies, a generated local application key and built assets are prepared. A temporary background preview is running at [127.0.0.1:8000](http://127.0.0.1:8000/preview/dashboard). Its process record/logs are under ignored `.tools`. Use that existing preview without starting a duplicate server. Future foreground sessions started below are stopped with Ctrl+C.
-
-If no preview is running:
+Use [sign-in](http://127.0.0.1:8000/login) and the [local recovery inbox](http://127.0.0.1:8025). The application and isolated services are running. Do not start a duplicate application server.
 
 ```powershell
+.\scripts\dev.ps1 services
 .\scripts\dev.ps1 serve
 ```
 
-The server binds only to **127.0.0.1:8000**, without port fallback. Phone-accessible trusted HTTPS belongs to later NFC integration. No public hosting was configured.
+The service command reuses matching processes and refuses ports owned by another program. It does not stop processes. The application binds only to 127.0.0.1:8000 and refuses port fallback. Future foreground sessions stop with Ctrl+C.
 
 ## Fresh checkout
 
-Use Windows x64 and PowerShell 7.4+. Run commands from the project root. Before creating secrets, verify root `.htaccess` remains in place and the old Apache project URL is denied. Never serve the project root.
+Use Windows x64 and PowerShell 7.4+, from the project root. Verify root `.htaccess` remains in place and the old Apache project URL is denied. Never serve the project root.
 
 ```powershell
-# Verify pinned downloads and prepare isolated PHP/Node/Git/patched Composer.
 pwsh -File .\scripts\bootstrap-tools.ps1
-
-# Install committed dependency locks. No migration scripts are configured.
 .\scripts\dev.ps1 composer install --no-interaction --prefer-dist
 .\scripts\dev.ps1 npm ci
 
-# Only for a new local environment; preserve any existing .env.
-if (-not (Test-Path -LiteralPath .env)) { Copy-Item -LiteralPath .env.example -Destination .env }
-.\.tools\php\php.exe artisan key:generate
-```
+# Preserve existing environments and keys.
+if (-not (Test-Path -LiteralPath .env)) {
+    Copy-Item -LiteralPath .env.example -Destination .env
+    .\scripts\dev.ps1 artisan key:generate
+}
 
-Edit local `.env` to set `NFCHECK_UI_PREVIEW=true` with `APP_ENV=local`. The example defaults previews off. Keep file sessions/cache and synchronous queues for Phase 1. Database settings are reserved Phase 2 placeholders, with no operational username/password. Do not run migrate/seed/reset commands.
+# Pinned service packages, new private instance, fixed schemas.
+pwsh -File .\scripts\bootstrap-services.ps1
+.\scripts\dev.ps1 migrate
 
-```powershell
+# Provision each account ONCE; initial passwords go to a private handoff file.
+.\scripts\dev.ps1 artisan nfcheck:provision-user alexi@nfcheck.test --name=Alexi --role=admin --generate
+.\scripts\dev.ps1 artisan nfcheck:provision-user pauleen@nfcheck.test --name=Pauleen --role=admin --generate
+.\scripts\dev.ps1 artisan nfcheck:provision-user zaidy@nfcheck.test --name=Zaidy --role=admin --generate
+
 .\scripts\dev.ps1 build
 .\scripts\dev.ps1 check
 .\scripts\dev.ps1 serve
 ```
 
-Key generation writes the ignored environment file. Never paste/commit its key. Do not regenerate an existing application's key as a routine startup action: that can invalidate encrypted data and sessions.
+Existing emails are rejected rather than replaced. Do not regenerate keys, delete data directories or run `migrate:fresh`/`db:wipe` during routine startup. The migration helper verifies the private instance, uses a separate migration account and applies runtime grants afterward. See [database setup](database-setup.md).
 
-## Hot reload
+## Accounts
 
-Start Laravel in one terminal and Vite in a second:
+Open `.tools/secrets/initial-accounts.json` privately to copy an initial password. All three requested accounts are active administrators. First sign-in requires a personal password of 15–128 characters; passphrases are accepted. This handoff stores initial credentials only and does not track passwords after a user changes them.
 
-```powershell
-.\scripts\dev.ps1 serve
-# Second terminal, same project:
-.\scripts\dev.ps1 vite
-```
+Recovery mail stays in Mailpit on this machine. Reset links expire after 30 minutes and work once. A reset ends other sessions and returns to sign-in.
 
-Vite is loopback-only on 5173 with the intended 8000 origin. Stop both with Ctrl+C. If a generated `public/hot` remains after Vite stops, remove that stale file and rebuild for the static preview. It is ignored by Git. Reload after a production build; static assets do not hot reload.
+Provisioning and access maintenance are CLI-only in Phase 2. For reviewed maintenance, `nfcheck:account-access {email} --role=guard --status=active` calls the account service, invalidates old sessions on their next request, records an audit event and protects the last active administrator. There is no public registration. Do not bypass the service with bulk SQL changes to roles/passwords/status.
 
-## Individual checks
+## Hot reload and checks
+
+Run `scripts/dev.ps1 serve` and `scripts/dev.ps1 vite` in separate terminals. Vite is loopback-only on 5173 with the intended 8000 origin. If an ignored `public/hot` remains after Vite stops, remove that stale file and rebuild. Reload after a production build.
 
 | Command | Purpose |
 | --- | --- |
-| `pwsh -File .\scripts\bootstrap-tools.ps1 -VerifyOnly` | Verify existing tools/config/build provenance and audit without rebuilding |
-| `.\scripts\dev.ps1 composer validate --strict` | Validate Composer manifest/lock |
-| `.\scripts\dev.ps1 composer audit` | Audit app PHP dependencies |
-| `.\scripts\dev.ps1 npm audit` | Audit frontend dependencies |
-| `.\scripts\dev.ps1 typecheck` | Strict TS7 app/library type checking |
-| `.\scripts\dev.ps1 build` | Typecheck and production build |
-| `.\scripts\dev.ps1 format --test` | PHP formatting check; omit `--test` to format |
-| `.\scripts\dev.ps1 npm run format:check` | Frontend formatting check |
-| `.\scripts\dev.ps1 npm run format` | Format frontend code |
-| `.\scripts\dev.ps1 test` | Database-independent feature tests |
-| `.\scripts\dev.ps1 check` | Full validation/audits/format/build/test pipeline |
-| `.\scripts\dev.ps1 git status` | Use patched local Git |
+| `pwsh -File .\scripts\bootstrap-tools.ps1 -VerifyOnly` | Verify runtime/Composer provenance |
+| `pwsh -File .\scripts\bootstrap-services.ps1 -VerifyOnly` | Verify service archives and executables |
+| `.\scripts\dev.ps1 services` | Start/reuse loopback services |
+| `.\scripts\dev.ps1 migrate` | Pending migrations in both fixed schemas and scoped runtime grants |
+| `.\scripts\dev.ps1 artisan route:list` | Inspect routes |
+| `.\scripts\dev.ps1 composer audit` / `npm audit` | Dependency advisories |
+| `.\scripts\dev.ps1 build` | Strict TypeScript and Vite build |
+| `.\scripts\dev.ps1 format --test` | PHP style; omit --test to format |
+| `.\scripts\dev.ps1 npm run format:check` | Frontend style; use format to format |
+| `.\scripts\dev.ps1 test` | Unit and isolated MySQL feature tests |
+| `.\scripts\dev.ps1 check` | Full validation/audits/style/build/test pipeline |
 
-The launcher prepends local paths and uses an isolated Composer home for its process, then restores the environment. No system PATH/global runtime is changed. Provenance and security-bootstrap limitations are in [toolchain.md](toolchain.md).
+Database tests require services, migrations and ignored `.env.testing`. Before transactions, they verify testing environment, driver, host/port, test username/schema and server version. Fixtures roll back; the main application receives no synthetic people/gates. Hashing costs are reduced only in testing.
 
-## Routes and structure
+The launcher restores PATH/Composer environment changes after use. MySQL/Mailpit run as hidden project processes, not installed Windows services. Database files survive process restarts.
 
-`/login` and `/preview/{page}` are local-only previews; `/` redirects to the login shell. There are no login POST or operational mutation handlers. Page allowlist: dashboard, students, employees, credentials, guards, gates, scanner, history, reports, analytics and settings. Unknown pages return 404. `/up` is a lightweight health route.
+## Routes
 
-Laravel owns the controller, preview gate, headers and Inertia props. React pages/components are under `resources/js`, tokens in `resources/css/app.css`, and Blade in `resources/views/app.blade.php`. Inertia SSR and DevTools recording are disabled; no extra Node server is required.
+- Guest: GET/POST `/login`, `/forgot-password`; GET `/reset-password/{token}`, POST `/reset-password`.
+- Signed-in: POST `/logout`, GET/PUT `/account/password`.
+- Administrators: `/admin/dashboard` and allowlisted `/admin/{page}` shells.
+- Guards: `/guard/scanner`, `/guard/activity`; `/guard/gates/{gate}/scanner` additionally requires the exact effective assignment and active gate. NFC actions remain unavailable.
+- Optional previews: `/preview/login`, `/preview/{page}`, disabled by default. Production always rejects previews.
+- `/up`: lightweight application health, not database readiness.
 
 ## Troubleshooting and limits
 
-- **Old XAMPP URL returns 403:** expected; use port 8000. Keep root `.htaccess`.
-- **Preview returns 404:** check environment, explicit preview flag and loopback access. Production rejection is intentional. Restart after environment changes; clear a locally generated configuration cache if necessary.
-- **Bare `php` reports cURL failure:** that is shared XAMPP PHP; use the launcher or full isolated PHP path.
-- **Port 8000 occupied:** use the existing preview, or stop its foreground terminal with Ctrl+C if you started it there. The launcher intentionally refuses a port fallback. Never kill all PHP processes.
-- **Disabled login/scanning or no data:** expected Phase 1 shells; no operational access is granted.
-- **Checksum/audit fails:** review/update pinned inputs from official sources. Do not bypass checks or TLS.
+- **403 on old localhost project/public/index.php:** intentional; use 127.0.0.1:8000.
+- **Port occupied:** reuse the existing service or Ctrl+C in a foreground session you started. Never kill all PHP/MySQL processes.
+- **Database unavailable:** start project services; do not repoint at XAMPP MariaDB.
+- **Password change required:** expected for initial credentials.
+- **Recovery mail absent:** check Mailpit and the local inbox; no external SMTP service is configured.
+- **Checksum/audit fails:** investigate pinned inputs from official sources; do not bypass checks or TLS.
 
-Shared Apache/PHP/MariaDB/phpMyAdmin remain unchanged with the Phase 0 findings. Full browser zoom, assistive technology certification, physical phones/tags, trusted phone HTTPS and production operations require later validation. Emulated responsive widths are not hardware tests.
+This is a local development installation. Production needs a separately reviewed deployment, trusted HTTPS/Secure cookies, real SMTP, backups/retention and operator procedures. Existing XAMPP audit findings remain unchanged. No physical phone/tag, full browser zoom, assistive-technology certification or production readiness is claimed.

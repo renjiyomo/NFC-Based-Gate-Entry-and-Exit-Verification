@@ -1,6 +1,6 @@
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('serve', 'vite', 'build', 'typecheck', 'test', 'format', 'composer', 'npm', 'git', 'check')]
+    [ValidateSet('serve', 'vite', 'build', 'typecheck', 'test', 'format', 'composer', 'npm', 'git', 'check', 'artisan', 'services', 'migrate')]
     [string]$Action = 'serve',
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$ToolArguments = @()
@@ -36,6 +36,9 @@ try {
     $env:COMPOSER_HOME = Join-Path $projectRoot '.tools\composer-home'
     switch ($Action) {
         'serve' { Invoke-Checked $phpPath @('artisan', 'serve', '--host=127.0.0.1', '--port=8000', '--tries=1') }
+        'services' { & (Join-Path $PSScriptRoot 'start-services.ps1') }
+        'migrate' { Invoke-Checked $phpPath @('scripts/migrate-database.php') }
+        'artisan' { Invoke-Checked $phpPath (@('artisan') + $ToolArguments) }
         'vite' { Invoke-Checked $npmPath @('run', 'dev') }
         'build' { Invoke-Checked $npmPath @('run', 'build') }
         'typecheck' { Invoke-Checked $npmPath @('run', 'typecheck') }

@@ -2,57 +2,60 @@
 
 **NFC-Based Campus Gate Entry and Exit Verification and Monitoring System with Data Analytics, Anomaly Detection, and AI-Generated Summaries for Bicol University Polangui**
 
-Current checkpoint: **Phase 1 — project foundation and UI/UX completed. Phase 2 awaits explicit approval.**
+Current checkpoint: **Phase 2 — database and authentication completed. Awaiting approval for Phase 3.**
 
-Laravel, React, TypeScript, Inertia, Tailwind and Vite are connected. Explore [the local preview](http://127.0.0.1:8000/preview/dashboard) or [sign-in screen](http://127.0.0.1:8000/login) while the development server is running.
+Open [NFCheck sign-in](http://127.0.0.1:8000/login). Sign-in, password changes/recovery, role restrictions, encrypted database sessions and account audits are connected to isolated Oracle MySQL. People/gate management, credentials, NFC scanning, passage recording, statistics, exports and AI await their approved phases. No operational statistics or institutional records are fabricated.
 
-This checkpoint contains **interface shells**. Authentication, database-backed records, credential issuance, scanning, passage recording, statistics, exports and AI are unavailable. The UI labels these states honestly; it contains no invented operational records or counts. No MySQL instance/schema, migration or institutional data was created.
+The three requested local administrators are **alexi@nfcheck.test**, **pauleen@nfcheck.test**, and **zaidy@nfcheck.test**. Each has a different generated initial password in the ignored, Windows-access-restricted `.tools/secrets/initial-accounts.json`. A personal password is required on first sign-in. Passwords are never committed or printed in reports.
+
+Recovery messages arrive only in the [local mail inbox](http://127.0.0.1:8025). There is no external email relay.
 
 ## Run locally
 
-Use PowerShell 7.4+ in this project directory. The current workstation already has isolated tools, dependencies, a local environment and built assets prepared.
+Use PowerShell 7.4+ in this directory. The current workstation has tools, services, dependencies, schemas and built assets prepared; its application server is already running on port 8000.
 
 ```powershell
-# Start the loopback server if it is not already running. Ctrl+C stops it.
+# Start/reuse the project's matching loopback services when needed.
+.\scripts\dev.ps1 services
+
+# Start only when port 8000 is free. Ctrl+C stops a foreground session.
 .\scripts\dev.ps1 serve
 
-# Run the verification pipeline.
+# Verify dependencies, style, TypeScript, build, and isolated tests.
 .\scripts\dev.ps1 check
 ```
 
-The Phase 1 preview was left running in the background on port 8000. Open the link above without starting a second server. Future foreground sessions started with the launcher are stopped with Ctrl+C.
-
-For a fresh checkout, individual tool commands and development with hot reload, see [development instructions](docs/development.md). Use the launcher: shared XAMPP PHP still has its old extension mismatch. Project tools live in ignored `.tools`; no global runtime or shared service was upgraded.
+See [development instructions](docs/development.md) and [database setup](docs/database-setup.md) for a fresh checkout. Tools, MySQL data, mail and secrets live under ignored `.tools`. Shared XAMPP PHP, Apache, MariaDB and unrelated projects/databases remain unchanged.
 
 ## Security boundary
 
-Root `.htaccess` denies access through the original shared XAMPP `htdocs` route, including its `public` subdirectory. This is intentional. The patched loopback server serves only `public` at port 8000. Do not remove the denial to make the old URL work.
+The original Apache `htdocs` URL, including `public/index.php`, intentionally returns **403**. Root `.htaccess` protects source and secrets. Use **127.0.0.1:8000**, which serves only `public`. Do not remove that denial to restore the old URL.
 
-Preview routes require a local/testing environment, a loopback client and explicit `NFCHECK_UI_PREVIEW=true`; the example defaults it to false. Production rejects previews even if that flag is accidentally true. Preview controls do not replace Phase 2 authentication/authorization. No public deployment has occurred.
+Normal workspace routes require authentication and server-side authorization. Optional `/preview/*` routes require a local/testing environment, loopback client and explicit preview flag. They are disabled on this workstation and always rejected in production. No public deployment occurred.
 
 ## Documents
 
 | Document | Contents |
 | --- | --- |
-| [Phase 1 report](docs/phase-1-report.md) | Implemented foundation, actual checks, UI evidence, limitations and approval checkpoint |
-| [Local development](docs/development.md) | Setup/startup, isolated commands, boundaries and troubleshooting |
-| [Isolated toolchain](docs/toolchain.md) | Verified downloads, patched Composer build and reproducible provisioning |
-| [Phase 0 report](docs/phase-0-report.md) | Original planning checkpoint and audit outcomes |
-| [Environment audit](docs/environment-audit.md) | Historical installed environment and dated security research |
-| [Requirements and permissions](docs/requirements.md) | Revised research scope and module/role boundaries |
-| [Architecture](docs/architecture.md) | Responsibilities, verification versus passage, retries and concurrency |
-| [Database proposal and ERD](docs/database.md) | Proposed entities/constraints; not implemented schema |
-| [UI/UX research](docs/ui-ux.md) | Inspected reference, extracted design values and layout plan |
-| [Security plan](docs/security.md) | Threat model, privacy and operational safeguards |
-| [NFC plan](docs/nfc-integration.md) | Credential lifecycle, hardware limits and future test plan |
+| [Phase 2 report](docs/phase-2-report.md) | Features, schema, checks, evidence and checkpoint |
+| [Development](docs/development.md) | Setup/startup, commands, routes and troubleshooting |
+| [Database setup](docs/database-setup.md) | Service provenance, privileges and private credentials |
+| [Toolchain](docs/toolchain.md) | Verified runtimes and patched Composer build |
+| [Database design](docs/database.md) | Implemented subset and future ERD proposal |
+| [Phase 1 report](docs/phase-1-report.md) | Historical foundation/UI checkpoint |
+| [Phase 0 report](docs/phase-0-report.md) | Original planning and environment audit |
+| [Requirements](docs/requirements.md) | Scope and module/role boundaries |
+| [Architecture](docs/architecture.md) | Verification versus passage and concurrency |
+| [UI/UX research](docs/ui-ux.md) | Reference research and design system |
+| [Security plan](docs/security.md) | Threat model and operational safeguards |
+| [NFC plan](docs/nfc-integration.md) | Credential lifecycle and hardware limits |
 | [Roadmap](docs/roadmap.md) | Phase boundaries and acceptance gates |
-| [Test/research plan](docs/testing-and-research.md) | Planned feature, hardware and research evaluation |
+| [Test/research plan](docs/testing-and-research.md) | Planned hardware and research evaluation |
 
 ## Project rules
 
 - Implement only the explicitly approved phase, then report and stop.
-- Keep security decisions and business logic in Laravel; React handles presentation and interaction.
-- Use synthetic development data until institutional processing is authorized.
-- Never commit environment secrets, private photographs, database dumps or credential plaintext.
+- Keep security decisions and business logic in Laravel; React handles presentation.
+- Never commit secrets, private photographs, database dumps or credential plaintext.
 - A credential reference does not prove identity or physical passage. Later guard confirmation remains explicit; campus presence remains an estimate.
-- Original logos and the old-title manuscript are preserved. The old manuscript is excluded from Git; the revised gate scope is authoritative.
+- Preserve original branding and the old-title manuscript. The revised gate scope is authoritative.

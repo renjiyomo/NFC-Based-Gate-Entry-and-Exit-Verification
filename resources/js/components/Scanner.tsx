@@ -13,9 +13,11 @@ import {
     WifiOff,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useWorkspace } from '../lib/workspace';
 import { Badge, Button, ChoiceGroup, EmptyTable, Notice, PageHeading, Panel } from './ui';
 
 export default function Scanner() {
+    const { preview, user, station } = useWorkspace();
     const [direction, setDirection] = useState<'entry' | 'exit'>('entry');
     const [browser, setBrowser] = useState<{ online: boolean; hasNfcApi: boolean } | null>(null);
 
@@ -59,14 +61,24 @@ export default function Scanner() {
                         <DoorOpen size={16} aria-hidden="true" /> Gate station
                     </label>
                     <select id="gate-station" disabled>
-                        <option>Gate assignments unavailable</option>
+                        <option>
+                            {station
+                                ? `${station.code} · ${station.name}`
+                                : 'Gate assignment management pending'}
+                        </option>
                     </select>
                 </div>
                 <div className="station-session">
                     <ShieldCheck size={18} aria-hidden="true" />
                     <div>
-                        <strong>Guard session required</strong>
-                        <span>Sign-in and station assignment are not connected</span>
+                        <strong>
+                            {preview ? 'Guard session required' : `${user?.name} · Guard signed in`}
+                        </strong>
+                        <span>
+                            {station
+                                ? 'Station assignment verified'
+                                : 'Choose an assigned station when gate management is available'}
+                        </span>
                     </div>
                 </div>
             </div>

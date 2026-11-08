@@ -19,9 +19,9 @@ export default function Error({ status = 500 }: { status?: number }) {
                 title={title}
                 description="Return to the workspace or try again in a moment."
                 action={
-                    <Link href="/preview/dashboard" className="button button-secondary">
+                    <Link href="/" className="button button-secondary">
                         <ArrowLeft size={16} aria-hidden="true" />
-                        Return to overview
+                        Return to workspace
                     </Link>
                 }
             />

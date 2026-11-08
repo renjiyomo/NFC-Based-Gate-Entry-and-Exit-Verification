@@ -11,13 +11,18 @@ class HandleInertiaRequests extends Middleware
 
     public function share(Request $request): array
     {
+        $preview = $request->routeIs('preview.*');
+        $user = $preview ? null : $request->user();
+
         return [
             ...parent::share($request),
             'app' => [
                 'name' => config('app.name'),
-                'phase' => 1,
-                'preview' => (bool) config('nfcheck.ui_preview'),
+                'phase' => 2,
+                'preview' => $preview,
             ],
+            ...($preview ? [] : ['auth' => ['user' => $user ? ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'role' => $user->role->value, 'mustChangePassword' => $user->must_change_password] : null]]),
+            'flash' => ['status' => fn () => $request->session()->get('status')],
         ];
     }
 }

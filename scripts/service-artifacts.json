@@ -1,0 +1,15 @@
+{
+  "mysql": {
+    "version": "8.4.13",
+    "url": "https://cdn.mysql.com/Downloads/MySQL-8.4/mysql-8.4.13-winx64.zip",
+    "sha256": "e9cd98b1d23f122987b1afca26ad942efec5891481103d48ae3cde237fa3ea54",
+    "signingFingerprint": "BCA43417C3B485DD128EC6D4B7B3B788A8D3785C",
+    "signatureUrl": "https://cdn.mysql.com/Downloads/MySQL-8.4/mysql-8.4.13-winx64.zip.asc",
+    "keyUrl": "https://repo.mysql.com/RPM-GPG-KEY-mysql-2025"
+  },
+  "mailpit": {
+    "version": "1.33.1",
+    "url": "https://github.com/axllent/mailpit/releases/download/v1.33.1/mailpit-windows-amd64.zip",
+    "sha256": "0bcf8f1e7c21005b30c206064ff2f37dac602ef66774e558379d326f5673d652"
+  }
+}

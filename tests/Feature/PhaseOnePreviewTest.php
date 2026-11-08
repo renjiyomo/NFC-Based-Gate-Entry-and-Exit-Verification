@@ -39,19 +39,19 @@ class PhaseOnePreviewTest extends TestCase
                 ->component('Workspace')
                 ->where('page', $page)
                 ->where('app.preview', true)
-                ->where('app.phase', 1)
+                ->where('app.phase', 2)
                 ->missing('auth')
                 ->missing('users'));
     }
 
     public function test_login_is_an_explicit_preview_without_authentication(): void
     {
-        $this->get('/login')->assertOk()->assertInertia(fn (Assert $page) => $page
+        $this->get('/preview/login')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('Login')
             ->where('app.preview', true)
             ->missing('auth'));
 
-        $this->post('/login', ['email' => 'sample@example.invalid', 'password' => 'sample'])
+        $this->post('/preview/login', ['email' => 'sample@example.invalid', 'password' => 'sample'])
             ->assertStatus(405);
     }
 
@@ -75,7 +75,7 @@ class PhaseOnePreviewTest extends TestCase
     {
         config(['nfcheck.ui_preview' => false]);
 
-        foreach (['/', '/login', '/preview/dashboard'] as $url) {
+        foreach (['/preview/login', '/preview/dashboard'] as $url) {
             $this->get($url)->assertNotFound();
             $this->get($url, ['X-Inertia' => 'true'])->assertNotFound();
         }
@@ -85,7 +85,7 @@ class PhaseOnePreviewTest extends TestCase
     {
         $this->app->instance('env', 'production');
 
-        foreach (['/', '/login', '/preview/dashboard'] as $url) {
+        foreach (['/preview/login', '/preview/dashboard'] as $url) {
             $this->get($url)->assertNotFound();
             $this->get($url, ['X-Inertia' => 'true'])->assertNotFound();
         }

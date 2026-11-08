@@ -1728,13 +1728,18 @@ html:has(dialog[open]) {
     color: var(--primary);
 }
 .recovery-link {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
     margin: 12px 0 0 auto;
-    min-height: 31px;
-    color: var(--subtle);
+    min-height: 44px;
+    color: var(--primary);
     background: transparent;
     border: 0;
     font-size: 11px;
+    opacity: 1;
+}
+.recovery-link:disabled {
     opacity: 0.65;
 }
 .login-submit {
@@ -2565,5 +2570,83 @@ html:has(dialog[open]) {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
+    }
+}
+/* Connected account forms reuse the workspace palette and controls. */
+.auth-page {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+}
+.auth-main {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    padding: 32px 20px;
+}
+.auth-main .login-form-panel {
+    width: min(100%, 480px);
+}
+.auth-main h1 {
+    font-size: 1.65rem;
+    line-height: 1.25;
+    font-weight: 650;
+}
+.login-form-panel .auth-status {
+    margin-top: 16px;
+}
+.auth-status {
+    padding: 14px 16px;
+    margin: 0 0 20px;
+    border: 1px solid #a8c7fa;
+    border-radius: 12px;
+    color: #e9f0f8;
+    background: #142233;
+    overflow-wrap: anywhere;
+}
+.field-error {
+    margin-top: 8px;
+    color: #ffb7b0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+.auth-back {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-top: 16px;
+    color: #a8c7fa;
+}
+.auth-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+}
+.auth-actions a,
+.auth-actions button {
+    color: #a8c7fa;
+    min-height: 44px;
+}
+.account-label {
+    display: grid;
+    gap: 3px;
+    font-size: 0.8rem;
+}
+.account-label span {
+    color: #b2c2d5;
+    font-size: 0.7rem;
+}
+@media (max-width: 640px) {
+    .topbar {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .topbar-right {
+        margin-left: auto;
+    }
+    .auth-main {
+        padding: 20px 12px;
     }
 }

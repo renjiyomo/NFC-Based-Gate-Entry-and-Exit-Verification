@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import {
     ArrowRight,
     BadgeCheck,
@@ -13,10 +13,12 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '../components/ui';
-import { pageUrl } from '../lib/navigation';
+import { useWorkspace } from '../lib/workspace';
 
-export default function Login() {
+export default function Login({ preview = false }: { preview?: boolean }) {
     const [showPassword, setShowPassword] = useState(false);
+    const { flash } = useWorkspace();
+    const form = useForm({ email: '', password: '' });
     return (
         <div className="login-page">
             <Head title="Sign in" />
@@ -31,7 +33,7 @@ export default function Login() {
                         <small>Tap. Check. Verify.</small>
                     </span>
                 </Link>
-                <Badge tone="blue">Interface preview</Badge>
+                <Badge tone="blue">{preview ? 'Interface preview' : 'Account access'}</Badge>
             </header>
             <main id="main-content" tabIndex={-1} className="login-content">
                 <section className="login-introduction" aria-labelledby="login-introduction-title">
@@ -97,23 +99,47 @@ export default function Login() {
                     </span>
                     <h2 id="sign-in-title">Welcome back</h2>
                     <p className="login-form-description">Sign in to your NFCheck workspace.</p>
-                    <div className="login-preview-notice">
-                        <Info size={16} aria-hidden="true" />
-                        <p>
-                            Sign-in is not connected. Use sample text only; do not enter real
-                            credentials.
+                    {preview && (
+                        <div className="login-preview-notice">
+                            <Info size={16} aria-hidden="true" />
+                            <p>
+                                Sign-in is not connected. Use sample text only; do not enter real
+                                credentials.
+                            </p>
+                        </div>
+                    )}
+                    {flash?.status && (
+                        <p className="auth-status" role="status">
+                            {flash.status}
                         </p>
-                    </div>
-                    <form onSubmit={(event) => event.preventDefault()}>
+                    )}
+                    <form
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            if (!preview)
+                                form.post('/login', { onFinish: () => form.reset('password') });
+                        }}
+                    >
                         <div className="form-field">
                             <label htmlFor="email">Email address</label>
                             <input
                                 id="email"
                                 type="email"
                                 name="email"
-                                autoComplete="off"
-                                placeholder="Enter a sample email"
+                                autoComplete={preview ? 'off' : 'username'}
+                                placeholder={preview ? 'Enter a sample email' : 'you@nfcheck.test'}
+                                value={form.data.email}
+                                onChange={(event) => form.setData('email', event.target.value)}
+                                required
+                                maxLength={255}
+                                aria-invalid={!!form.errors.email}
+                                aria-describedby={form.errors.email ? 'email-error' : undefined}
                             />
+                            {form.errors.email && (
+                                <p id="email-error" className="field-error" role="alert">
+                                    {form.errors.email}
+                                </p>
+                            )}
                         </div>
                         <div className="form-field">
                             <label htmlFor="password">Password</label>
@@ -122,8 +148,20 @@ export default function Login() {
                                     id="password"
                                     type={showPassword ? 'text' : 'password'}
                                     name="password"
-                                    autoComplete="off"
-                                    placeholder="Enter a sample password"
+                                    autoComplete={preview ? 'off' : 'current-password'}
+                                    placeholder={
+                                        preview ? 'Enter a sample password' : 'Enter your password'
+                                    }
+                                    value={form.data.password}
+                                    onChange={(event) =>
+                                        form.setData('password', event.target.value)
+                                    }
+                                    required
+                                    maxLength={128}
+                                    aria-invalid={!!form.errors.password}
+                                    aria-describedby={
+                                        form.errors.password ? 'password-error' : undefined
+                                    }
                                 />
                                 <button
                                     type="button"
@@ -138,28 +176,43 @@ export default function Login() {
                                     )}
                                 </button>
                             </div>
+                            {form.errors.password && (
+                                <p id="password-error" className="field-error" role="alert">
+                                    {form.errors.password}
+                                </p>
+                            )}
                         </div>
-                        <button type="button" disabled className="recovery-link">
-                            Forgot password?
-                        </button>
+                        {preview ? (
+                            <button type="button" disabled className="recovery-link">
+                                Forgot password?
+                            </button>
+                        ) : (
+                            <Link href="/forgot-password" className="recovery-link">
+                                Forgot password?
+                            </Link>
+                        )}
                         <button
                             className="button button-primary login-submit"
                             type="submit"
-                            disabled
+                            disabled={preview || form.processing}
                         >
                             <KeyRound size={17} aria-hidden="true" />
-                            Sign in
+                            {form.processing ? 'Signing in…' : 'Sign in'}
                         </button>
-                        <p className="login-no-submit">
-                            No credentials are sent from this preview.
-                        </p>
+                        {preview && (
+                            <p className="login-no-submit">
+                                No credentials are sent from this preview.
+                            </p>
+                        )}
                     </form>
-                    <div className="login-preview-link">
-                        <span>Explore the interface</span>
-                        <Link href={pageUrl('dashboard')}>
-                            Open workspace preview <ArrowRight size={16} aria-hidden="true" />
-                        </Link>
-                    </div>
+                    {preview && (
+                        <div className="login-preview-link">
+                            <span>Explore the interface</span>
+                            <Link href="/preview/dashboard">
+                                Open workspace preview <ArrowRight size={16} aria-hidden="true" />
+                            </Link>
+                        </div>
+                    )}
                 </section>
             </main>
             <footer className="login-footer">

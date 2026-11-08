@@ -25,7 +25,7 @@ export default function NavigationFeedback() {
             router.on('start', ({ detail: { visit } }) => {
                 if (visit.async) return;
                 activeVisits.add(visit.id);
-                retryUrl.current = visit.url.href;
+                retryUrl.current = visit.method === 'get' ? visit.url.href : null;
                 setError(null);
                 setAnnouncement('');
                 updateLoading();
@@ -47,17 +47,22 @@ export default function NavigationFeedback() {
                 });
             }),
             router.on('error', () => {
-                navigationFailed('The requested view reported an error. Try opening it again.');
+                // Inertia's error event carries form validation, rendered beside its fields.
+                setError(null);
+                setAnnouncement('Review the highlighted form fields.');
+                window.requestAnimationFrame(() =>
+                    document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
+                );
             }),
             router.on('networkError', () => {
                 navigationFailed(
-                    'The next view could not be loaded. Check your connection and try again.',
+                    'The request could not be completed. Check your connection and try again.',
                 );
                 return false;
             }),
             router.on('httpException', () => {
                 navigationFailed(
-                    'The next view is unavailable. Try again or stay on the current page.',
+                    'The request is unavailable. Reload the page and try again in a moment.',
                 );
                 return false;
             }),

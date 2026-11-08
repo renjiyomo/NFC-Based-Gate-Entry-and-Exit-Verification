@@ -13,7 +13,7 @@ import {
     ShieldAlert,
     Users,
 } from 'lucide-react';
-import { pageUrl } from '../lib/navigation';
+import { useWorkspace } from '../lib/workspace';
 import { ActionLink, Badge, EmptyState, EmptyTable, PageHeading, Panel } from './ui';
 
 const metrics = [
@@ -39,6 +39,7 @@ const metrics = [
 ];
 
 export default function Dashboard() {
+    const { pageUrl, preview } = useWorkspace();
     return (
         <>
             <PageHeading
@@ -46,8 +47,9 @@ export default function Dashboard() {
                 title="Gate monitoring overview"
                 description="A clear view of campus access and recorded gate activity."
                 action={
-                    <ActionLink href={pageUrl('scanner')}>
-                        <ScanLine size={17} aria-hidden="true" /> Open gate scanner
+                    <ActionLink href={pageUrl(preview ? 'scanner' : 'gates')}>
+                        <ScanLine size={17} aria-hidden="true" />{' '}
+                        {preview ? 'Open gate scanner' : 'View gate stations'}
                         <ArrowRight size={16} aria-hidden="true" />
                     </ActionLink>
                 }
@@ -59,11 +61,14 @@ export default function Dashboard() {
                 <div>
                     <strong>Gate operations are not connected</strong>
                     <p>
-                        This interface preview is ready to explore. Live records and gate
-                        verification will appear once connected.
+                        {preview
+                            ? 'This interface preview is ready to explore.'
+                            : 'Your account is signed in.'}{' '}
+                        People management and gate verification will become available in later
+                        development phases.
                     </p>
                 </div>
-                <Badge>Preview mode</Badge>
+                <Badge>{preview ? 'Preview mode' : 'Modules pending'}</Badge>
             </div>
             <section className="metric-grid" aria-label="Gate activity statistics">
                 {metrics.map(({ label, icon: Icon, note, color }) => (

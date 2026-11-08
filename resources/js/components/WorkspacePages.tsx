@@ -1,3 +1,5 @@
+import { Link } from '@inertiajs/react';
+import { useWorkspace } from '../lib/workspace';
 import {
     Activity,
     ArrowDownLeft,
@@ -297,6 +299,7 @@ export function AnalyticsPage() {
 }
 
 export function SettingsPage() {
+    const { preview } = useWorkspace();
     return (
         <>
             <PageHeading
@@ -304,9 +307,10 @@ export function SettingsPage() {
                 title="Workspace settings"
                 description="Review the workspace presentation and future administrative controls."
             />
-            <Notice title="Settings preview" icon={Info}>
-                Administrative changes will require secure sign-in. No operational settings are
-                saved from this screen.
+            <Notice title="Workspace settings" icon={Info}>
+                {preview
+                    ? 'This preview does not save settings.'
+                    : 'Account security is connected. Operational settings are awaiting later phases.'}
             </Notice>
             <div className="settings-grid">
                 <Panel title="Presentation" subtitle="Current interface display">
@@ -342,28 +346,30 @@ export function SettingsPage() {
                                 </span>
                             </dt>
                             <dd>
-                                <Badge tone="blue">Preview</Badge>
+                                <Badge tone="blue">
+                                    {preview ? 'Preview' : 'Account connected'}
+                                </Badge>
                             </dd>
                         </div>
                     </dl>
                 </Panel>
-                <Panel
-                    title="Access & accountability"
-                    subtitle="Available after secure account management"
-                >
+                <Panel title="Access & accountability" subtitle="Account security">
                     <div className="settings-security">
                         <span className="empty-icon">
                             <LockKeyhole size={25} aria-hidden="true" />
                         </span>
-                        <h3>Administrative access is not connected</h3>
+                        <h3>{preview ? 'Account access preview' : 'Your account is protected'}</h3>
                         <p>
-                            Account permissions, session controls, recovery, and audit review will
-                            be managed through authorized access.
+                            {preview
+                                ? 'Sign-in is disabled in this preview.'
+                                : 'Role permissions, encrypted sessions, password recovery, and account audit records are active. Sessions expire after 30 minutes of inactivity.'}
                         </p>
-                        <Button disabled>
-                            <ShieldCheck size={17} aria-hidden="true" />
-                            Manage security settings
-                        </Button>
+                        {!preview && (
+                            <Link href="/account/password" className="button button-secondary">
+                                <ShieldCheck size={17} aria-hidden="true" />
+                                Change password
+                            </Link>
+                        )}
                     </div>
                 </Panel>
             </div>

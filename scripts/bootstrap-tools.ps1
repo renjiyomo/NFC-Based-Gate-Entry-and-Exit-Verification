@@ -88,7 +88,7 @@ try {
     $toolIni = Join-Path $toolRoot 'php/php.ini'
     if (-not $VerifyOnly) {
         $toolPhpPath = (Join-Path $toolRoot 'php').Replace('\', '/')
-        $toolIniLines = @('[PHP]', "extension_dir=`"$toolPhpPath/ext`"", 'extension=curl', 'extension=fileinfo', 'extension=gd', 'extension=intl', 'extension=mbstring', 'extension=openssl', 'extension=pdo_mysql', 'extension=pdo_sqlite', 'extension=zip', 'date.timezone=UTC', 'memory_limit=512M', 'display_errors=On', 'log_errors=On', 'expose_php=Off', 'session.upload_progress.enabled=0', 'session.use_strict_mode=1', 'session.cookie_httponly=1', 'session.cookie_samesite=Lax', 'zend.assertions=1', "curl.cainfo=`"$toolPhpPath/cacert.pem`"", "openssl.cafile=`"$toolPhpPath/cacert.pem`"")
+        $toolIniLines = @('[PHP]', "extension_dir=`"$toolPhpPath/ext`"", 'extension=curl', 'extension=fileinfo', 'extension=gd', 'extension=intl', 'extension=mbstring', 'extension=openssl', 'extension=pdo_mysql', 'extension=pdo_sqlite', 'extension=zip', 'date.timezone=UTC', 'memory_limit=512M', 'display_errors=On', 'log_errors=On', 'zend.exception_ignore_args=1', 'expose_php=Off', 'session.upload_progress.enabled=0', 'session.use_strict_mode=1', 'session.cookie_httponly=1', 'session.cookie_samesite=Lax', 'zend.assertions=1', "curl.cainfo=`"$toolPhpPath/cacert.pem`"", "openssl.cafile=`"$toolPhpPath/cacert.pem`"")
         [IO.File]::WriteAllLines($toolIni, $toolIniLines, [Text.UTF8Encoding]::new($false))
     }
     $env:PATH = "$(Join-Path $toolRoot 'php');$toolNodeHome;$(Join-Path $toolRoot 'git/cmd');$($toolSavedEnvironment.PATH)"

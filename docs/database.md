@@ -1,8 +1,33 @@
 # NFCheck database and ERD proposal
 
-Status: Phase 0 design only. No database, tables or migrations have been created. This proposal uses the workflows in [architecture.md](architecture.md); the database product/version decision is recorded in [environment-audit.md](environment-audit.md).
+Status: **Phase 2 core subset implemented** on isolated Oracle MySQL 8.4.13. The larger ERD below remains a future design. See [database setup](database-setup.md) for actual instances/permissions and [the Phase 2 report](phase-2-report.md) for verification.
 
-## Relational design
+## Implemented Phase 2 subset
+
+Ten migrations create `persons`, `users`, `student_profiles`, `employee_profiles`, `gates`, `access_authorizations`, `guard_gate_assignments`, `audit_logs`, `sessions` and `password_reset_tokens`, plus Laravel's migration ledger. They are applied to `nfcheck` and isolated `nfcheck_testing`; the web app has no migration credential.
+
+```mermaid
+erDiagram
+    PERSONS ||--o| STUDENT_PROFILES : has
+    PERSONS ||--o| EMPLOYEE_PROFILES : has
+    PERSONS o|--o| USERS : optionally_operates
+    PERSONS ||--o{ ACCESS_AUTHORIZATIONS : receives
+    USERS ||--o{ ACCESS_AUTHORIZATIONS : grants
+    USERS ||--o{ GUARD_GATE_ASSIGNMENTS : receives_or_assigns
+    GATES ||--o{ GUARD_GATE_ASSIGNMENTS : hosts
+    USERS o|--o{ AUDIT_LOGS : acts
+    USERS o|--o{ SESSIONS : authenticates
+```
+
+- User emails are unique and normalized. Roles/statuses use enums; account security revisions revoke older sessions. A user may optionally link to one person. Administrator provisioning does not create an employee/person record.
+- Person campus numbers are unique within their classification. Models reject ordinary person-type changes and profile/type mismatches; profiles use the person ID as their primary/foreign key.
+- Foreign keys preserve identity/account/gate references. Audit rows have nullable actor/target references, allowlisted metadata and server timestamps; runtime SQL cannot update/delete them.
+- Authorization/assignment validity uses inclusive starts and exclusive ends. MySQL CHECK constraints reject invalid intervals; scopes reject revoked/expired/future records, and inactive people override authorizations. Gate policies also require active guards/gates and the exact assignment.
+- Session payloads are encrypted. Password reset hashes are separate from account passwords and expire after 30 minutes.
+
+Core models have been tested with transaction-scoped synthetic fixtures. Main-schema people, profiles, gates, authorizations and assignments remain empty. Phase 3 management screens and all credential/verification/passage/analytics tables remain deferred.
+
+## Longer-term relational proposal
 
 Use InnoDB-compatible transactions, foreign keys, `utf8mb4`, UTC timestamps with microsecond precision where supported, and explicit status/reason values. Internally use unsigned bigint primary keys unless a framework requirement justifies otherwise. Expose opaque operation identifiers rather than treating an obscure database ID as authorization. All identifiers still require object-level policies.
 

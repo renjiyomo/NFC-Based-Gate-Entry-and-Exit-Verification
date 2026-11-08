@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountSession;
 use App\Http\Middleware\EnsureLocalPreview;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SecurityHeaders;
@@ -18,9 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(SecurityHeaders::class);
         $middleware->prependToPriorityList(StartSession::class, EnsureLocalPreview::class);
-        $middleware->web(append: [HandleInertiaRequests::class]);
+        $middleware->web(append: [EnsureAccountSession::class, HandleInertiaRequests::class]);
+        $middleware->redirectGuestsTo('/login');
+        $middleware->redirectUsersTo(fn (Request $request): string => $request->user()->isAdmin() ? '/admin/dashboard' : '/guard/scanner');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->dontFlash(['token']);
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

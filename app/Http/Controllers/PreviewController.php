@@ -9,7 +9,7 @@ class PreviewController
 {
     public function login(): Response
     {
-        return Inertia::render('Login');
+        return Inertia::render('Login', ['preview' => true]);
     }
 
     public function workspace(string $page = 'dashboard'): Response

@@ -1,0 +1,103 @@
+{
+    "checked_at_utc": "2026-11-08T04:38:50+00:00",
+    "server": {
+        "version": "8.4.13",
+        "db": "nfcheck"
+    },
+    "users_count": 3,
+    "accounts": [
+        {
+            "email": "alexi@nfcheck.test",
+            "role": "admin",
+            "status": "active",
+            "change_required": true,
+            "hash_algorithm": "argon2id",
+            "initial_credential_verified": true
+        },
+        {
+            "email": "pauleen@nfcheck.test",
+            "role": "admin",
+            "status": "active",
+            "change_required": true,
+            "hash_algorithm": "argon2id",
+            "initial_credential_verified": true
+        },
+        {
+            "email": "zaidy@nfcheck.test",
+            "role": "admin",
+            "status": "active",
+            "change_required": true,
+            "hash_algorithm": "argon2id",
+            "initial_credential_verified": true
+        }
+    ],
+    "distinct_initial_passwords": true,
+    "operational_row_counts": {
+        "persons": 0,
+        "student_profiles": 0,
+        "employee_profiles": 0,
+        "gates": 0,
+        "guard_gate_assignments": 0,
+        "access_authorizations": 0
+    },
+    "testing_row_counts": {
+        "users": 0,
+        "persons": 0,
+        "gates": 0,
+        "audit_logs": 0,
+        "sessions": 0,
+        "password_reset_tokens": 0
+    },
+    "runtime_grants": [
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT USAGE ON *.* TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT ON `nfcheck`.* TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`access_authorizations` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT ON `nfcheck`.`audit_logs` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`employee_profiles` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`gates` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`guard_gate_assignments` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT ON `nfcheck`.`migrations` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`password_reset_tokens` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`persons` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`sessions` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`student_profiles` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`users` TO `nfcheck_app`@`127.0.0.1`"
+        }
+    ],
+    "exception_arguments_ignored": true,
+    "debug": false,
+    "preview_enabled": false,
+    "session_driver": "database",
+    "session_encrypted": true,
+    "session_idle_minutes": 30,
+    "password_hash_options": {
+        "memory_cost": 65536,
+        "time_cost": 3,
+        "threads": 1
+    }
+}
