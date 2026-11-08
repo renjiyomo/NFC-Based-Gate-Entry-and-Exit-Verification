@@ -3106,6 +3106,26 @@ html:has(dialog[open]) {
     padding-top: 0;
 }
 
+.nfc-setup-panel {
+    margin-bottom: 24px;
+}
+.nfc-setup-panel > .form-actions,
+.nfc-setup-panel > .field-hint,
+.nfc-setup-panel > .credential-feedback,
+.nfc-setup-panel > .credential-notice,
+.nfc-setup-panel > .button,
+.nfc-setup-panel > .nfc-instructions {
+    margin: 20px 24px;
+}
+.nfc-instructions {
+    padding-left: 20px;
+    list-style: decimal;
+    line-height: 1.7;
+}
+.nfc-instructions li + li {
+    margin-top: 12px;
+}
+
 /* Assigned-guard verification and explicit passage review */
 .operation-direction {
     display: flex;

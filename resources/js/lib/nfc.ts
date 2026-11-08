@@ -1,4 +1,4 @@
-// NDEF adapter only. Hardware UID and physical passage are never used as evidence.
+// NDEF only: UID, card payment protocols and physical identity are never trusted.
 export interface NfcRecord {
     recordType: string;
     encoding?: string;
@@ -17,6 +17,52 @@ export interface NfcReader extends EventTarget {
     ): Promise<void>;
 }
 type ReaderConstructor = new () => NfcReader;
+export type NfcErrorCode =
+    | 'insecure'
+    | 'embedded'
+    | 'unsupported'
+    | 'hidden'
+    | 'busy'
+    | 'permission'
+    | 'unavailable'
+    | 'incompatible'
+    | 'read_failed'
+    | 'write_failed'
+    | 'invalid_record'
+    | 'timeout'
+    | 'aborted';
+const messages: Record<NfcErrorCode, string> = {
+    insecure:
+        'Open NFCheck through trusted HTTPS or the local USB connection. Ordinary Wi-Fi HTTP cannot use Web NFC.',
+    embedded: 'Open NFCheck directly in a Chrome tab. NFC is unavailable inside an embedded page.',
+    unsupported:
+        'Web NFC is unavailable in this browser. Use an updated Chrome browser on your NFC-enabled Android phone.',
+    hidden: 'Keep Chrome visible and the phone unlocked, then tap the NFC button again.',
+    busy: 'Another NFC operation is active. Finish or cancel it before starting another.',
+    permission:
+        'NFC permission was not granted. Allow NFC in this site’s Chrome permissions, then tap again.',
+    unavailable:
+        'The NFC radio is unavailable. Turn on NFC, unlock the phone and keep Chrome visible, then tap again.',
+    incompatible:
+        'This device or tag cannot complete the NDEF operation. Use a compatible, writable NTAG215 tag.',
+    read_failed:
+        'The tag could not be read. Remove it, check its position near the phone’s NFC antenna, then retry.',
+    write_failed:
+        'The write did not finish. The tag may be locked, incompatible or removed too soon. Keep issuance pending and retry the intended tag.',
+    invalid_record:
+        'Use a tag containing exactly one correctly encoded NFCheck text record. Unrelated, malformed or oversized records are rejected.',
+    timeout:
+        'No NFC operation completed within 30 seconds. Remove the tag and tap the button to retry.',
+    aborted: 'NFC operation cancelled. Tap the button again when you are ready.',
+};
+export class NfcError extends Error {
+    readonly code: NfcErrorCode;
+    constructor(code: NfcErrorCode) {
+        super(messages[code]);
+        this.name = 'NfcError';
+        this.code = code;
+    }
+}
 export function canonicalReference(value: string): boolean {
     if (!/^nfcheck:v1:[A-Za-z0-9_-]{43}$/.test(value)) return false;
     const encoded = value.slice(11);
@@ -32,7 +78,7 @@ export function canonicalReference(value: string): boolean {
 }
 export function referenceFromMessage(records: NfcRecord[]): string {
     if (records.length !== 1 || records[0].recordType !== 'text')
-        throw new Error('Use a tag containing exactly one NFCheck text record.');
+        throw new NfcError('invalid_record');
     const record = records[0];
     const encoding = (record.encoding ?? 'utf-8').toLowerCase();
     if (
@@ -40,88 +86,172 @@ export function referenceFromMessage(records: NfcRecord[]): string {
         !record.data ||
         record.data.byteLength > 128
     )
-        throw new Error('The tag text encoding or length is unsupported.');
+        throw new NfcError('invalid_record');
     let text: string;
     try {
         text = new TextDecoder(encoding, { fatal: true }).decode(record.data);
     } catch {
-        throw new Error('The tag text could not be decoded.');
+        throw new NfcError('invalid_record');
     }
-    if (!canonicalReference(text))
-        throw new Error('The tag does not contain a valid NFCheck reference.');
+    if (!canonicalReference(text)) throw new NfcError('invalid_record');
     return text;
 }
+export function nfcCapabilities() {
+    return {
+        secure: typeof window !== 'undefined' && window.isSecureContext,
+        topLevel: typeof window !== 'undefined' && window.top === window.self,
+        api:
+            typeof window !== 'undefined' &&
+            typeof (window as unknown as { NDEFReader?: unknown }).NDEFReader === 'function',
+        visible: typeof document !== 'undefined' && document.visibilityState === 'visible',
+    };
+}
 export function nfcAvailable(): boolean {
-    return (
-        typeof window !== 'undefined' &&
-        window.isSecureContext &&
-        window.top === window.self &&
-        'NDEFReader' in window
+    const c = nfcCapabilities();
+    return c.secure && c.topLevel && c.api;
+}
+function nativeError(error: unknown, mode: string): NfcError {
+    if (error instanceof NfcError) return error;
+    const name = error && typeof error === 'object' && 'name' in error ? String(error.name) : '';
+    return new NfcError(
+        name === 'NotAllowedError' || name === 'SecurityError'
+            ? 'permission'
+            : name === 'NotReadableError'
+              ? 'unavailable'
+              : name === 'NotSupportedError'
+                ? 'incompatible'
+                : name === 'InvalidStateError'
+                  ? 'busy'
+                  : name === 'AbortError'
+                    ? 'aborted'
+                    : name === 'TimeoutError'
+                      ? 'timeout'
+                      : mode === 'write'
+                        ? 'write_failed'
+                        : 'read_failed',
     );
 }
+let radioOwner: AbortController | null = null;
 export class NdefAdapter {
     private create: () => NfcReader;
-    constructor(create?: () => NfcReader) {
+    private timeoutMs: number;
+    constructor(create?: () => NfcReader, options: { timeoutMs?: number } = {}) {
+        this.timeoutMs = options.timeoutMs ?? 30000;
+        if (!Number.isInteger(this.timeoutMs) || this.timeoutMs < 1 || this.timeoutMs > 120000)
+            throw new Error('Invalid NFC timeout.');
         this.create =
             create ??
             (() => {
-                if (!nfcAvailable())
-                    throw new Error(
-                        'Web NFC is unavailable. Use a supported secure, top-level browser with NFC hardware.',
-                    );
+                const c = nfcCapabilities();
+                if (!c.secure) throw new NfcError('insecure');
+                if (!c.topLevel) throw new NfcError('embedded');
+                if (!c.api) throw new NfcError('unsupported');
+                if (!c.visible) throw new NfcError('hidden');
                 const Reader = (window as unknown as { NDEFReader: ReaderConstructor }).NDEFReader;
                 return new Reader();
             });
     }
     async write(payload: string, signal: AbortSignal): Promise<void> {
-        if (!canonicalReference(payload))
-            throw new Error('The issuance reference is unavailable. Start a new issuance.');
-        await this.create().write(
-            { records: [{ recordType: 'text', data: payload, encoding: 'utf-8', lang: 'en' }] },
-            { signal, overwrite: true },
-        );
+        if (!canonicalReference(payload)) throw new NfcError('invalid_record');
+        return this.perform('write', signal, payload);
     }
     read(signal: AbortSignal): Promise<string> {
-        const reader = this.create();
+        return this.perform('read', signal);
+    }
+    probe(signal: AbortSignal): Promise<void> {
+        return this.perform('probe', signal);
+    }
+    private perform(mode: 'read', external: AbortSignal, payload?: string): Promise<string>;
+    private perform(
+        mode: 'write' | 'probe',
+        external: AbortSignal,
+        payload?: string,
+    ): Promise<void>;
+    private perform(
+        mode: 'read' | 'write' | 'probe',
+        external: AbortSignal,
+        payload?: string,
+    ): Promise<string | void> {
         return new Promise((resolve, reject) => {
-            const dispose = () => {
-                reader.removeEventListener('reading', reading);
-                reader.removeEventListener('readingerror', failed);
-                signal.removeEventListener('abort', aborted);
-            };
-            const failed = () => {
-                dispose();
-                reject(new Error('The tag could not be read. Remove it, then try again.'));
-            };
-            const aborted = () => {
-                dispose();
-                reject(new Error('NFC operation ended. Tap the button to try again.'));
-            };
-            const reading = (event: Event) => {
-                try {
-                    const value = referenceFromMessage((event as NfcReading).message.records);
-                    dispose();
-                    resolve(value);
-                } catch (error) {
-                    dispose();
-                    reject(error);
-                }
-            };
-            if (signal.aborted) {
-                aborted();
+            if (radioOwner) {
+                reject(new NfcError('busy'));
                 return;
             }
-            reader.addEventListener('reading', reading);
-            reader.addEventListener('readingerror', failed);
-            signal.addEventListener('abort', aborted, { once: true });
-            reader.scan({ signal }).catch(() => {
-                dispose();
+            if (external.aborted) {
                 reject(
-                    new Error(
-                        'NFC permission or hardware is unavailable. Check the device and tap again.',
-                    ),
+                    new NfcError(external.reason?.name === 'TimeoutError' ? 'timeout' : 'aborted'),
                 );
-            });
+                return;
+            }
+            const internal = new AbortController();
+            radioOwner = internal;
+            const disposers: (() => void)[] = [];
+            let settled = false;
+            let timer: ReturnType<typeof setTimeout> | undefined;
+            const finish = (error?: NfcError, value?: string) => {
+                if (settled) return;
+                settled = true;
+                if (timer !== undefined) clearTimeout(timer);
+                external.removeEventListener('abort', cancelled);
+                for (const dispose of disposers) dispose();
+                internal.abort();
+                if (radioOwner === internal) radioOwner = null;
+                if (error) reject(error);
+                else resolve(value);
+            };
+            const cancelled = () =>
+                finish(
+                    new NfcError(external.reason?.name === 'TimeoutError' ? 'timeout' : 'aborted'),
+                );
+            external.addEventListener('abort', cancelled, { once: true });
+            timer = setTimeout(() => finish(new NfcError('timeout')), this.timeoutMs);
+            try {
+                const reader = this.create();
+                if (mode === 'read') {
+                    const reading = (event: Event) => {
+                        try {
+                            finish(
+                                undefined,
+                                referenceFromMessage((event as NfcReading).message.records),
+                            );
+                        } catch (error) {
+                            finish(nativeError(error, mode));
+                        }
+                    };
+                    const failed = () => finish(new NfcError('read_failed'));
+                    reader.addEventListener('reading', reading);
+                    reader.addEventListener('readingerror', failed);
+                    disposers.push(
+                        () => reader.removeEventListener('reading', reading),
+                        () => reader.removeEventListener('readingerror', failed),
+                    );
+                }
+                // Start within the button gesture; no network or permission-query await comes first.
+                const native =
+                    mode === 'write'
+                        ? reader.write(
+                              {
+                                  records: [
+                                      {
+                                          recordType: 'text',
+                                          data: payload!,
+                                          encoding: 'utf-8',
+                                          lang: 'en',
+                                      },
+                                  ],
+                              },
+                              { signal: internal.signal, overwrite: true },
+                          )
+                        : reader.scan({ signal: internal.signal });
+                Promise.resolve(native).then(
+                    () => {
+                        if (mode !== 'read') finish();
+                    },
+                    (error: unknown) => finish(nativeError(error, mode)),
+                );
+            } catch (error) {
+                finish(nativeError(error, mode));
+            }
         });
     }
 }

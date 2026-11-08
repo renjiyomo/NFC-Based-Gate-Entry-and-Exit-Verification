@@ -18,7 +18,7 @@ import { virtualTagLabel } from '../lib/nfc';
 
 export default function Login({ preview = false }: { preview?: boolean }) {
     const [showPassword, setShowPassword] = useState(false);
-    const { flash, simulator } = useWorkspace();
+    const { flash, simulator, hardwareLab } = useWorkspace();
     const form = useForm({ email: '', password: '' });
     return (
         <div className="login-page">
@@ -100,6 +100,12 @@ export default function Login({ preview = false }: { preview?: boolean }) {
                     </span>
                     <h2 id="sign-in-title">Welcome back</h2>
                     <p className="login-form-description">Sign in to your NFCheck workspace.</p>
+                    {hardwareLab && (
+                        <p className="login-preview-notice">
+                            Hardware test workspace · Use the separate hardware test account.
+                            Synthetic identities and test passages only.
+                        </p>
+                    )}
                     {simulator && virtualTagLabel() && (
                         <p className="login-preview-notice">
                             Virtual lab tag {virtualTagLabel()} is held only in this tab’s memory

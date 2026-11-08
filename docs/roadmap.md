@@ -1,6 +1,6 @@
 # Phase-by-phase implementation strategy
 
-Status: **Phases 0–5 completed for their approved scopes. Phase 6 awaits explicit approval.** Every phase ends with a completion report and an explicit stop. Successful tests do not authorize the next phase. See the [Phase 5 report](phase-5-report.md). Physical NFC acceptance remains outstanding for Phase 6.
+Status: **Phases 0–5 completed for their approved scopes. Phase 6 is approved and its software integration is verified; real phone/tag acceptance remains pending.** Every phase ends with a report and an explicit stop. Successful tests do not authorize the next phase. See [Phase 6 status](phase-6-report.md). Phase 7 is not started.
 
 ## Phase acceptance gates
 

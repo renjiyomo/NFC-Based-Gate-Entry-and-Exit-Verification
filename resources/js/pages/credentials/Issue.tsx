@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { CredentialBadge, SimulatorNotice } from '../../components/credentials/Shared';
 import PersonPicker from '../../components/credentials/PersonPicker';
+import NfcStatus from '../../components/credentials/NfcStatus';
 import { Field, FormErrors, ManagementPage, Select } from '../../components/management/Common';
 import { Button, Panel } from '../../components/ui';
 import {
@@ -31,6 +32,7 @@ export default function Issue({
     const [until, setUntil] = useState('');
     const [record, setRecord] = useState<CredentialRecord | null>(null);
     const [busy, setBusy] = useState(false);
+    const [radio, setRadio] = useState(false);
     const [written, setWritten] = useState(false);
     const [receiptLost, setReceiptLost] = useState(false);
     const [message, setMessage] = useState('');
@@ -117,7 +119,13 @@ export default function Issue({
         }
         setBusy(true);
         setErrors({});
-        setMessage('');
+        setMessage(
+            action === 'write'
+                ? 'Hold only the intended writable tag against the phone…'
+                : action === 'read-back'
+                  ? 'Remove the tag, then hold it against the phone again…'
+                  : 'Activating the reviewed assignment…',
+        );
         operation.current?.abort();
         const controller = new AbortController();
         operation.current = controller;
@@ -125,8 +133,10 @@ export default function Issue({
         try {
             // Hardware calls start directly from this button gesture, before a network await.
             if (action === 'write') {
+                setRadio(!simulated);
                 if (simulated) writeVirtualTag(current.payload, current.credential.label);
                 else await new NdefAdapter().write(current.payload, signal);
+                setRadio(false);
                 if (signal.aborted || !mounted.current) return;
                 setWritten(true);
                 setMessage(
@@ -137,9 +147,11 @@ export default function Issue({
             } else {
                 let payload = current.payload;
                 if (action === 'read-back') {
+                    setRadio(!simulated);
                     payload = simulated
                         ? (readVirtualTag() ?? '')
                         : await new NdefAdapter().read(signal);
+                    setRadio(false);
                     if (!payload) throw new Error('Write the virtual tag before reading it back.');
                 }
                 const result = await credentialPost<{ credential: CredentialRecord }>(
@@ -164,7 +176,10 @@ export default function Issue({
                 );
         } finally {
             controller.abort();
-            if (mounted.current) setBusy(false);
+            if (mounted.current) {
+                setBusy(false);
+                setRadio(false);
+            }
         }
     }
     return (
@@ -175,6 +190,7 @@ export default function Issue({
             back="/admin/credentials"
         >
             {simulated && <SimulatorNotice />}
+            {!simulated && <NfcStatus />}
             <FormErrors errors={errors} />
             {!record ? (
                 <Panel
@@ -291,6 +307,11 @@ export default function Issue({
                                 </p>
                             )}
                             <div className="form-actions">
+                                {radio && (
+                                    <Button onClick={() => operation.current?.abort()}>
+                                        Cancel NFC operation
+                                    </Button>
+                                )}
                                 <Button
                                     disabled={busy || (!simulated && !nfcAvailable())}
                                     onClick={() => void operate('write')}
@@ -318,9 +339,10 @@ export default function Issue({
                                 </Button>
                             </div>
                             <p className="field-hint">
-                                Keep this page visible. Each NFC operation stops after 30 seconds. A
-                                read-back is software evidence of the reference; it does not attest
-                                hardware identity or prevent copying a tag.
+                                Writing replaces the intended tag’s NDEF contents. Keep the tag
+                                writable. Keep this page visible. Each NFC operation stops after 30
+                                seconds. A read-back is software evidence of the reference; it does
+                                not attest hardware identity or prevent copying a tag.
                             </p>
                         </Panel>
                     )}

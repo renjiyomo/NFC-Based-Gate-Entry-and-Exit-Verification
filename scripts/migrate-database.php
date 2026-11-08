@@ -24,6 +24,9 @@ $schemas = ['nfcheck' => 'local', 'nfcheck_testing' => 'testing'];
 if (isset($secrets['simulator'])) {
     $schemas['nfcheck_simulator'] = 'local';
 }
+if (isset($secrets['hardware'])) {
+    $schemas['nfcheck_hardware'] = 'local';
+}
 foreach ($schemas as $schema => $environment) {
     $process = new Process([PHP_BINARY, $root.'/artisan', 'migrate', '--no-interaction'], $root, [
         'APP_ENV' => $environment, 'DB_CONNECTION' => 'mysql', 'DB_HOST' => '127.0.0.1', 'DB_PORT' => '3307',
@@ -38,7 +41,7 @@ foreach ($schemas as $schema => $environment) {
         throw new RuntimeException('Scoped migrations failed.');
     }
     $user = match ($schema) {
-        'nfcheck' => 'nfcheck_app', 'nfcheck_testing' => 'nfcheck_test', 'nfcheck_simulator' => 'nfcheck_simulator'
+        'nfcheck' => 'nfcheck_app', 'nfcheck_testing' => 'nfcheck_test', 'nfcheck_simulator' => 'nfcheck_simulator', 'nfcheck_hardware' => 'nfcheck_hardware'
     };
     $tables = $db->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA='$schema'")->fetchAll(PDO::FETCH_COLUMN);
     foreach ($tables as $table) {

@@ -1,10 +1,10 @@
 # NFC integration and credential lifecycle
 
-Status: **Phase 5 software implemented and verified with mocks, simulation and concurrent database workers**. Credential lifecycle, NDEF adapter, shared verifier and assigned-guard review/passage service are connected. No physical tag test has been performed. Hardware acceptance is Phase 6. See [the Phase 5 report](phase-5-report.md).
+Status: **Phase 6 software implemented and verified; physical Samsung A52/NTAG215 tests remain pending**. Credential lifecycle, NDEF adapter, shared verifier and assigned-guard review/passage service are connected. The user has ten NTAG215 tags and a USB-connected Samsung A52. Debugging authorization has not yet succeeded; no physical tag test has been performed. See [Phase 6 status](phase-6-report.md).
 
 ## Supported target and limits
 
-Target NFC Forum Type 2 NTAG215 coins carrying NDEF, read/written using `NDEFReader` on compatible Android Chrome devices over trusted HTTPS. NXP identifies NTAG215 as a Type 2 tag with 504 bytes of user memory; the proposed small reference payload fits without personal information. Tag quality, formatting, locked memory and antenna placement still need physical verification. [NXP NTAG21x product specifications](https://www.nxp.com/products/NTAG213_215_216)
+Target NFC Forum Type 2 NTAG215 coins carrying NDEF, read/written using `NDEFReader` on compatible Android Chrome devices in a secure context: trusted HTTPS or phone loopback HTTP over an authorized USB reverse connection. NXP identifies NTAG215 as a Type 2 tag with 504 bytes of user memory; the small reference payload fits without personal information. Tag quality, formatting, locked memory and antenna placement still need physical verification. [NXP NTAG21x product specifications](https://www.nxp.com/products/NTAG213_215_216)
 
 Chrome's Web NFC implementation is NDEF-only: no low-level ISO-DEP, peer-to-peer mode or host card emulation. It needs a top-level secure context, user gesture/permission and a compatible enabled NFC device. Scanning is affected by page visibility and device lock state. Detecting `NDEFReader` establishes API presence, not working NFC hardware. Desktop/iOS/other-browser support is not assumed. [Chrome Web NFC documentation](https://developer.chrome.com/docs/capabilities/nfc)
 
@@ -58,9 +58,9 @@ Unit/feature/browser tests can validate parsing, permissions UI, token lifecycle
 
 ## Physical acceptance checklist — not performed
 
-Record model, Android build, Chrome version, tag type/supplier, NDEF state, app build and HTTPS origin. Using only authorized synthetic identities:
+Record model, Android build, Chrome version, tag type/supplier, NDEF state, app build, secure origin and connection method. Using only authorized synthetic identities:
 
-1. Verify certificate trust, login, gate assignment, NFC permission and scan start on the real phone.
+1. Verify secure-context access (USB loopback or trusted HTTPS), login, gate assignment, NFC permission and scan start on the real phone.
 2. Write a fresh pending tag, read it back, activate it, verify identity, and confirm Entry then Exit.
 3. Verify unknown, malformed, revoked, replaced, locked and incompatible tags; repeated taps and two guards using the same reference.
 4. Interrupt write, remove tag early, deny permission, disable NFC, lock phone, background the tab, switch apps and resume safely.

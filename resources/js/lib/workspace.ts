@@ -9,6 +9,7 @@ export interface WorkspaceProps {
         preview: boolean;
         testWorkspace?: boolean;
         simulator?: boolean;
+        hardwareLab?: boolean;
     };
     auth?: {
         user: {
@@ -27,25 +28,28 @@ export interface WorkspaceProps {
 export function useWorkspace() {
     const { app, auth, flash, station, stations = [] } = usePage<WorkspaceProps>().props;
     const user = auth?.user;
-    const items = navigation.filter(
-        (item) =>
-            app.preview ||
-            (user?.role === 'admin'
-                ? item.id !== 'scanner'
-                : ['scanner', 'history'].includes(item.id)),
+    const items = navigation.filter((item) =>
+        app.preview
+            ? item.id !== 'nfc'
+            : user?.role === 'admin'
+              ? item.id !== 'scanner'
+              : ['scanner', 'history', 'nfc'].includes(item.id),
     );
     const pageUrl = (page: PageId) =>
-        app.preview
-            ? `/preview/${page}`
-            : user?.role === 'guard'
-              ? page === 'history'
-                  ? '/guard/activity'
-                  : '/guard/scanner'
-              : `/admin/${page}`;
+        page === 'nfc'
+            ? '/nfc/setup'
+            : app.preview
+              ? `/preview/${page}`
+              : user?.role === 'guard'
+                ? page === 'history'
+                    ? '/guard/activity'
+                    : '/guard/scanner'
+                : `/admin/${page}`;
     return {
         preview: app.preview,
         testWorkspace: app.testWorkspace ?? false,
         simulator: app.simulator ?? false,
+        hardwareLab: app.hardwareLab ?? false,
         user,
         flash,
         station,

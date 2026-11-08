@@ -2,11 +2,13 @@
 
 **NFC-Based Campus Gate Entry and Exit Verification and Monitoring System with Data Analytics, Anomaly Detection, and AI-Generated Summaries for Bicol University Polangui**
 
-Current checkpoint: **Phase 5 — assigned-guard verification and confirmed Entry/Exit recording completed. Awaiting approval for Phase 6.**
+Current checkpoint: **Phase 6 software integration verified; USB authorization and physical Samsung A52/NTAG215 acceptance are pending. Phase 7 is not started.**
 
 Open [NFCheck sign-in](http://127.0.0.1:8000/login). Account security, people/gates/guards, access grants, credential lifecycles and assigned-guard verification are connected to isolated Oracle MySQL. Guards choose Entry or Exit, verify a reference, review identity and explicitly confirm observed passage. Retries recover the same operation, duplicate passages are suppressed and recent permitted activity refreshes. Physical NFC hardware remains untested; monitoring analytics, exports and AI remain later phases.
 
 The [isolated NFC simulator](http://localhost:8002/login) uses its own schema, key, cookie, administrator, two guard accounts, synthetic people and lab gate. Administrator sign-in details are in `.tools/secrets/simulator-account.json`; separate guard details are in `.tools/secrets/simulator-guards.json`. Issue/write/activate a virtual tag, then use **Hand virtual tag to a lab guard** and sign in as the guard in the same tab. Use **localhost:8002** for the lab and **127.0.0.1:8000** for the main app to separate browser cookies. See [the Phase 5 report](docs/phase-5-report.md) and [NFC instructions](docs/nfc-integration.md).
+
+For actual phone/tag tests, use the separate [hardware workspace](http://localhost:8003/login). Run `scripts/dev.ps1 hardware`, enable USB debugging and authorize this laptop on the phone, then run `scripts/connect-phone.ps1 Connect`. Open the same URL in **phone Chrome**, sign in with the private hardware account from `.tools/secrets/hardware-accounts.json`, and open **NFC setup**. File Transfer alone does not authorize debugging. Setup preserves main/simulator records; mock/browser emulation checks do not count as physical NFC evidence. See [Phase 6 status and test procedure](docs/phase-6-report.md).
 
 The three requested local administrators are **alexi@nfcheck.test**, **pauleen@nfcheck.test**, and **zaidy@nfcheck.test**. Each has a different generated initial password in the ignored, Windows-access-restricted `.tools/secrets/initial-accounts.json`. A personal password is required on first sign-in. Passwords are never committed or printed in reports.
 
@@ -42,6 +44,7 @@ Normal workspace routes require authentication and server-side authorization. Op
 
 | Document | Contents |
 | --- | --- |
+| [Phase 6 report](docs/phase-6-report.md) | NFC integration, USB setup, verified software and pending physical acceptance |
 | [Phase 5 report](docs/phase-5-report.md) | Guard review/confirmation, retry recovery, duplicate protection, concurrent tests and evidence |
 | [Phase 4 report](docs/phase-4-report.md) | Credential lifecycle, isolated simulator, validation and UI evidence |
 | [Phase 3 report](docs/phase-3-report.md) | Connected management workflows, schema changes, tests and UI evidence |

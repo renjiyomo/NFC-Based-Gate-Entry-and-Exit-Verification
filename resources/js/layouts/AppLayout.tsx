@@ -51,7 +51,7 @@ function Navigation({ page, close }: { page: PageId; close?: () => void }) {
 }
 
 export default function AppLayout({ page, children }: { page: PageId; children: ReactNode }) {
-    const { navigation, preview, user, flash, testWorkspace } = useWorkspace();
+    const { navigation, preview, user, flash, testWorkspace, hardwareLab } = useWorkspace();
     const drawer = useRef<HTMLDialogElement>(null);
     const information = useRef<HTMLDialogElement>(null);
     const current = navigation.find((item) => item.id === page) ?? navigation[0];
@@ -141,7 +141,9 @@ export default function AppLayout({ page, children }: { page: PageId; children: 
                     <div className="content-container">
                         {testWorkspace && (
                             <p className="test-workspace-notice">
-                                Test workspace · Isolated records used for development checks.
+                                {hardwareLab
+                                    ? 'Hardware test workspace · Synthetic identities and test passages only. Physical results require an actual phone and tag.'
+                                    : 'Test workspace · Isolated records used for development checks.'}
                             </p>
                         )}
                         {flash?.status && (

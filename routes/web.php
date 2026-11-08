@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function (): void {
     Route::put('/account/password', [PasswordController::class, 'update'])->middleware('throttle:password-change')->name('password.change');
 });
 Route::middleware(['auth', 'auth.session', EnsurePasswordChanged::class])->group(function (): void {
+    Route::get('/nfc/setup', fn () => inertia('nfc/Setup'))->name('nfc.setup');
     foreach (['guard/gates' => 'operations.', 'simulator/guard/gates' => 'lab.'] as $prefix => $name) {
         Route::prefix($prefix)->middleware($name === 'lab.' ? [EnsureNfcSimulator::class, 'can:guard.workspace', 'can:operate,gate'] : ['can:guard.workspace', 'can:operate,gate'])->name($name)->group(function (): void {
             Route::post('/{gate}/scan', [OperationController::class, 'scan'])->whereNumber('gate')->middleware('throttle:gate-write')->name('scan');

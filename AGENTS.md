@@ -1,8 +1,10 @@
 # NFCheck development rules
 
 - Work only in the user-approved phase. Report results and stop for explicit approval before the next phase.
-- Current approved scope is Phase 5: assigned-guard scanning, fresh authorization, identity review, explicit Entry/Exit confirmation, immutable attempts/passages, retry recovery, duplicate handling and refreshed activity. Phase 4 is complete; see docs/phase-4-report.md.
-- Stop after Phase 5 verification/reporting. Physical hardware validation remains Phase 6; dashboards, exports, analytics and anomaly/AI modules remain later phases.
+- Current approved scope is Phase 6: Android Chrome Web NFC integration, secure phone connectivity, capability/permission/error handling, real NTAG215 writing/read-back/scanning and physical acceptance evidence. Phase 5 is complete; see docs/phase-5-report.md.
+- User has a Samsung A52 and ten NTAG215 tags and chose USB testing. File Transfer is connected; USB debugging/device authorization and physical acceptance are still pending. Never equate phone ownership, API detection or mock tests with physical acceptance.
+- Stop after Phase 6 verification/reporting. Dashboards, exports, analytics and anomaly/AI modules remain later phases. Physical tests require the user's phone/tag interaction and truthful recorded outcomes.
+- Use a separate hardware-test schema/workspace for synthetic physical tests; preserve main records and simulator isolation. Keep servers loopback-only by default; do not expose a service or bypass browser certificate/security checks without the user's chosen connection setup.
 - User selected development defaults: 30-second review validity and a 10-second duplicate-passage window. Both are configurable and require campus acceptance before operational use.
 - Simulator routes require local/testing environment, loopback, an explicit flag and a dedicated simulation/testing schema. Simulated credentials cannot pass normal verification. Do not create synthetic people or credentials in the main schema.
 - Raw NFC references and completion nonces must never enter Inertia props/history, URLs, sessions, logs, browser storage or Git. Deliver once via protected no-store JSON and retain only transient browser memory; store digests only.

@@ -24,7 +24,8 @@ export type PageId =
     | 'history'
     | 'reports'
     | 'analytics'
-    | 'settings';
+    | 'settings'
+    | 'nfc';
 
 export interface NavigationItem {
     id: PageId;
@@ -45,6 +46,7 @@ export const navigation: NavigationItem[] = [
     { id: 'reports', label: 'Reports', group: 'Insights', icon: FileText },
     { id: 'analytics', label: 'Analytics', group: 'Insights', icon: BarChart3 },
     { id: 'settings', label: 'Settings', group: 'System', icon: Settings2 },
+    { id: 'nfc', label: 'NFC setup', group: 'System', icon: ScanLine },
 ];
 
 export const pageUrl = (page: PageId) => `/preview/${page}`;

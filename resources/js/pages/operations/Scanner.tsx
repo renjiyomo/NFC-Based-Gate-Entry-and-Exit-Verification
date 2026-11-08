@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { FormErrors, ManagementPage, Select } from '../../components/management/Common';
 import Activity, { useActivity } from '../../components/operations/Activity';
+import NfcStatus from '../../components/credentials/NfcStatus';
 import { Badge, Button, Panel } from '../../components/ui';
 import { manilaTime } from '../../lib/management';
 import {
@@ -52,6 +53,7 @@ export default function Scanner({
     const [direction, setDirection] = useState<Direction | null>(null);
     const [operation, setOperation] = useState<Operation | null>(null);
     const [busy, setBusy] = useState(false);
+    const [reading, setReading] = useState(false);
     const busyRef = useRef(false);
     const [online, setOnline] = useState(navigator.onLine);
     const [uncertain, setUncertain] = useState(Boolean(requestId));
@@ -153,6 +155,7 @@ export default function Scanner({
         active.current = controller;
         let submitted = false;
         try {
+            setReading(!simulator);
             const value = simulator
                 ? probe === 'unknown'
                     ? unknownReference()
@@ -162,6 +165,7 @@ export default function Scanner({
                 : await new NdefAdapter().read(
                       AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]),
                   );
+            setReading(false);
             controller.abort();
             if (!value)
                 throw new Error(
@@ -190,7 +194,10 @@ export default function Scanner({
             }
         } finally {
             controller.abort();
-            if (mounted.current) working(false);
+            if (mounted.current) {
+                working(false);
+                setReading(false);
+            }
         }
     }
     async function recover(poll = false) {
@@ -436,12 +443,10 @@ export default function Scanner({
                         >
                             {busy ? 'Working…' : simulator ? 'Scan virtual tag' : 'Start NFC scan'}
                         </Button>
-                        {!simulator && !nfcAvailable() && (
-                            <p className="field-hint">
-                                Web NFC is unavailable. A compatible NFC phone and trusted secure
-                                browser are required. Hardware compatibility remains untested.
-                            </p>
+                        {reading && (
+                            <Button onClick={() => active.current?.abort()}>Cancel NFC scan</Button>
                         )}
+                        {!simulator && <NfcStatus />}
                     </div>
                     {simulator && (
                         <div className="operation-probes">

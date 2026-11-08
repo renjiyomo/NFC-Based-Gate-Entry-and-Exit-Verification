@@ -1,0 +1,53 @@
+# Phase 6 — Physical NFC integration
+
+Status: **software implemented and verified; physical acceptance pending**. The user has a Samsung A52 and ten NTAG215 tags and selected USB testing. File Transfer and USB debugging were reported enabled. ADB detects the phone but currently reports **unauthorized**. Android/Chrome versions, NFC radio operation, tag writing/read-back and real guard scans are not yet verified. Phase 7 is not started.
+
+## Implemented
+
+- Shared `NdefAdapter` starts native NFC directly from the user's button gesture. It allows one radio operation at a time, attaches read listeners before scan, stops after the first result and releases listeners/signals on success, error, cancellation or a 30-second timeout. Timeout/cancel also settle if the native promise fails to respond to abort.
+- Capability detection distinguishes secure context, direct browser tab, API presence and page visibility. Native errors use fixed redacted messages for permission denial, unavailable radio, incompatible tag/device, read/write failure, malformed record, timeout and cancellation. Native error text and tag data never appear in diagnostics.
+- Authenticated **NFC setup** is available to administrators and guards. Permission state queries do not prompt automatically. **Check NFC access** starts/stops the radio; **Read reference format** discards its result without backend submission, registration claim or passage creation. Backgrounding/unmount cancels operations; a new button tap is required to restart.
+- Real issuance and guard scanner share capability guidance and explicit radio cancellation controls. Writing, separate matching read-back, activation, backend verification, identity review and observed-passage confirmation remain distinct. References stay in transient memory; backend stores digests. Existing network uncertainty/recovery and server idempotency rules remain active.
+- Permissions Policy explicitly permits NFC for the same origin; camera, microphone and geolocation remain denied. Existing no-store, no-referrer and framing protections apply.
+- Separate `nfcheck_hardware` workspace on loopback port 8003 uses a distinct runtime account, application key, encrypted session cookie and private account handoff. It has two synthetic people, a test gate and separate admin/two guard accounts. Startup creates no credentials or passages, preserves existing lab records and does not reset schemas or main passwords. Simulator routes reject this schema. Hardware workspace requests require local/testing mode, explicit flag and loopback client.
+- `scripts/connect-phone.ps1 Status|Connect|Disconnect` uses the existing Google-signed Android SDK ADB, checks the server/process and one authorized USB device, forwards only port 8003, refuses conflicting/unowned mappings and disconnects only the mapping it owns. It does not enable wireless debugging, expose a LAN listener, operate the phone UI, restart servers or install software. The ignored receipt contains a device hash, not its serial.
+
+## Verification
+
+`scripts/dev.ps1 check` passed: Composer validation/audit, npm audit, Prettier, strict TypeScript/Vite build, Pint, **135 PHP tests / 1,368 assertions**, **16 NFC adapter tests**, and all **4 real multi-process MySQL race scenarios**. Concurrent overlap was observed and owned test fixture counts restored. The new setup feature tests cover authentication/password setup, both roles, no NFC/event creation and hardware workspace isolation.
+
+Browser QA on desktop and at a 393 × 851 viewport correctly showed a secure loopback context with Web NFC unavailable, disabled native actions, private lab labeling and usable mobile navigation. Issuance lists the synthetic people; the separate guard can select the test gate and Entry, while native scanning remains disabled on desktop. No credential or attempt was created by browser QA; it ended signed out with the viewport restored. This is desktop emulation, not evidence from the A52. No horizontal overflow was observed. Evidence: [desktop diagnostics](evidence/phase-6/nfc-setup-desktop.png), [mobile diagnostics emulation](evidence/phase-6/nfc-setup-mobile-emulation.png), [guard mobile emulation](evidence/phase-6/guard-mobile-emulation.png).
+
+Read-only runtime/privilege checks found 15 migrations in all four schemas; runtime DDL is denied and attempt/event/audit immutability restrictions hold. Main data remains 4 users, 2 persons, 1 gate, zero credentials/attempts/passages; all three requested administrators remain active. Simulator remains 4 closed credentials, 11 attempts and 5 explicitly simulated passages. The hardware workspace initially has 3 synthetic test accounts, 2 people, 1 gate, zero credentials/attempts/passages. Secrets and NFC plaintext checks found no private values in reviewable files or plaintext references in application/lab logs. Private environment/account files are ignored and Windows access restricted.
+
+## Phone procedure
+
+1. Keep the Samsung unlocked and connected by a data cable. Enable Developer options → USB debugging. Approve **Allow USB debugging?** for this laptop. File Transfer alone is insufficient. If ADB reports unauthorized, reconnect while unlocked and approve the RSA fingerprint prompt. Do not bypass browser security warnings or install unknown certificates.
+2. On the laptop, run `scripts/dev.ps1 hardware`, then `scripts/connect-phone.ps1 Connect`. A successful result identifies the model/Android release and confirms forwarding. If unauthorized/no device, stop here and resolve the phone prompt. Do not expose the app to Wi-Fi as a shortcut.
+3. Open **http://localhost:8003/login** in **Chrome on the phone**. Use the private `admin` entry in `.tools/secrets/hardware-accounts.json`, then open **NFC setup**. Turn on NFC in Settings → Connections → NFC and contactless payments. Record actual model, Android/Chrome versions and app commit in acceptance notes.
+4. Tap **Check NFC access** and allow Chrome's NFC prompt. Report the exact redacted result. An API-detected result or successful access probe is not tag acceptance.
+5. Label one intended blank writable tag `HW-TAG-01`. In NFC credentials → Issue credential, choose `HW-STUDENT-01`, label `HW-TAG-01`, and prepare. Tap **Write NFC tag**, hold only that tag near the back antenna until completion, remove it, then tap **Read back NFC tag** and retap the same tag. Only activate after matching read-back. Stay on the issuance page; hiding/reload clears its one-time receipt, requiring cancellation/new issuance.
+6. Sign out and sign in on the phone using the separate `guard1` entry. Select `HW-GATE-01`, choose Entry, scan the tag, compare the synthetic identity and explicitly confirm the lab passage using the campus-document fallback. No photograph is fabricated. Scan alone must create no passage. Repeat with Exit; use the same physical tag across roles without copying its reference.
+7. Work through the remaining physical matrix below. Record which steps were actually observed versus reported by the tester. Keep references, nonces, passwords and personal photos out of notes/screenshots. Leave test tags writable. Use only the isolated hardware workspace.
+8. After testing, run `scripts/connect-phone.ps1 Disconnect`; disconnect the cable and turn off USB debugging when it is no longer needed. The helper leaves unrelated mappings/server processes alone.
+
+Chrome supports Web NFC in a top-level secure context with a user gesture and permission; screen lock/page visibility affect operation. USB forwarding maps a phone-local address to the laptop service without LAN exposure, and loopback HTTP is potentially trustworthy. Ordinary LAN HTTP is insufficient. [Chrome Web NFC](https://developer.chrome.com/docs/capabilities/nfc), [Chrome USB port forwarding](https://developer.chrome.com/docs/devtools/remote-debugging/local-server), [MDN secure contexts](https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Secure_Contexts).
+
+## Physical acceptance matrix
+
+| Scenario | Required result | Actual evidence |
+| --- | --- | --- |
+| Authorized USB / Chrome / NFC access | Phone can load private app; access check succeeds | Pending: ADB unauthorized |
+| Actual tag write → separate read-back → activate | Intended tag matches; activation only after read-back | Not performed |
+| Guard Entry and Exit | Backend authorizes; scan alone creates no passage; explicit review confirms each | Not performed |
+| Wrong/read-only/locked/unrelated tag and early removal | Actionable failure; no unjustified activation/passage | Not performed; mock/parser tests only |
+| Deny permission / NFC off / screen lock / background / cancel / timeout | Safe stop, no automatic restart, new gesture needed | Not performed; adapter software tests only |
+| Repeated physical taps / same reference across two guards | At most one passage inside configured duplicate window | Not performed; MySQL concurrency tests only |
+| Unknown / malformed / revoked / replaced physical tag | Backend denies or parser rejects without identity leakage | Not performed; backend/parser tests only |
+| Network interruption before verification and during confirmation | No cached authorization; recover same request without duplicate passage | Not performed; existing recovery/idempotency tests only |
+
+## Limits and next step
+
+No RF range, antenna placement, tag capacity/formatting/lock state, native permission prompt behavior, physical write reliability, phone-browser compatibility or end-to-end physical passage result is claimed. Web NFC supplies NDEF data, not cryptographic identity or anti-cloning protection. A mock read-back is never hardware evidence. Development defaults remain 30-second review and 10-second duplicate window pending campus validation.
+
+Complete the phone authorization and physical matrix before declaring Phase 6 accepted. Keep all failed/unperformed outcomes explicit. Stop before Phase 7; dashboards, exports, analytics and AI are outside this phase.
