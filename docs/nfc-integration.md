@@ -1,6 +1,6 @@
 # NFC integration and credential lifecycle
 
-Status: **Phase 6 software/USB verified; first-coin issuance passed as reported by the user and its saved state verified; guard/remaining physical acceptance pending**. Credential lifecycle, NDEF adapter, shared verifier and assigned-guard review/passage service are connected. The current phone is **vivo V2318 / Android 16 / Chrome 156.0.8078.79**; its NFC access probe and actual coin write/read-back/activation succeeded as reported by the user. The hardware database independently confirms HW-TAG-01 as physical, active and selected for HW-STUDENT-01, with a saved read-back. RF actions were not independently observed and do not prove identity or passage. The earlier Samsung access result remains a separate user-reported probe. See [Phase 6 status](phase-6-report.md).
+Status: **Phase 6 software/USB, first-coin issuance and staged guard Entry/Exit verified; remaining physical acceptance pending**. The current phone is **vivo V2318 / Android 16 / Chrome 156.0.8078.79**. The user reports NFC access, coin write/read-back/activation and Entry. The hardware database independently confirms HW-TAG-01 active/physical/selected for HW-STUDENT-01, one confirmed Entry and one Exit at HW-GATE-01, plus two expired reviews without passage. The campus-document method was used for a synthetic lab comparison, not institutional identity validation. RF actions were user-reported; the earlier Samsung access result remains a separate probe. See [Phase 6 status](phase-6-report.md).
 
 ## Supported target and limits
 
