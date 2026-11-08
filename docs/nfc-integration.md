@@ -1,6 +1,6 @@
 # NFC integration and credential lifecycle
 
-Status: **Phase 6 software and USB connection verified; replacement-phone access and tag acceptance remain pending**. Credential lifecycle, NDEF adapter, shared verifier and assigned-guard review/passage service are connected. The user switched from Samsung SM-A525F to **vivo V2318 / Android 16 / Chrome 156.0.8078.79**. USB debugging authorization, port 8003 forwarding and Android-advertised NFC hardware features are verified on the new phone; repeat its Chrome NFC access check before writing. The earlier Samsung access success was reported by the user and does not establish the new phone's browser permission or RF behavior. Actual tag write/read-back and guard tests are still pending. See [Phase 6 status](phase-6-report.md).
+Status: **Phase 6 software and USB connection verified; vivo NFC access passed as reported by the user; tag acceptance remains pending**. Credential lifecycle, NDEF adapter, shared verifier and assigned-guard review/passage service are connected. The user switched from Samsung SM-A525F to **vivo V2318 / Android 16 / Chrome 156.0.8078.79**. USB debugging authorization, port 8003 forwarding and Android-advertised NFC hardware features are verified on the new phone. The user separately reported a successful Chrome NFC access check on the vivo after its own setup. Both phones' access results are user-reported probes, not tag write/read-back or guard test evidence. Actual tag acceptance remains pending. See [Phase 6 status](phase-6-report.md).
 
 ## Supported target and limits
 
