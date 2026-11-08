@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { canonicalReference, referenceFromMessage, NdefAdapter, writeVirtualTag, readVirtualTag, clearVirtualTag, unknownReference } from '../../resources/js/lib/nfc.ts';
+import { canonicalReference, referenceFromMessage, NdefAdapter, writeVirtualTag, readVirtualTag, clearVirtualTag, unknownReference, holdVirtualTagForHandoff, acceptVirtualTagHandoff } from '../../resources/js/lib/nfc.ts';
 
 const payload = 'nfcheck:v1:' + 'A'.repeat(43);
 const textRecord = (text, encoding = 'utf-8') => ({ recordType: 'text', encoding, data: new DataView(new TextEncoder().encode(text).buffer) });
@@ -42,4 +42,22 @@ test('virtual tag is memory-only and explicitly clearable', () => {
     clearVirtualTag(); assert.equal(readVirtualTag(), null);
     writeVirtualTag(payload, 'TEST-FIXTURE'); assert.equal(readVirtualTag(), payload);
     clearVirtualTag(); assert.equal(readVirtualTag(), null);
+});
+test('explicit lab handoff expires after two minutes without persistent storage', () => {
+    const original = Date.now;
+    try {
+        Date.now = () => 1000;
+        writeVirtualTag(payload, 'SYNTHETIC-HANDOFF'); holdVirtualTagForHandoff();
+        Date.now = () => 120999; assert.equal(readVirtualTag(), payload);
+        Date.now = () => 121000; assert.equal(readVirtualTag(), null);
+    } finally { Date.now = original; clearVirtualTag(); }
+});
+test('received lab tag stays in memory until ordinary clearing after handoff acceptance', () => {
+    const original = Date.now;
+    try {
+        Date.now = () => 1000; writeVirtualTag(payload, 'SYNTHETIC-RECEIVED'); holdVirtualTagForHandoff();
+        Date.now = () => 2000; acceptVirtualTagHandoff();
+        Date.now = () => 300000; assert.equal(readVirtualTag(), payload);
+        clearVirtualTag(); assert.equal(readVirtualTag(), null);
+    } finally { Date.now = original; clearVirtualTag(); }
 });

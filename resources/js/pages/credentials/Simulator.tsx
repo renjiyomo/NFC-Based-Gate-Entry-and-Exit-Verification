@@ -1,10 +1,16 @@
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { SimulatorNotice } from '../../components/credentials/Shared';
 import { FormErrors, ManagementPage } from '../../components/management/Common';
 import { Badge, Button, Panel } from '../../components/ui';
 import { credentialErrors, credentialPost, type Inspection } from '../../lib/credentials';
-import { clearVirtualTag, readVirtualTag, unknownReference, virtualTagLabel } from '../../lib/nfc';
+import {
+    clearVirtualTag,
+    holdVirtualTagForHandoff,
+    readVirtualTag,
+    unknownReference,
+    virtualTagLabel,
+} from '../../lib/nfc';
 
 export default function Simulator() {
     const [tag, setTag] = useState(virtualTagLabel());
@@ -46,6 +52,24 @@ export default function Simulator() {
             }
         >
             <SimulatorNotice />
+            {tag && (
+                <div className="credential-notice">
+                    <strong>Try the guard workflow</strong>
+                    <p>
+                        Hand this simulated tag to the separate lab guard account. This signs out of
+                        administration and retains only the virtual tag in this tab’s memory for up
+                        to two minutes. Reloading discards it.
+                    </p>
+                    <Button
+                        onClick={() => {
+                            holdVirtualTagForHandoff();
+                            router.post('/logout');
+                        }}
+                    >
+                        Hand virtual tag to a lab guard
+                    </Button>
+                </div>
+            )}
             <FormErrors errors={errors} />
             <div className="record-detail-grid">
                 <Panel

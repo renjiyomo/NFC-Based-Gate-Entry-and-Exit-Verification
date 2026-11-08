@@ -4,6 +4,8 @@ use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\Credentials\CredentialController;
+use App\Http\Controllers\GateOperations\ActivityController;
+use App\Http\Controllers\GateOperations\OperationController;
 use App\Http\Controllers\Management\AssignmentController;
 use App\Http\Controllers\Management\AuthorizationController;
 use App\Http\Controllers\Management\ChoiceController;
@@ -33,6 +35,18 @@ Route::middleware('auth')->group(function (): void {
     Route::put('/account/password', [PasswordController::class, 'update'])->middleware('throttle:password-change')->name('password.change');
 });
 Route::middleware(['auth', 'auth.session', EnsurePasswordChanged::class])->group(function (): void {
+    foreach (['guard/gates' => 'operations.', 'simulator/guard/gates' => 'lab.'] as $prefix => $name) {
+        Route::prefix($prefix)->middleware($name === 'lab.' ? [EnsureNfcSimulator::class, 'can:guard.workspace', 'can:operate,gate'] : ['can:guard.workspace', 'can:operate,gate'])->name($name)->group(function (): void {
+            Route::post('/{gate}/scan', [OperationController::class, 'scan'])->whereNumber('gate')->middleware('throttle:gate-write')->name('scan');
+            Route::get('/{gate}/requests/{requestId}', [OperationController::class, 'recover'])->whereNumber('gate')->whereUuid('requestId')->middleware('throttle:gate-read')->name('recover');
+            Route::post('/{gate}/attempts/{attempt}/review', [OperationController::class, 'review'])->whereNumber('gate')->whereUuid('attempt')->middleware('throttle:gate-write')->name('review');
+            Route::get('/{gate}/attempts/{attempt}/photo', [OperationController::class, 'photo'])->whereNumber('gate')->whereUuid('attempt')->middleware('throttle:gate-read')->name('photo');
+        });
+    }
+    Route::get('/admin/history', [ActivityController::class, 'index'])->middleware('can:admin.workspace')->name('operations.history');
+    Route::get('/admin/history/feed', [ActivityController::class, 'feed'])->middleware(['can:admin.workspace', 'throttle:gate-read'])->name('operations.history.feed');
+    Route::get('/guard/activity/feed', [ActivityController::class, 'feed'])->middleware(['can:guard.workspace', 'throttle:gate-read'])->name('operations.activity.feed');
+    Route::get('/guard/gates/{gate}/activity', [ActivityController::class, 'feed'])->whereNumber('gate')->middleware(['can:guard.workspace', 'can:operate,gate', 'throttle:gate-read'])->name('operations.station.activity');
     Route::prefix('admin/credentials')->middleware('can:admin.workspace')->name('credentials.')->group(function (): void {
         Route::get('/', [CredentialController::class, 'index'])->name('index');
         Route::get('/create', [CredentialController::class, 'create'])->name('create');
@@ -81,9 +95,9 @@ Route::middleware(['auth', 'auth.session', EnsurePasswordChanged::class])->group
     });
     Route::get('/admin/dashboard', [WorkspaceController::class, 'admin'])->middleware('can:admin.workspace')->name('admin.dashboard');
     Route::get('/admin/{page}', [WorkspaceController::class, 'admin'])->middleware('can:admin.workspace')->name('admin.workspace');
-    Route::get('/guard/scanner', [WorkspaceController::class, 'guard'])->middleware('can:guard.workspace')->name('guard.scanner');
-    Route::get('/guard/activity', [WorkspaceController::class, 'recent'])->middleware('can:guard.workspace')->name('guard.activity');
-    Route::get('/guard/gates/{gate}/scanner', [WorkspaceController::class, 'station'])->middleware('can:operate,gate')->name('guard.station');
+    Route::get('/guard/scanner', [ActivityController::class, 'scanner'])->middleware('can:guard.workspace')->name('guard.scanner');
+    Route::get('/guard/activity', [ActivityController::class, 'index'])->middleware('can:guard.workspace')->name('guard.activity');
+    Route::get('/guard/gates/{gate}/scanner', [ActivityController::class, 'scanner'])->middleware(['can:guard.workspace', 'can:operate,gate'])->name('guard.station');
 });
 Route::prefix('preview')->name('preview.')->middleware(EnsureLocalPreview::class)->group(function (): void {
     Route::get('/login', [PreviewController::class, 'login'])->name('login');

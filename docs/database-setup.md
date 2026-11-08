@@ -16,19 +16,21 @@ Pinned URLs/hashes are in `scripts/service-artifacts.json`. The MySQL ZIP came f
 | --- | --- |
 | Private root | New private instance; bootstrap only, never used by the web app |
 | nfcheck_migrator | Schema/data privileges only in nfcheck, nfcheck_testing and the optional nfcheck_simulator |
-| nfcheck_app | Main per-table SELECT/INSERT/UPDATE/DELETE; audit SELECT/INSERT only; migrations SELECT only |
+| nfcheck_app | Per-table DML; audit/events SELECT/INSERT only; attempts SELECT/INSERT plus named review-column UPDATE; migrations SELECT |
 | nfcheck_test | Equivalent restricted grants only in nfcheck_testing |
 | nfcheck_simulator | Equivalent restricted grants only in nfcheck_simulator |
 
 Runtime accounts cannot create/alter/drop tables, modify/delete audit rows, grant privileges or read the other schema. A privileged database administrator still controls audit data; no tamper-proof external audit store is claimed.
 
-Each schema has the ten core application tables plus `nfc_credentials`, `credential_assignments` and Laravel's migration ledger. Verification/passage/reporting tables are deferred. See [database design](database.md).
+Each schema has the ten core tables plus credentials/assignments, `scan_attempts`, `access_events` and Laravel's migration ledger. The current ledger has **15 migrations**. Reporting/correction/anomaly tables remain deferred. See [database design](database.md).
 
 Phase 4 brings the ledger to 13 applied migrations in all three project schemas. Persons/gates/users support retained archives and edit versions; access/assignment schedule columns use UTC DATETIME(6). Credential records store unique binary digests, permanent assignments and an owner-qualified selected-assignment pointer. Archive operations deactivate records and revoke related permissions; restoration leaves them inactive. Existing main records are preserved. Transaction fixtures roll back in `nfcheck_testing`; Phase 4 browser QA uses only `nfcheck_simulator`.
 
 `scripts/dev.ps1 simulator` adds the fixed `nfcheck_simulator` schema/runtime user and a distinct random secret in the protected database handoff. Its environment/key/session cookie live in ignored `.env.simulator`. The migrator receives DDL only within this additional schema; simulator runtime grants remain per-table DML, audit SELECT/INSERT, migrations SELECT. MySQL version/data-directory checks run before provisioning and migration. The runtime cannot query the main/test schemas. A CLI-only guarded seed creates one disposable lab administrator and two explicitly simulated people/grants, idempotently; no credential references are seeded or stored in plaintext. Existing lab records are preserved.
 
 ## Setup
+
+Phase 5 adds two synthetic lab guards and `SIM-GATE-01` only in the simulator schema; their private sign-in file is `.tools/secrets/simulator-guards.json`. Existing records and passwords are not reset. The concurrent test harness uses a private maintenance connection only to remove its captured testing-fixture IDs from immutable tables, restores pre-run row counts and never targets the main schema. Web runtimes never receive that credential.
 
 ```powershell
 # First setup: verify packages and initialize this private instance.

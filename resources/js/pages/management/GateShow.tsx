@@ -46,7 +46,7 @@ export default function GateShow({
                         </div>
                         <div>
                             <dt>Gate scanning</dt>
-                            <dd>Unavailable until the scanning phase</dd>
+                            <dd>Available to active guards with a current assignment</dd>
                         </div>
                     </dl>
                     <p className="panel-message">

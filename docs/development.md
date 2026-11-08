@@ -1,4 +1,4 @@
-# Local development — Phase 4
+# Local development — Phase 5
 
 Authentication, student/employee management, private photos, gates, guards, access grants and gate assignments are implemented. Credential issuance, scanning and passage recording require later phase approvals. Follow [AGENTS.md](../AGENTS.md) and [the current report](phase-3-report.md).
 
@@ -92,7 +92,7 @@ The launcher restores PATH/Composer environment changes after use. MySQL/Mailpit
 - Guest: GET/POST `/login`, `/forgot-password`; GET `/reset-password/{token}`, POST `/reset-password`.
 - Signed-in: POST `/logout`, GET/PUT `/account/password`.
 - Administrators: connected `/admin/students`, `/admin/employees`, `/admin/gates`, `/admin/guards` resources and their create/detail/edit/archive/restore actions. Person photo/grant and gate/guard assignment endpoints are scoped to those records. `/admin/choices/{gates|guards}` supplies bounded searchable choices. Dashboard and later modules retain their honest unavailable states.
-- Guards: `/guard/scanner`, `/guard/activity`; `/guard/gates/{gate}/scanner` additionally requires the exact effective assignment and active gate. NFC actions remain unavailable.
+- Guards: `/guard/scanner`, `/guard/activity`; `/guard/gates/{gate}/scanner` additionally requires the exact effective assignment and active gate. NFC verification, separate identity review, confirmation and recent activity are connected; real NFC hardware remains untested.
 - Optional previews: `/preview/login`, `/preview/{page}`, disabled by default. Production always rejects previews.
 - `/up`: lightweight application health, not database readiness.
 
@@ -120,3 +120,17 @@ Simulator routes require local/testing environment, loopback, the explicit flag 
 This is a local development installation. Production needs a separately reviewed deployment, trusted HTTPS/Secure cookies, real SMTP, backups/retention and operator procedures. Existing XAMPP audit findings remain unchanged. No physical phone/tag, full browser zoom, assistive-technology certification or production readiness is claimed.
 
 The Phase 3 pipeline passed 87 tests / 946 assertions. Browser QA used a separate loopback 8001 listener with disposable accounts in `nfcheck_testing`; those rows/photos and test credentials were removed afterward. The separate QA listener may still display a login screen without an operator account. Use **port 8000** for the normal application. Evidence and cleanup results are linked from the Phase 3 report.
+
+## Phase 5 gate operations
+
+The current checkpoint is Phase 5. Guards use `/guard/scanner`, select a current assigned gate, choose Entry/Exit and scan. A credential check creates an attempt only. Review the photograph or explicitly choose the trusted-campus-document fallback, check the identity/observed-passage assertion, then confirm. Identity mismatch/cancel/30-second expiry create no passage. Confirmation rechecks current state and revision. The user selected a 10-second duplicate window; a same-person/gate/direction/source confirmation within it is suppressed, even across guards and request IDs. At the boundary a new passage is permitted with any applicable sequence note.
+
+Gate JSON endpoints are POST `/guard/gates/{gate}/scan`, GET `.../requests/{requestId}`, POST `.../attempts/{attempt}/review` and GET `.../attempts/{attempt}/photo`. The lab equivalents begin `/simulator/guard/gates`. Source is fixed by the route; simulated references cannot create physical events. Writes require JSON/CSRF and active guard/gate assignment; operation lookup additionally binds the same guard/session/auth revision. The URL may contain a non-secret request UUID for reload recovery, never a reference. Recover uncertain status before resending an exact request. Review retries never extend the deadline. No trusted offline decisions are queued.
+
+`/guard/activity/feed` and station activity return at most 30 permitted attempts from the last 30 minutes; `/admin/history/feed` returns at most 50 latest attempts. The UI refreshes every 8 seconds while visible and after actions. Credential authorization, review state and passage are distinct. Full report filters/exports and dashboard aggregates remain later work.
+
+Run `scripts/dev.ps1 simulator` for the isolated lab. The administrator file remains `.tools/secrets/simulator-account.json`; two separate guard accounts are in `.tools/secrets/simulator-guards.json`. Issue, simulate write/read-back, activate, then select **Hand virtual tag to a lab guard** and sign in as that guard in the same tab. Complete the first server check within two minutes to accept the handoff. The accepted tag stays in tab memory until reload/page hide/ordinary sign-out/clear. No role is impersonated and no plaintext is persisted. Refreshing discards the tag but a pending review can still recover by its request UUID.
+
+Use `scripts/dev.ps1 concurrency` for the four real multi-process race scenarios; `check` includes it after the transaction-based PHP suite. The harness requires the exact isolated testing runtime, commits only owned synthetic fixtures for visibility to its workers, observes simultaneous blocked transactions and restores pre-run row counts by captured IDs through a private maintenance connection. Never run generic schema resets. The final Phase 5 suite passed 132 tests / 1,324 assertions, 8 adapter tests and all 4 concurrent scenarios.
+
+`nfcheck:expire-reviews` materializes unattended review expiry; validity already applies on every request. No scheduler daemon was installed. See [Phase 5 report](phase-5-report.md) for evidence and hardware/policy limits. Earlier Phase 3/4 check totals above describe their historical checkpoints.

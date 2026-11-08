@@ -212,7 +212,7 @@ export default function AppLayout({ page, children }: { page: PageId; children: 
                 <p>
                     {preview
                         ? 'Explore the navigation, layouts, and gate direction controls. No operational data is saved from this preview.'
-                        : 'Account security, people and gate management, access grants, guard assignments and credential lifecycles are connected. Guard gate operations begin in Phase 5.'}
+                        : 'Account security, people, gates, credentials and assigned-guard verification are connected. Every passage requires a separate identity review and explicit guard confirmation.'}
                 </p>
                 <div className="dialog-note">
                     <strong>Before gate operations</strong>

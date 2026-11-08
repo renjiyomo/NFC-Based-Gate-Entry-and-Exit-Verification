@@ -46,9 +46,12 @@ foreach ($schemas as $schema => $environment) {
             throw new RuntimeException('Unexpected table identifier.');
         }
         $permissions = match ($table) {
-            'audit_logs' => 'SELECT, INSERT', 'migrations' => 'SELECT', default => 'SELECT, INSERT, UPDATE, DELETE'
+            'audit_logs', 'scan_attempts', 'access_events' => 'SELECT, INSERT', 'migrations' => 'SELECT', default => 'SELECT, INSERT, UPDATE, DELETE'
         };
         $db->exec("GRANT $permissions ON `$schema`.`$table` TO '$user'@'127.0.0.1'");
+        if ($table === 'scan_attempts') {
+            $db->exec("GRANT UPDATE (review_status, reviewed_at, reviewed_by, review_reason, duplicate_of_event_id, updated_at) ON `$schema`.`scan_attempts` TO '$user'@'127.0.0.1'");
+        }
     }
     echo "Scoped runtime privileges applied to $schema.\n";
 }

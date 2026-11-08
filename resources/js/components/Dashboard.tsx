@@ -59,13 +59,14 @@ export default function Dashboard() {
                     <Activity size={20} aria-hidden="true" />
                 </span>
                 <div>
-                    <strong>Gate operations are not connected</strong>
+                    <strong>
+                        {preview ? 'Gate operations preview' : 'Guard gate workflow connected'}
+                    </strong>
                     <p>
                         {preview
                             ? 'This interface preview is ready to explore.'
-                            : 'People, gates, and assignments can now be managed.'}{' '}
-                        Gate verification and passage recording will become available in later
-                        phases.
+                            : 'Assigned guards can verify credentials and separately confirm observed passage.'}{' '}
+                        Monitoring statistics and reports are introduced in Phase 7.
                     </p>
                 </div>
                 <Badge>{preview ? 'Preview mode' : 'Modules pending'}</Badge>
@@ -155,7 +156,11 @@ export default function Dashboard() {
                     </div>
                     <div className="readiness-foot">
                         <ShieldAlert size={16} aria-hidden="true" />
-                        <p>Gate verification and passage recording are unavailable.</p>
+                        <p>
+                            {preview
+                                ? 'Gate operations are unavailable in preview.'
+                                : 'Guard verification and separate passage confirmation are available.'}
+                        </p>
                     </div>
                     <Link className="text-link readiness-link" href={pageUrl('gates')}>
                         View gate stations <ArrowRight size={15} aria-hidden="true" />

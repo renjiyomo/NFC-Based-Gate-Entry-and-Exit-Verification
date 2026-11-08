@@ -14,10 +14,11 @@ import {
 import { useState } from 'react';
 import { Badge } from '../components/ui';
 import { useWorkspace } from '../lib/workspace';
+import { virtualTagLabel } from '../lib/nfc';
 
 export default function Login({ preview = false }: { preview?: boolean }) {
     const [showPassword, setShowPassword] = useState(false);
-    const { flash } = useWorkspace();
+    const { flash, simulator } = useWorkspace();
     const form = useForm({ email: '', password: '' });
     return (
         <div className="login-page">
@@ -99,6 +100,13 @@ export default function Login({ preview = false }: { preview?: boolean }) {
                     </span>
                     <h2 id="sign-in-title">Welcome back</h2>
                     <p className="login-form-description">Sign in to your NFCheck workspace.</p>
+                    {simulator && virtualTagLabel() && (
+                        <p className="login-preview-notice">
+                            Virtual lab tag {virtualTagLabel()} is held only in this tab’s memory
+                            for up to two minutes. Sign in with the separate lab guard account.
+                            Reloading discards the tag.
+                        </p>
+                    )}
                     {preview && (
                         <div className="login-preview-notice">
                             <Info size={16} aria-hidden="true" />

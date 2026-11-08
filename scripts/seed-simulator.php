@@ -3,10 +3,13 @@
 declare(strict_types=1);
 
 use App\Enums\PersonType;
+use App\Models\Gate;
+use App\Models\GuardGateAssignment;
 use App\Models\Person;
 use App\Models\User;
 use App\Services\AccessManagement;
 use App\Services\AccountService;
+use App\Services\GateManagement;
 use App\Services\PersonManagement;
 use Illuminate\Contracts\Console\Kernel;
 
@@ -39,4 +42,23 @@ foreach ([['SIM-STUDENT-01', PersonType::Student, ['program' => 'Simulation prog
     $person = app(PersonManagement::class)->save($operator, $type, ['campus_number' => $number, 'full_name' => $type === PersonType::Student ? 'SIMULATED Student One' : 'SIMULATED Employee One', 'status' => 'active', ...$profile]);
     app(AccessManagement::class)->grant($operator, $person, ['record_version' => $person->record_version, 'starts_at' => now('Asia/Manila')->subMinute()->format('Y-m-d\TH:i'), 'ends_at' => null, 'reason' => 'Synthetic local simulator grant']);
 }
-echo "Simulator operator and two synthetic people ready; existing lab records preserved. Credentials are in the private handoff file.\n";
+$gate = Gate::withTrashed()->where('code', 'SIM-GATE-01')->first();
+if (! $gate) {
+    $gate = app(GateManagement::class)->save($operator, ['code' => 'SIM-GATE-01', 'name' => 'SIMULATED Lab Gate', 'status' => 'active']);
+}
+$guardsPath = $root.'/.tools/secrets/simulator-guards.json';
+$handoff = is_file($guardsPath) ? json_decode(file_get_contents($guardsPath), true, 512, JSON_THROW_ON_ERROR) : [];
+foreach ([1, 2] as $number) {
+    $email = 'simulator.guard'.$number.'@nfcheck.test';
+    $guard = User::withTrashed()->where('email', $email)->first();
+    if (! $guard) {
+        $password = 'Lab-'.bin2hex(random_bytes(20));
+        $guard = app(AccountService::class)->create(['name' => 'Local simulator guard '.$number, 'email' => $email, 'password' => $password, 'role' => 'guard', 'must_change_password' => false], $operator);
+        $handoff[$email] = ['email' => $email, 'password' => $password, 'url' => 'http://localhost:8002/login', 'purpose' => 'Synthetic guard workflow in the isolated lab only.'];
+        file_put_contents($guardsPath, json_encode($handoff, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), LOCK_EX);
+    }
+    if (! GuardGateAssignment::where('guard_id', $guard->id)->where('gate_id', $gate->id)->exists() && $guard->isGuard() && ! $gate->trashed() && $gate->status->value === 'active') {
+        app(AccessManagement::class)->assign($operator, ['guard_id' => $guard->id, 'gate_id' => $gate->id, 'starts_at' => now('Asia/Manila')->subMinute()->format('Y-m-d\TH:i'), 'ends_at' => null]);
+    }
+}
+echo "Simulator operator, synthetic people, lab gate and two guards ready. Existing lab records preserved; sign-in details remain private.\n";

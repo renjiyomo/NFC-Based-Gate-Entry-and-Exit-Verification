@@ -1,6 +1,14 @@
 # NFCheck database and ERD proposal
 
-Status: **Phase 4 credential management implemented** on the Phase 2/3 schema in isolated Oracle MySQL 8.4.13. The larger ERD below remains a future design. See [database setup](database-setup.md) for instances/permissions and [the Phase 4 report](phase-4-report.md) for current verification.
+Status: **Phase 5 guard verification and passage implemented** in isolated Oracle MySQL 8.4.13. The larger ERD includes future modules. See [database setup](database-setup.md) and [the Phase 5 report](phase-5-report.md).
+
+## Implemented Phase 5 additions
+
+Migrations 14/15 add `scan_attempts` and `access_events` and explicit non-null/reviewer checks; the ledger is now **15** in each fixed project schema. Unique `(guard_id,request_id)` and keyed payload fingerprints protect retry identity. Review expiry, auth/session binding, person revision and fresh server rechecks protect confirmation. Unique event-per-attempt and a composite event/attempt owner/gate/direction/source foreign key protect passage linkage.
+
+Runtime attempts are SELECT/INSERT plus UPDATE only on named review-state fields, with no DELETE. Events and audit are SELECT/INSERT only. Eloquent additionally rejects historical mutations. Essential audit, review transition and event insert share a transaction. Stable person locks and current locking reads suppress same-person/gate/direction/source confirmations within the configured window across guards. At exactly 10 seconds, new passage is permitted. No presence projection, correction, anomaly or reporting tables were introduced.
+
+Guard activity is bounded to 30 minutes/30 attempts at currently assigned active gates; administrator recent activity is limited to 50 attempts. Denied attempts do not disclose identity to guards. Review photographs require the same live authorized guard/gate/source/session context and disappear after review expiry/closure. Operation UUIDs are metadata locators, not credentials; raw references are never stored on attempts.
 
 ## Implemented Phase 4 additions
 

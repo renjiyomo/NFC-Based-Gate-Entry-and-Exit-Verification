@@ -18,7 +18,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'app' => [
                 'name' => config('app.name'),
-                'phase' => 4,
+                'phase' => 5,
                 'preview' => $preview,
                 'simulator' => EnsureNfcSimulator::available($request),
                 'testWorkspace' => in_array(config('database.connections.mysql.database'), ['nfcheck_testing', 'nfcheck_simulator'], true),

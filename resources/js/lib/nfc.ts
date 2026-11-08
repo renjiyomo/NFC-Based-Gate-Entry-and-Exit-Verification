@@ -126,20 +126,42 @@ export class NdefAdapter {
     }
 }
 // A virtual tag is held in module memory, just like the contents of a tag in the lab.
-// It survives Inertia navigation only; page hide, reload and logout clear it.
+// Explicit lab handoff retains a simulated tag in memory for at most two minutes.
+// Ordinary sign-out and page hide clear it; it never enters browser storage.
 let virtualTag: { payload: string; label: string } | null = null;
+let handoffExpires: number | null = null;
+let handoffTimer: ReturnType<typeof setTimeout> | null = null;
 export function writeVirtualTag(payload: string, label: string): void {
     if (!canonicalReference(payload)) throw new Error('Invalid virtual tag.');
+    clearVirtualTag();
     virtualTag = { payload, label };
+    handoffExpires = null;
 }
 export function readVirtualTag(): string | null {
+    if (handoffExpires !== null && Date.now() >= handoffExpires) clearVirtualTag();
     return virtualTag?.payload ?? null;
 }
 export function virtualTagLabel(): string | null {
+    if (handoffExpires !== null && Date.now() >= handoffExpires) clearVirtualTag();
     return virtualTag?.label ?? null;
 }
 export function clearVirtualTag(): void {
+    if (handoffTimer !== null) clearTimeout(handoffTimer);
+    handoffTimer = null;
     virtualTag = null;
+    handoffExpires = null;
+}
+export function holdVirtualTagForHandoff(): void {
+    if (!readVirtualTag()) throw new Error('The virtual tag is unavailable.');
+    handoffExpires = Date.now() + 120000;
+    if (handoffTimer !== null) clearTimeout(handoffTimer);
+    handoffTimer = setTimeout(clearVirtualTag, 120000);
+}
+export function acceptVirtualTagHandoff(): void {
+    if (!readVirtualTag()) return;
+    if (handoffTimer !== null) clearTimeout(handoffTimer);
+    handoffTimer = null;
+    handoffExpires = null;
 }
 if (typeof window !== 'undefined') window.addEventListener('pagehide', clearVirtualTag);
 export function unknownReference(): string {

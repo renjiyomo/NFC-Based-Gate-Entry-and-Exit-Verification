@@ -2,11 +2,11 @@
 
 **NFC-Based Campus Gate Entry and Exit Verification and Monitoring System with Data Analytics, Anomaly Detection, and AI-Generated Summaries for Bicol University Polangui**
 
-Current checkpoint: **Phase 4 — NFC credential management completed. Awaiting approval for Phase 5.**
+Current checkpoint: **Phase 5 — assigned-guard verification and confirmed Entry/Exit recording completed. Awaiting approval for Phase 6.**
 
-Open [NFCheck sign-in](http://127.0.0.1:8000/login). Account security, people/gates/guards, access grants and credential issuance/activation/revocation/replacement are connected to isolated Oracle MySQL. Credential issuance includes a one-time reference, permanent person assignment and matching read-back before activation. Guard scanning, passage recording, statistics, exports and AI await their approved phases. Physical NFC hardware remains untested.
+Open [NFCheck sign-in](http://127.0.0.1:8000/login). Account security, people/gates/guards, access grants, credential lifecycles and assigned-guard verification are connected to isolated Oracle MySQL. Guards choose Entry or Exit, verify a reference, review identity and explicitly confirm observed passage. Retries recover the same operation, duplicate passages are suppressed and recent permitted activity refreshes. Physical NFC hardware remains untested; monitoring analytics, exports and AI remain later phases.
 
-The [isolated NFC simulator](http://localhost:8002/login) uses its own schema, application key, session cookie, disposable operator and synthetic people. Its private sign-in details are in `.tools/secrets/simulator-account.json`. Use **localhost:8002** for the lab and **127.0.0.1:8000** for the main app to keep browser cookies on separate hosts. See [the Phase 4 report](docs/phase-4-report.md) and [NFC instructions](docs/nfc-integration.md).
+The [isolated NFC simulator](http://localhost:8002/login) uses its own schema, key, cookie, administrator, two guard accounts, synthetic people and lab gate. Administrator sign-in details are in `.tools/secrets/simulator-account.json`; separate guard details are in `.tools/secrets/simulator-guards.json`. Issue/write/activate a virtual tag, then use **Hand virtual tag to a lab guard** and sign in as the guard in the same tab. Use **localhost:8002** for the lab and **127.0.0.1:8000** for the main app to separate browser cookies. See [the Phase 5 report](docs/phase-5-report.md) and [NFC instructions](docs/nfc-integration.md).
 
 The three requested local administrators are **alexi@nfcheck.test**, **pauleen@nfcheck.test**, and **zaidy@nfcheck.test**. Each has a different generated initial password in the ignored, Windows-access-restricted `.tools/secrets/initial-accounts.json`. A personal password is required on first sign-in. Passwords are never committed or printed in reports.
 
@@ -42,6 +42,7 @@ Normal workspace routes require authentication and server-side authorization. Op
 
 | Document | Contents |
 | --- | --- |
+| [Phase 5 report](docs/phase-5-report.md) | Guard review/confirmation, retry recovery, duplicate protection, concurrent tests and evidence |
 | [Phase 4 report](docs/phase-4-report.md) | Credential lifecycle, isolated simulator, validation and UI evidence |
 | [Phase 3 report](docs/phase-3-report.md) | Connected management workflows, schema changes, tests and UI evidence |
 | [Phase 2 report](docs/phase-2-report.md) | Features, schema, checks, evidence and checkpoint |

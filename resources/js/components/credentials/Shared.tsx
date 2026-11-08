@@ -31,8 +31,9 @@ export function SimulatorNotice() {
         <div className="credential-notice" role="note">
             <strong>Isolated NFC simulator</strong>
             <p>
-                Uses synthetic lab people and the shared credential verifier. No physical NFC read,
-                identity check, gate decision or passage is recorded.
+                Uses synthetic lab people and the shared credential verifier. Credential inspection
+                records no gate decision or passage. The separate guard workflow records labeled
+                simulated passages after explicit confirmation.
             </p>
             <Link href="/simulator">Open simulator</Link>
         </div>

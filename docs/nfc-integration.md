@@ -1,6 +1,6 @@
 # NFC integration and credential lifecycle
 
-Status: **Phase 4 software implemented and verified with mocks/simulation**. Credential lifecycle, NDEF adapter and shared verifier are connected. No physical tag test has been performed. Operational guard scanning/passage is Phase 5; hardware acceptance is Phase 6. See [the Phase 4 report](phase-4-report.md).
+Status: **Phase 5 software implemented and verified with mocks, simulation and concurrent database workers**. Credential lifecycle, NDEF adapter, shared verifier and assigned-guard review/passage service are connected. No physical tag test has been performed. Hardware acceptance is Phase 6. See [the Phase 5 report](phase-5-report.md).
 
 ## Supported target and limits
 
@@ -33,7 +33,7 @@ The browser reports read-back completion; this is software workflow evidence, no
 
 Lost credentials are revoked immediately, the active pointer is cleared and assignment ended, independently of replacement success. Normal replacement may keep the old credential valid until the fresh tag is ready, then atomically revoke old/activate new. A revoked token never becomes active again. Existing credential ownership never moves to another person. See [database invariants](database.md).
 
-## Future scan and passage flow — Phase 5
+## Implemented scan and passage flow — Phase 5
 
 Explicit Entry/Exit and assigned gate are fixed into the attempt. Browser reading submits to the authenticated Laravel verification service. Display authorized credential + necessary identity details, then require guard comparison and observed-passage confirmation. A failed/missing backend response is not a successful verification. Guard rejection/cancellation/expiry are audited terminal review states and create no passage.
 
@@ -43,7 +43,7 @@ UI error states need actionable distinctions: unsupported API/device, NFC disabl
 
 ## Controlled simulator
 
-The implemented simulator invokes **the same `CredentialVerifier`** as normal credential inspection. Middleware requires local/testing environment, loopback, explicit flag and `nfcheck_simulator`/`nfcheck_testing`; production rejects it. Routes fix the source server-side and normal verification rejects simulated references. The lab uses its own runtime account, key, cookie and synthetic people. It has no passage tables and records no operational decision.
+The implemented simulator invokes **the same `CredentialVerifier`** as normal credential inspection. Middleware requires local/testing environment, loopback, explicit flag and `nfcheck_simulator`/`nfcheck_testing`; production rejects it. Routes fix the source server-side and normal verification rejects simulated references. The lab uses its own runtime account, key, cookie and synthetic people. Credential inspection records no passage; the separate Phase 5 guard workflow records labeled simulated attempts/passages only in the lab schema.
 
 1. Run `scripts/dev.ps1 simulator`; open **http://localhost:8002/login**. Read the disposable operator credentials privately from `.tools/secrets/simulator-account.json`. Keep the main app at **127.0.0.1:8000** so the browsers' XSRF cookies use separate hosts.
 2. Open NFC credentials → Issue credential. Choose a synthetic person, a unique inventory label and purpose. Prepare the pending credential.
@@ -68,3 +68,9 @@ Record model, Android build, Chrome version, tag type/supplier, NDEF state, app 
 6. Compare recorded server outcomes with guard observations; record failures and latency without claiming perfect identity assurance.
 
 Hardware availability is unknown. Phase 6 may complete software integration with physical evidence explicitly outstanding, but physical readiness cannot be marked successful until these device/tag tests pass.
+
+### Guard simulator handoff — Phase 5
+
+After activation, the administrator can select **Hand virtual tag to a lab guard**. This signs out and preserves only the synthetic virtual tag in module memory for up to two minutes while the separate lab guard signs in. The first server-authorized lab check accepts the handoff; afterward the tag remains memory-only until ordinary sign-out, clear, reload or page hide. Use `.tools/secrets/simulator-guards.json` privately for guard sign-in. Select `SIM-GATE-01`, explicitly choose Entry/Exit and scan. Check the identity-review assertion before confirming. Repeated confirmations within the chosen 10-second window must not create another passage. Cancel/mismatch/expiry create none. All lab events remain labeled simulated and isolated.
+
+A reload clears the virtual tag. It does not extend or bypass an existing review: the non-secret request UUID can locate the same guard/session-bound operation until its original deadline. Photos remain private and review-scoped. Unknown/revoked/inactive/expired credentials are denied; no identity is disclosed for denied guard attempts. This software workflow does not establish physical RF reliability.

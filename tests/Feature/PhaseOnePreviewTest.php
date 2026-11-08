@@ -39,7 +39,7 @@ class PhaseOnePreviewTest extends TestCase
                 ->component('Workspace')
                 ->where('page', $page)
                 ->where('app.preview', true)
-                ->where('app.phase', 4)
+                ->where('app.phase', 5)
                 ->missing('auth')
                 ->missing('users'));
     }

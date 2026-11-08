@@ -34,7 +34,13 @@ export function ManagementPage({
             )}
             <PageHeading
                 eyebrow={
-                    page === 'students' || page === 'employees' ? 'People' : 'Access management'
+                    page === 'scanner'
+                        ? 'Gate operations'
+                        : page === 'history'
+                          ? 'Gate activity'
+                          : page === 'students' || page === 'employees'
+                            ? 'People'
+                            : 'Access management'
                 }
                 title={title}
                 description={description}

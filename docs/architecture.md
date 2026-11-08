@@ -1,6 +1,6 @@
 # NFCheck architecture proposal
 
-Status: **Phases 1–4 implemented locally**: foundation, authentication, people/gates/assignments and credential lifecycles. The scanning/passage/reporting sections below remain future design. See [the Phase 4 report](phase-4-report.md) for delivered scope and verification. Guard operations require Phase 5 approval; physical NFC is untested.
+Status: **Phases 1–5 implemented locally**, including assigned-guard verification, identity review, confirmed passage and recent activity. Broader reporting/correction/anomaly design remains future work. See [the Phase 5 report](phase-5-report.md). Physical NFC is untested; Phase 6 awaits approval. User-selected development defaults are 30-second review validity and a 10-second duplicate window.
 
 ## Purpose and boundaries
 
