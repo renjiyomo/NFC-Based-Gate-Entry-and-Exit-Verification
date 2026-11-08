@@ -2,7 +2,7 @@
 
 **NFC-Based Campus Gate Entry and Exit Verification and Monitoring System with Data Analytics, Anomaly Detection, and AI-Generated Summaries for Bicol University Polangui**
 
-Current checkpoint: **Phase 6 software/USB, core phone flow, coin-reuse safeguards and NFC diagnostic recovery checks are verified in the hardware workspace, with RF/browser actions reported by the user and saved state independently checked. Remaining physical acceptance tests are pending. Phase 7 is not started.**
+Current checkpoint: **Core Phase 6 implementation and the controlled vivo/NTAG215 session are complete: issuance, coin-reuse safeguards, NFC diagnostics, duplicate suppression and connection-loss recovery are verified with user-reported RF/UI results and independently checked server state. Full physical readiness remains partially verified; broader device/tag, two-guard and post-commit response-loss cases are unperformed. Phase 7 is not started.**
 
 Open [NFCheck sign-in](http://127.0.0.1:8000/login). Account security, people/gates/guards, access grants, credential lifecycles and assigned-guard verification are connected to isolated Oracle MySQL. Guards choose Entry or Exit, verify a reference, review identity and explicitly confirm observed passage. Retries recover the same operation, duplicate passages are suppressed and recent permitted activity refreshes. The core physical NFC workflow has been exercised in the isolated hardware workspace; remaining device/failure cases and operational validation are pending. Monitoring analytics, exports and AI remain later phases.
 
