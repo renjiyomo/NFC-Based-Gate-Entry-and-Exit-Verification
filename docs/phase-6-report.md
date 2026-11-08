@@ -46,6 +46,12 @@ After an accidental USB unplug/replug, Connect/Status restored and verified the 
 
 The user subsequently reported **Blocked access refused; restored permission read succeeded** after temporarily blocking only this site's NFC permission, attempting Check NFC access, restoring Allow and requesting a fresh format read. This is user-reported browser permission refusal and successful recovery; exact refusal wording was not provided. A separate runtime check found hardware **9 credentials / 15 attempts / 3 passages**, no pending reviews, main/simulator unchanged and owned USB forwarding active. No new issuance or passage was created. NFC setup's supported diagnostic cases are now covered by user-reported outcomes. Next is guard-side rejection of the third coin's cancelled HW-SAFETY-01 reference; unlike a format check, this uses server lifecycle validation. That guard test has been requested but its outcome is pending.
 
+## Guard rejection and repeated-tap checks
+
+The user reported **Cancelled credential rejected; no identity shown** after presenting the third HW-SAFETY-01 coin to guard1 at HW-GATE-01 / Entry. A separate DB query found **two** physical-source attempts for that reference, received at **03:29:29.003248** and **03:30:26.649492 Asia/Manila on November 9** (19:29:29.003248 / 19:30:26.649492 UTC November 8). Both are **denied / cancelled**, review **not_applicable**, and neither has a linked passage. Hardware counts are now **9 credentials / 17 attempts / 3 passages**; active student09 and employee08 selections are unchanged. The guard's absent identity and RF taps are user-reported; saved denials and no linked passages are independently verified. Denied scans correctly remain in attempt history without becoming passage events.
+
+Next requested physical case: two explicit staged Entry confirmations using unchanged employee HW-TAG-08, guard1 and HW-GATE-01, with the second aimed within the configured 10-second duplicate window. The second result and exact DB timing must be checked before declaring suppression successful. A repeat outside that window is not a duplicate-policy failure. Synthetic campus-document comparison remains a lab exercise, not institutional identity validation. Outcome pending; no new result inferred yet.
+
 ## Implemented
 
 - Shared `NdefAdapter` starts native NFC directly from the user's button gesture. It allows one radio operation at a time, attaches read listeners before scan, stops after the first result and releases listeners/signals on success, error, cancellation or a 30-second timeout. Timeout/cancel also settle if the native promise fails to respond to abort.
@@ -103,7 +109,7 @@ NFC Tools' Read tab reports tag details and writable/locked status. NXP distingu
 | NFC off / screen lock / restore and retry | Safe stop and actionable prompt; explicit new gesture after recovery | User reports lock stopped without restarting, NFC-off note to enable NFC, then both active coins read successfully through fresh format checks after NFC restored; counts unchanged |
 | Browser NFC permission denied / restored | Refusal while blocked; fresh explicit read succeeds after restoration | User reports blocked access refused and fresh read succeeded after restoring Allow; runtime counts unchanged, exact refusal wording not supplied |
 | Repeated physical taps / same reference across two guards | At most one passage inside configured duplicate window | Not performed; MySQL concurrency tests only |
-| Unknown / malformed / revoked / replaced physical tag | Backend denies or parser rejects without identity leakage | Saved physical-source HW-TAG-05/06 revoked denials have no passage; exact taps not independently observed. Blank rejection user-reported. Remaining cases pending |
+| Cancelled / revoked / unknown / malformed / replaced physical tag | Backend denies or parser rejects without identity leakage | User reports safety01 cancelled denial/no identity; two physical-source cancelled attempts saved with no passage. HW-TAG-05/06 revoked denials also saved. Blank rejection user-reported; remaining cases pending |
 | Network interruption before verification and during confirmation | No cached authorization; recover same request without duplicate passage | Not performed; existing recovery/idempotency tests only |
 
 ## Limits and next step
