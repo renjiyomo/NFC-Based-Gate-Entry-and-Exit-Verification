@@ -18,6 +18,7 @@
 !/storage/framework/sessions/.gitignore
 /storage/framework/views/*
 !/storage/framework/views/.gitignore
+/storage/framework/testing/
 /storage/logs/*
 !/storage/logs/.gitignore
 /bootstrap/cache/*

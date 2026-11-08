@@ -7,16 +7,21 @@ use App\Enums\RecordStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Person extends Model
 {
+    use SoftDeletes;
+
+    public const DELETED_AT = 'archived_at';
+
     protected $table = 'persons';
 
     protected $fillable = ['person_type', 'campus_number', 'full_name', 'photo_path', 'status'];
 
     protected function casts(): array
     {
-        return ['person_type' => PersonType::class, 'status' => RecordStatus::class];
+        return ['person_type' => PersonType::class, 'status' => RecordStatus::class, 'record_version' => 'integer', 'archived_at' => 'immutable_datetime'];
     }
 
     protected static function booted(): void

@@ -45,6 +45,8 @@ class AppServiceProvider extends ServiceProvider
         });
         RateLimiter::for('reset', fn (Request $request) => Limit::perMinute(10)->by(app(AuditLogger::class)->fingerprint((string) $request->ip())));
         RateLimiter::for('password-change', fn (Request $request) => Limit::perMinute(5)->by((string) $request->user()->id));
+        RateLimiter::for('management', fn (Request $request) => Limit::perMinute(60)->by((string) $request->user()->id));
+        RateLimiter::for('guard-setup', fn (Request $request) => Limit::perMinute(5)->by((string) $request->user()->id));
         ResetPassword::createUrlUsing(fn (User $user, string $token): string => rtrim(config('app.url'), '/').'/reset-password/'.rawurlencode($token).'?email='.rawurlencode($user->email));
     }
 }

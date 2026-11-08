@@ -50,7 +50,7 @@ function Navigation({ page, close }: { page: PageId; close?: () => void }) {
 }
 
 export default function AppLayout({ page, children }: { page: PageId; children: ReactNode }) {
-    const { navigation, preview, user, flash } = useWorkspace();
+    const { navigation, preview, user, flash, testWorkspace } = useWorkspace();
     const drawer = useRef<HTMLDialogElement>(null);
     const information = useRef<HTMLDialogElement>(null);
     const current = navigation.find((item) => item.id === page) ?? navigation[0];
@@ -137,6 +137,11 @@ export default function AppLayout({ page, children }: { page: PageId; children: 
                 </header>
                 <main id="main-content" tabIndex={-1} aria-label={`${current.label} content`}>
                     <div className="content-container">
+                        {testWorkspace && (
+                            <p className="test-workspace-notice">
+                                Test workspace · Isolated records used for development checks.
+                            </p>
+                        )}
                         {flash?.status && (
                             <p className="auth-status" role="status">
                                 {flash.status}
@@ -205,7 +210,7 @@ export default function AppLayout({ page, children }: { page: PageId; children: 
                 <p>
                     {preview
                         ? 'Explore the navigation, layouts, and gate direction controls. No operational data is saved from this preview.'
-                        : 'Sign-in, password recovery, role restrictions, and account audit records are connected. People management and gate operations are awaiting later development phases.'}
+                        : 'Account security, people and gate management, access grants, and guard assignments are connected. NFC issuance and gate operations await later development phases.'}
                 </p>
                 <div className="dialog-note">
                     <strong>Before gate operations</strong>

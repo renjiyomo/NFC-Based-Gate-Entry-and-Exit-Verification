@@ -3,6 +3,12 @@
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\SessionController;
+use App\Http\Controllers\Management\AssignmentController;
+use App\Http\Controllers\Management\AuthorizationController;
+use App\Http\Controllers\Management\ChoiceController;
+use App\Http\Controllers\Management\GateController;
+use App\Http\Controllers\Management\GuardController;
+use App\Http\Controllers\Management\PersonController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Middleware\EnsureLocalPreview;
@@ -25,6 +31,32 @@ Route::middleware('auth')->group(function (): void {
     Route::put('/account/password', [PasswordController::class, 'update'])->middleware('throttle:password-change')->name('password.change');
 });
 Route::middleware(['auth', 'auth.session', EnsurePasswordChanged::class])->group(function (): void {
+    Route::prefix('admin')->middleware('can:admin.workspace')->name('admin.')->group(function (): void {
+        Route::get('/choices/{kind}', ChoiceController::class)->whereIn('kind', ['gates', 'guards'])->name('choices');
+        Route::get('/{directory}', [PersonController::class, 'index'])->whereIn('directory', ['students', 'employees'])->name('people.index');
+        Route::get('/{directory}/create', [PersonController::class, 'create'])->whereIn('directory', ['students', 'employees'])->name('people.create');
+        Route::post('/{directory}', [PersonController::class, 'store'])->whereIn('directory', ['students', 'employees'])->middleware('throttle:management')->name('people.store');
+        Route::get('/{directory}/{person}/photo', [PersonController::class, 'photo'])->whereIn('directory', ['students', 'employees'])->whereNumber('person')->withTrashed()->name('people.photo');
+        Route::get('/{directory}/{person}/edit', [PersonController::class, 'edit'])->whereIn('directory', ['students', 'employees'])->whereNumber('person')->withTrashed()->name('people.edit');
+        Route::get('/{directory}/{person}', [PersonController::class, 'show'])->whereIn('directory', ['students', 'employees'])->whereNumber('person')->withTrashed()->name('people.show');
+        Route::match(['put', 'patch'], '/{directory}/{person}', [PersonController::class, 'update'])->whereIn('directory', ['students', 'employees'])->whereNumber('person')->withTrashed()->middleware('throttle:management')->name('people.update');
+        Route::delete('/{directory}/{person}', [PersonController::class, 'destroy'])->whereIn('directory', ['students', 'employees'])->whereNumber('person')->withTrashed()->middleware('throttle:management')->name('people.destroy');
+        Route::post('/{directory}/{person}/restore', [PersonController::class, 'restore'])->whereIn('directory', ['students', 'employees'])->whereNumber('person')->withTrashed()->middleware('throttle:management')->name('people.restore');
+        Route::post('/{directory}/{person}/grants', [AuthorizationController::class, 'store'])->whereIn('directory', ['students', 'employees'])->whereNumber('person')->middleware('throttle:management')->name('people.grants.store');
+        Route::delete('/{directory}/{person}/grants/{grant}', [AuthorizationController::class, 'destroy'])->whereIn('directory', ['students', 'employees'])->whereNumber('person')->withTrashed()->middleware('throttle:management')->name('people.grants.destroy');
+
+        Route::resource('gates', GateController::class)->withTrashed()->middlewareFor(['store', 'update', 'destroy'], 'throttle:management');
+        Route::post('/gates/{gate}/restore', [GateController::class, 'restore'])->withTrashed()->middleware('throttle:management')->name('gates.restore');
+        Route::resource('guards', GuardController::class)->parameters(['guards' => 'guard'])->withTrashed()->middlewareFor(['store', 'update', 'destroy'], 'throttle:management');
+        Route::post('/guards/{guard}/restore', [GuardController::class, 'restore'])->withTrashed()->middleware('throttle:management')->name('guards.restore');
+        Route::post('/guards/{guard}/setup-link', [GuardController::class, 'setup'])->middleware('throttle:guard-setup')->name('guards.setup');
+        Route::post('/gates/{gate}/assignments', [AssignmentController::class, 'gateStore'])->middleware('throttle:management')->name('assignments.store');
+        Route::post('/guards/{guard}/assignments', [AssignmentController::class, 'guardStore'])->middleware('throttle:management')->name('guards.assignments.store');
+        Route::put('/gates/{gate}/assignments/{assignment}', [AssignmentController::class, 'gateUpdate'])->middleware('throttle:management')->name('assignments.update');
+        Route::put('/guards/{guard}/assignments/{assignment}', [AssignmentController::class, 'guardUpdate'])->middleware('throttle:management')->name('guards.assignments.update');
+        Route::delete('/gates/{gate}/assignments/{assignment}', [AssignmentController::class, 'gateDestroy'])->withTrashed()->middleware('throttle:management')->name('assignments.destroy');
+        Route::delete('/guards/{guard}/assignments/{assignment}', [AssignmentController::class, 'guardDestroy'])->withTrashed()->middleware('throttle:management')->name('guards.assignments.destroy');
+    });
     Route::get('/admin/dashboard', [WorkspaceController::class, 'admin'])->middleware('can:admin.workspace')->name('admin.dashboard');
     Route::get('/admin/{page}', [WorkspaceController::class, 'admin'])->middleware('can:admin.workspace')->name('admin.workspace');
     Route::get('/guard/scanner', [WorkspaceController::class, 'guard'])->middleware('can:guard.workspace')->name('guard.scanner');

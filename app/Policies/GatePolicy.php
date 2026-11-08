@@ -30,7 +30,12 @@ class GatePolicy
 
     public function operate(User $user, Gate $gate): bool
     {
-        return $user->isGuard() && $gate->status === RecordStatus::Active
+        return $user->isGuard() && ! $gate->trashed() && $gate->status === RecordStatus::Active
             && $user->guardAssignments()->where('gate_id', $gate->id)->effective()->exists();
+    }
+
+    public function archive(User $user, Gate $gate): bool
+    {
+        return $user->isAdmin();
     }
 }

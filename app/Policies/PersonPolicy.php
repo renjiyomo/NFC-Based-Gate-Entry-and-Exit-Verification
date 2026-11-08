@@ -31,4 +31,9 @@ class PersonPolicy
     {
         return false;
     }
+
+    public function archive(User $user, Person $person): bool
+    {
+        return $user->isAdmin();
+    }
 }

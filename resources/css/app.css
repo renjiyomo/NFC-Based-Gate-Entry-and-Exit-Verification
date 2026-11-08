@@ -2631,6 +2631,9 @@ html:has(dialog[open]) {
 }
 .account-label {
     display: grid;
+    min-width: 0;
+    max-width: 240px;
+    overflow-wrap: anywhere;
     gap: 3px;
     font-size: 0.8rem;
 }
@@ -2642,11 +2645,349 @@ html:has(dialog[open]) {
     .topbar {
         flex-wrap: wrap;
         gap: 8px;
+        height: auto;
+        min-height: 64px;
+        padding-block: 8px;
     }
     .topbar-right {
         margin-left: auto;
+        max-width: 100%;
     }
     .auth-main {
         padding: 20px 12px;
     }
+}
+.management-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    color: var(--primary);
+    margin-bottom: 12px;
+}
+.management-form {
+    padding: 24px;
+}
+.management-form .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 24px;
+}
+.management-form .form-field + .form-field,
+.directory-filters .form-field + .form-field {
+    margin-top: 0;
+}
+.form-field select {
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+}
+.management-form > .form-field,
+.management-form form > .form-field {
+    margin-block: 20px;
+}
+.field-hint,
+.form-note {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+    margin-top: 8px;
+}
+.form-note {
+    padding: 16px;
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    margin-top: 24px;
+}
+.form-actions,
+.record-actions,
+.row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+.form-actions {
+    margin-top: 24px;
+}
+.form-errors {
+    border: 1px solid var(--error);
+    background: var(--error-bg);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    overflow-wrap: anywhere;
+}
+.form-errors ul {
+    padding-left: 20px;
+    margin-block: 8px;
+}
+.form-errors a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--primary);
+}
+.required-mark {
+    color: var(--institution-accent);
+}
+.directory-filters {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-soft);
+}
+.filter-fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+.filter-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+}
+.management-table {
+    max-width: 100%;
+}
+.management-table .data-table td {
+    padding: 18px 24px;
+    border-top: 1px solid var(--border-soft);
+    vertical-align: middle;
+}
+.management-table .data-table small {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 4px;
+}
+.management-table .data-table td {
+    overflow-wrap: anywhere;
+    max-width: 360px;
+}
+.row-link {
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 550;
+}
+.identity-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 180px;
+}
+.person-portrait {
+    display: block;
+    width: 44px;
+    height: 52px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid var(--border-soft);
+}
+.portrait-placeholder {
+    display: grid;
+    place-items: center;
+    color: var(--subtle);
+    background: var(--soft);
+}
+.photo-editor {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 20px;
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-soft);
+}
+.photo-editor .person-portrait,
+.identity-summary .person-portrait {
+    width: 96px;
+    height: 112px;
+}
+.photo-editor input[type='file'] {
+    padding: 10px;
+    height: auto;
+    min-height: 48px;
+}
+.checkbox-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    margin-top: 12px;
+    color: var(--muted);
+}
+.checkbox-control input {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--primary);
+}
+.record-detail-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 24px;
+    margin-bottom: 24px;
+}
+.identity-summary {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 24px;
+}
+.identity-summary p {
+    margin-top: 8px;
+}
+.record-facts {
+    padding: 0 24px 24px;
+}
+.record-facts > div {
+    display: grid;
+    grid-template-columns: minmax(110px, 1fr) minmax(0, 1.3fr);
+    gap: 16px;
+    padding-block: 16px;
+    border-bottom: 1px solid var(--border-soft);
+}
+.record-facts dt {
+    color: var(--muted);
+    font-size: 12px;
+}
+.record-facts dd {
+    overflow-wrap: anywhere;
+}
+.panel-message {
+    padding: 24px;
+    color: var(--muted);
+    line-height: 1.8;
+}
+.management-pagination {
+    padding: 20px 24px;
+    border-top: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    color: var(--muted);
+    font-size: 12px;
+}
+.management-pagination > div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.management-empty {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+    gap: 12px;
+    padding: 56px 24px;
+    color: var(--muted);
+}
+.management-empty h3 {
+    font-size: 16px;
+    color: var(--text);
+}
+.management-dialog {
+    width: min(540px, calc(100vw - 32px));
+    max-height: calc(100dvh - 40px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    background: var(--surface);
+    color: var(--text);
+    margin: auto;
+}
+.management-dialog::backdrop {
+    background: rgb(3 9 18 / 0.8);
+}
+.management-dialog h2 {
+    font-size: 22px;
+    font-weight: 650;
+    margin-bottom: 12px;
+}
+.management-dialog > p {
+    color: var(--muted);
+    line-height: 1.8;
+    margin-bottom: 20px;
+}
+.button-danger {
+    color: var(--error);
+}
+@media (max-width: 1000px) {
+    .record-detail-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .filter-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 640px) {
+    .management-form {
+        padding: 20px;
+    }
+    .management-form .form-grid,
+    .filter-fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .directory-filters {
+        padding: 20px;
+    }
+    .photo-editor {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .record-actions {
+        width: 100%;
+    }
+    .record-actions > .button {
+        flex: 1;
+    }
+    .management-pagination {
+        padding: 16px;
+    }
+    .management-dialog {
+        padding: 22px;
+    }
+    .management-table .data-table {
+        min-width: 720px;
+    }
+    .record-facts {
+        padding-inline: 20px;
+    }
+}
+.management-table .data-table {
+    table-layout: auto;
+    min-width: 720px;
+}
+.choice-picker {
+    display: grid;
+    gap: 12px;
+}
+.choice-feedback {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    color: var(--muted);
+    font-size: 12px;
+}
+.test-workspace-notice {
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    color: var(--primary);
+    background: var(--surface);
+    font-size: 12px;
+}
+.page-heading h1,
+.page-description,
+.management-dialog h2 {
+    overflow-wrap: anywhere;
 }

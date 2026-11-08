@@ -63,9 +63,9 @@ export default function Dashboard() {
                     <p>
                         {preview
                             ? 'This interface preview is ready to explore.'
-                            : 'Your account is signed in.'}{' '}
-                        People management and gate verification will become available in later
-                        development phases.
+                            : 'People, gates, and assignments can now be managed.'}{' '}
+                        Gate verification and passage recording will become available in later
+                        phases.
                     </p>
                 </div>
                 <Badge>{preview ? 'Preview mode' : 'Modules pending'}</Badge>
@@ -124,7 +124,9 @@ export default function Dashboard() {
                                 <strong>Gate assignments</strong>
                                 <small>Assigned stations and security personnel</small>
                             </span>
-                            <span className="readiness-status">Pending</span>
+                            <span className="readiness-status">
+                                {preview ? 'Pending' : 'Available'}
+                            </span>
                         </div>
                         <div>
                             <span className="readiness-icon">
@@ -134,7 +136,9 @@ export default function Dashboard() {
                                 <strong>Identity directory</strong>
                                 <small>Students, employees, and photographs</small>
                             </span>
-                            <span className="readiness-status">Pending</span>
+                            <span className="readiness-status">
+                                {preview ? 'Pending' : 'Available'}
+                            </span>
                         </div>
                         <div>
                             <span className="readiness-icon">
@@ -149,7 +153,7 @@ export default function Dashboard() {
                     </div>
                     <div className="readiness-foot">
                         <ShieldAlert size={16} aria-hidden="true" />
-                        <p>This preview cannot authorize access or record passage.</p>
+                        <p>Gate verification and passage recording are unavailable.</p>
                     </div>
                     <Link className="text-link readiness-link" href={pageUrl('gates')}>
                         View gate stations <ArrowRight size={15} aria-hidden="true" />

@@ -1,6 +1,6 @@
 # Requirements and scope proposal
 
-Status: **Phase 0 design proposal; no module is implemented.** Source: the supplied NFCheck master development prompt, especially Parts 1, 6–8, 10–12, and 16. The revised gate monitoring direction is authoritative over the old-title manuscript.
+Status: **Requirements baseline created in Phase 0.** Authentication and Phase 3 management are now implemented as recorded in [the Phase 3 report](phase-3-report.md); later modules remain planned. Source: the supplied NFCheck master development prompt, especially Parts 1, 6–8, 10–12, and 16. The revised gate monitoring direction is authoritative over the old-title manuscript.
 
 ## Research objective
 

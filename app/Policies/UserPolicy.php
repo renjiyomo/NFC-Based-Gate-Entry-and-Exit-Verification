@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\User;
 
 class UserPolicy
@@ -29,5 +30,10 @@ class UserPolicy
     public function delete(User $user, User $target): bool
     {
         return false;
+    }
+
+    public function manageGuard(User $user, User $target): bool
+    {
+        return $user->isAdmin() && $target->role === UserRole::Guard;
     }
 }

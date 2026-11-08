@@ -17,16 +17,21 @@ class WorkspaceController
 
     public function guard(): Response
     {
-        return Inertia::render('Workspace', ['page' => 'scanner']);
+        return Inertia::render('Workspace', ['page' => 'scanner', 'stations' => $this->stations()]);
     }
 
     public function station(Gate $gate): Response
     {
-        return Inertia::render('Workspace', ['page' => 'scanner', 'station' => ['id' => $gate->id, 'name' => $gate->name, 'code' => $gate->code]]);
+        return Inertia::render('Workspace', ['page' => 'scanner', 'stations' => $this->stations(), 'station' => ['id' => $gate->id, 'name' => $gate->name, 'code' => $gate->code]]);
     }
 
     public function recent(): Response
     {
         return Inertia::render('Workspace', ['page' => 'history']);
+    }
+
+    private function stations(): array
+    {
+        return Gate::where('status', 'active')->whereHas('assignments', fn ($query) => $query->where('guard_id', request()->user()->id)->effective())->orderBy('name')->limit(500)->get(['id', 'name', 'code'])->toArray();
     }
 }

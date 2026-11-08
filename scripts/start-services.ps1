@@ -22,6 +22,7 @@ function Protect-LocalDirectory([string]$Path) {
 }
 
 foreach ($privateFolder in @('secrets','mysql-data','mail')) { Protect-LocalDirectory (Join-Path $serviceTools $privateFolder) }
+Protect-LocalDirectory (Join-Path $serviceRoot 'storage/app/private/person-photos')
 if (-not (Test-Path -LiteralPath $serviceMysql)) { throw 'Verified MySQL 8.4.13 package is required. See docs/database-setup.md.' }
 if (-not (Test-Path -LiteralPath $serviceMailpit)) { throw 'Verified Mailpit 1.33.1 package is required. See docs/database-setup.md.' }
 $mysqlIni = Join-Path $serviceTools 'mysql/my.ini'

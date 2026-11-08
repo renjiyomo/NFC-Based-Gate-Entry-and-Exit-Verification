@@ -20,7 +20,7 @@ class GuardGateAssignment extends Model
     protected static function booted(): void
     {
         static::saving(function (GuardGateAssignment $assignment): void {
-            if (User::find($assignment->guard_id)?->role !== UserRole::Guard) {
+            if ((! $assignment->exists || $assignment->isDirty('guard_id')) && User::find($assignment->guard_id)?->role !== UserRole::Guard) {
                 throw new \DomainException('Only guard accounts can receive gate assignments.');
             }
         });
@@ -35,12 +35,12 @@ class GuardGateAssignment extends Model
 
     public function guardUser(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'guard_id');
+        return $this->belongsTo(User::class, 'guard_id')->withTrashed();
     }
 
     public function gate(): BelongsTo
     {
-        return $this->belongsTo(Gate::class);
+        return $this->belongsTo(Gate::class)->withTrashed();
     }
 
     public function assignedBy(): BelongsTo

@@ -18,8 +18,9 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'app' => [
                 'name' => config('app.name'),
-                'phase' => 2,
+                'phase' => 3,
                 'preview' => $preview,
+                'testWorkspace' => config('database.connections.mysql.database') === 'nfcheck_testing',
             ],
             ...($preview ? [] : ['auth' => ['user' => $user ? ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'role' => $user->role->value, 'mustChangePassword' => $user->must_change_password] : null]]),
             'flash' => ['status' => fn () => $request->session()->get('status')],

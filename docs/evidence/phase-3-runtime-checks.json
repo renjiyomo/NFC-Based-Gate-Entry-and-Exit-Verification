@@ -1,0 +1,119 @@
+{
+    "checked_at_utc": "2026-11-08T08:27:11+00:00",
+    "server": {
+        "version": "8.4.13",
+        "db": "nfcheck"
+    },
+    "main_migration_count": 12,
+    "testing_migration_count": 12,
+    "main_domain_row_counts": {
+        "persons": 0,
+        "student_profiles": 0,
+        "employee_profiles": 0,
+        "gates": 0,
+        "guard_gate_assignments": 0,
+        "access_authorizations": 0
+    },
+    "requested_administrators": [
+        {
+            "email": "alexi@nfcheck.test",
+            "role": "admin",
+            "active": true,
+            "initial_change_required": false
+        },
+        {
+            "email": "pauleen@nfcheck.test",
+            "role": "admin",
+            "active": true,
+            "initial_change_required": true
+        },
+        {
+            "email": "zaidy@nfcheck.test",
+            "role": "admin",
+            "active": true,
+            "initial_change_required": true
+        }
+    ],
+    "testing_row_counts_after_checks": {
+        "persons": 0,
+        "users": 0,
+        "gates": 0,
+        "student_profiles": 0,
+        "employee_profiles": 0,
+        "guard_gate_assignments": 0,
+        "access_authorizations": 0,
+        "audit_logs": 0,
+        "sessions": 0,
+        "password_reset_tokens": 0
+    },
+    "remaining_private_photos": 0,
+    "runtime_grants": [
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT USAGE ON *.* TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT ON `nfcheck`.* TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`access_authorizations` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT ON `nfcheck`.`audit_logs` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`employee_profiles` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`gates` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`guard_gate_assignments` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT ON `nfcheck`.`migrations` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`password_reset_tokens` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`persons` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`sessions` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`student_profiles` TO `nfcheck_app`@`127.0.0.1`"
+        },
+        {
+            "Grants for nfcheck_app@127.0.0.1": "GRANT SELECT, INSERT, UPDATE, DELETE ON `nfcheck`.`users` TO `nfcheck_app`@`127.0.0.1`"
+        }
+    ],
+    "schedule_column_types": [
+        {
+            "TABLE_NAME": "access_authorizations",
+            "COLUMN_NAME": "valid_from",
+            "DATA_TYPE": "datetime",
+            "DATETIME_PRECISION": 6
+        },
+        {
+            "TABLE_NAME": "access_authorizations",
+            "COLUMN_NAME": "valid_until",
+            "DATA_TYPE": "datetime",
+            "DATETIME_PRECISION": 6
+        },
+        {
+            "TABLE_NAME": "guard_gate_assignments",
+            "COLUMN_NAME": "ends_at",
+            "DATA_TYPE": "datetime",
+            "DATETIME_PRECISION": 6
+        },
+        {
+            "TABLE_NAME": "guard_gate_assignments",
+            "COLUMN_NAME": "starts_at",
+            "DATA_TYPE": "datetime",
+            "DATETIME_PRECISION": 6
+        }
+    ],
+    "debug": false,
+    "preview_enabled": false
+}

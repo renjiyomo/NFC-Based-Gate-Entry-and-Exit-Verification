@@ -1,0 +1,67 @@
+import { Link } from '@inertiajs/react';
+import { Panel } from '../../components/ui';
+import {
+    AddLink,
+    DataTable,
+    DirectoryFilters,
+    ManagementPage,
+    Pagination,
+    RecordBadge,
+} from '../../components/management/Common';
+import type { Filters, GateRecord, Paginated } from '../../lib/management';
+
+export default function GatesIndex({
+    records,
+    filters,
+}: {
+    records: Paginated<GateRecord>;
+    filters: Filters;
+}) {
+    return (
+        <ManagementPage
+            page="gates"
+            title="Gate stations"
+            description="Manage campus gates and scheduled security assignments."
+            action={<AddLink href="/admin/gates/create">Add gate station</AddLink>}
+        >
+            <Panel title="Campus gates" subtitle="Station identities and record status">
+                <DirectoryFilters filters={filters} url="/admin/gates" />
+                <DataTable
+                    caption="Campus gates"
+                    columns={[
+                        'Gate station',
+                        'Gate code',
+                        'Record status',
+                        'Current schedules',
+                        'Details',
+                    ]}
+                    empty="No gate stations match these filters"
+                    count={records.data.length}
+                >
+                    {records.data.map((gate) => (
+                        <tr key={gate.id}>
+                            <td>
+                                <strong>{gate.name}</strong>
+                            </td>
+                            <td>{gate.code}</td>
+                            <td>
+                                <RecordBadge status={gate.status} archived={gate.archived_at} />
+                            </td>
+                            <td>{gate.assignments_count}</td>
+                            <td>
+                                <Link
+                                    className="row-link"
+                                    href={`/admin/gates/${gate.id}`}
+                                    aria-label={`View ${gate.name}`}
+                                >
+                                    View station
+                                </Link>
+                            </td>
+                        </tr>
+                    ))}
+                </DataTable>
+                <Pagination records={records} />
+            </Panel>
+        </ManagementPage>
+    );
+}

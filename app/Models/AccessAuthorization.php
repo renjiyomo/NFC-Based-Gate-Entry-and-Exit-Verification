@@ -21,12 +21,12 @@ class AccessAuthorization extends Model
         $at ??= now();
         $query->where('status', 'active')->whereNull('revoked_at')->where('valid_from', '<=', $at)
             ->where(fn (Builder $q) => $q->whereNull('valid_until')->orWhere('valid_until', '>', $at))
-            ->whereHas('person', fn (Builder $q) => $q->where('status', 'active'));
+            ->whereHas('person', fn (Builder $q) => $q->where('status', 'active')->whereNull('archived_at'));
     }
 
     public function person(): BelongsTo
     {
-        return $this->belongsTo(Person::class);
+        return $this->belongsTo(Person::class)->withTrashed();
     }
 
     public function grantedBy(): BelongsTo

@@ -13,11 +13,12 @@ import {
     WifiOff,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { router } from '@inertiajs/react';
 import { useWorkspace } from '../lib/workspace';
 import { Badge, Button, ChoiceGroup, EmptyTable, Notice, PageHeading, Panel } from './ui';
 
 export default function Scanner() {
-    const { preview, user, station } = useWorkspace();
+    const { preview, user, station, stations } = useWorkspace();
     const [direction, setDirection] = useState<'entry' | 'exit'>('entry');
     const [browser, setBrowser] = useState<{ online: boolean; hasNfcApi: boolean } | null>(null);
 
@@ -60,12 +61,25 @@ export default function Scanner() {
                     <label htmlFor="gate-station">
                         <DoorOpen size={16} aria-hidden="true" /> Gate station
                     </label>
-                    <select id="gate-station" disabled>
-                        <option>
-                            {station
-                                ? `${station.code} · ${station.name}`
-                                : 'Gate assignment management pending'}
+                    <select
+                        id="gate-station"
+                        disabled={preview || !stations.length}
+                        value={station?.id ?? ''}
+                        onChange={(event) => {
+                            if (event.target.value)
+                                router.get(`/guard/gates/${event.target.value}/scanner`);
+                        }}
+                    >
+                        <option value="">
+                            {stations.length
+                                ? 'Choose an assigned station'
+                                : 'No current gate assignments'}
                         </option>
+                        {stations.map((item) => (
+                            <option key={item.id} value={item.id}>
+                                {item.code} · {item.name}
+                            </option>
+                        ))}
                     </select>
                 </div>
                 <div className="station-session">
@@ -77,7 +91,7 @@ export default function Scanner() {
                         <span>
                             {station
                                 ? 'Station assignment verified'
-                                : 'Choose an assigned station when gate management is available'}
+                                : 'Choose a current assigned station to view its context'}
                         </span>
                     </div>
                 </div>

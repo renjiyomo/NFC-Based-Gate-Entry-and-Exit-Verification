@@ -23,6 +23,8 @@ Runtime accounts cannot create/alter/drop tables, modify/delete audit rows, gran
 
 Both schemas have ten application tables plus Laravel's migration ledger: persons, users, student_profiles, employee_profiles, gates, access_authorizations, guard_gate_assignments, audit_logs, sessions and password_reset_tokens. Later NFC/verification/passage/reporting tables are deferred. See [database design](database.md).
 
+Phase 3 brings the ledger to 12 applied migrations. Persons/gates/users support retained archives and edit versions; access/assignment schedule columns use UTC DATETIME(6). Archive operations deactivate records and revoke related permissions; restoration leaves them inactive. The main schema has no development people/gates. Transaction fixtures and disposable browser QA were confined to `nfcheck_testing` and removed after checks.
+
 ## Setup
 
 ```powershell
@@ -42,6 +44,8 @@ Initialization refuses unknown nonempty data directories. MySQL secure initializ
 The migration helper verifies the exact project data directory, version and fixed schemas before using its migration credential. Each migration also checks its target before up/down. Routine startup does not automatically apply migrations. Never use shared databases or generic reset commands.
 
 Private directories and environment files have Windows ACLs restricted to the current account and SYSTEM. They are ignored by Git and outside the served public directory. Private handoff/database credential files are unencrypted on disk; Windows administrators/the current account can access them. Do not share or include them in screenshots.
+
+Private normalized photos live in `storage/app/private/person-photos`; service startup also restricts this directory to the Windows user and SYSTEM. Local disk automatic serving is disabled. The administrator-authorized photo endpoint is the only application delivery route; no public symlink is created.
 
 ## Authentication configuration
 

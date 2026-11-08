@@ -2,9 +2,9 @@
 
 **NFC-Based Campus Gate Entry and Exit Verification and Monitoring System with Data Analytics, Anomaly Detection, and AI-Generated Summaries for Bicol University Polangui**
 
-Current checkpoint: **Phase 2 — database and authentication completed. Awaiting approval for Phase 3.**
+Current checkpoint: **Phase 3 — student, employee, gate and guard-assignment management completed. Awaiting approval for Phase 4.**
 
-Open [NFCheck sign-in](http://127.0.0.1:8000/login). Sign-in, password changes/recovery, role restrictions, encrypted database sessions and account audits are connected to isolated Oracle MySQL. People/gate management, credentials, NFC scanning, passage recording, statistics, exports and AI await their approved phases. No operational statistics or institutional records are fabricated.
+Open [NFCheck sign-in](http://127.0.0.1:8000/login). Account security and student/employee/gate/guard management are connected to isolated Oracle MySQL. Manage private photos, access grants and gate assignments; search/filter/paginate records and archive/restore them with retained history. NFC credentials, scanning, passage recording, statistics, exports and AI await their approved phases. No operational statistics or institutional records are fabricated.
 
 The three requested local administrators are **alexi@nfcheck.test**, **pauleen@nfcheck.test**, and **zaidy@nfcheck.test**. Each has a different generated initial password in the ignored, Windows-access-restricted `.tools/secrets/initial-accounts.json`. A personal password is required on first sign-in. Passwords are never committed or printed in reports.
 
@@ -37,6 +37,7 @@ Normal workspace routes require authentication and server-side authorization. Op
 
 | Document | Contents |
 | --- | --- |
+| [Phase 3 report](docs/phase-3-report.md) | Connected management workflows, schema changes, tests and UI evidence |
 | [Phase 2 report](docs/phase-2-report.md) | Features, schema, checks, evidence and checkpoint |
 | [Development](docs/development.md) | Setup/startup, commands, routes and troubleshooting |
 | [Database setup](docs/database-setup.md) | Service provenance, privileges and private credentials |

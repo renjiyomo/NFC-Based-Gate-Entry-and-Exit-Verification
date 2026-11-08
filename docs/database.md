@@ -1,6 +1,6 @@
 # NFCheck database and ERD proposal
 
-Status: **Phase 2 core subset implemented** on isolated Oracle MySQL 8.4.13. The larger ERD below remains a future design. See [database setup](database-setup.md) for actual instances/permissions and [the Phase 2 report](phase-2-report.md) for verification.
+Status: **Phase 3 management implemented** on the Phase 2 core schema in isolated Oracle MySQL 8.4.13. The larger ERD below remains a future design. See [database setup](database-setup.md) for instances/permissions and [the Phase 3 report](phase-3-report.md) for current verification.
 
 ## Implemented Phase 2 subset
 
@@ -25,7 +25,9 @@ erDiagram
 - Authorization/assignment validity uses inclusive starts and exclusive ends. MySQL CHECK constraints reject invalid intervals; scopes reject revoked/expired/future records, and inactive people override authorizations. Gate policies also require active guards/gates and the exact assignment.
 - Session payloads are encrypted. Password reset hashes are separate from account passwords and expire after 30 minutes.
 
-Core models have been tested with transaction-scoped synthetic fixtures. Main-schema people, profiles, gates, authorizations and assignments remain empty. Phase 3 management screens and all credential/verification/passage/analytics tables remain deferred.
+Phase 3 adds archived_at/record_version to persons, gates and users, plus archival indexes. Scheduled access/assignment intervals use DATETIME(6), stored in UTC. There are now 12 applied migrations in each schema. The main schema contains no development people/gates; QA fixtures were confined to testing and removed.
+
+Management services preserve historical references, use edit versions/row locks, reject overlapping grants or same-guard/same-gate schedules, and audit mutations transactionally. DELETE endpoints archive; restoration leaves records inactive. Archiving people revokes grants; archiving gates/guards revokes assignments. Disabling guards also removes sessions and reset tokens. Credential/verification/passage/analytics tables remain deferred.
 
 ## Longer-term relational proposal
 
