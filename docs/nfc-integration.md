@@ -1,6 +1,6 @@
 # NFC integration and credential lifecycle
 
-Status: **Phase 6 software/USB and initial staged NFC flow verified; live-coin overwrite blocks user-confirmed, remaining physical retest pending**. The current phone is **vivo V2318 / Android 16 / Chrome 156.0.8078.79**. The user reports NFC access, coin write/read-back/activation, Entry/Exit and blank-coin rejection. Initial HW-TAG-01 student passages are retained, but that credential is now revoked/withdrawn after reported physical overwrite. Employee HW-TAG-08 and restored student HW-TAG-09 are active/selected; the user confirms they are on two separate coins and both show the correct owner and block overwrite. The campus-document method was a synthetic lab comparison, not institutional identity validation. RF actions are user-reported; the earlier Samsung access result remains a separate probe. See [Phase 6 status](phase-6-report.md) for checkpoints and remaining cases.
+Status: **Phase 6 core flow and coin-reuse safeguards verified; remaining interruption/device acceptance pending**. The current phone is **vivo V2318 / Android 16 / Chrome 156.0.8078.79**. The user reports NFC access, coin write/read-back/activation, Entry/Exit and blank rejection. Employee HW-TAG-08 and restored student HW-TAG-09 are active/selected on two separate coins. Controlled safety01 tests report live-coin blocks, wrong destination rejected before write, correct destination write, wrong read-back rejection, and invalidation after an earlier matching read. Safety01 is cancelled with no activation; the two current selections and passages are unchanged. Initial HW-TAG-01 is revoked/withdrawn after reported overwrite, with history retained. Campus-document comparisons were synthetic lab exercises. RF/button results are user-reported; saved backend state is independently checked. See [Phase 6 status](phase-6-report.md) for checkpoints and remaining cases.
 
 ## Supported target and limits
 
@@ -43,7 +43,7 @@ The registry's **Current: active and pending** filter shows live references. **V
 
 If a coin was overwritten or erased externally, the server cannot discover that automatically. Identify and retire the old reference, then issue a fresh one onto the intended coin. A scan during read-back checks the data currently on the coin: writing an employee reference onto a student coin and then reading it back will match that employee issuance. That is different from presenting an unchanged student's reference during an employee read-back, which must fail.
 
-The pre-write check reduces accidental overwrites in this flow. Any browser-provided serial stays transient and is only an additional destination-change check; it is not trusted authentication or a permanent coin identity. Web NFC cannot attest a physical write, prevent an external app from overwriting data, or prevent reference copying. Writing from a reading event is supported by the [Web NFC specification](https://w3c-cg.github.io/web-nfc/). Physical retesting of this guarded writer is still required.
+The pre-write check reduces accidental overwrites in this flow. Any browser-provided serial stays transient and is only an additional destination-change check; it is not trusted authentication or a permanent coin identity. Web NFC cannot attest a physical write, prevent an external app from overwriting data, or prevent reference copying. Writing from a reading event is supported by the [Web NFC specification](https://w3c-cg.github.io/web-nfc/). Controlled guarded-writer success and changed-destination rejection have now been user-reported on the vivo; broader interruption/device acceptance is still required.
 
 ## Implemented scan and passage flow — Phase 5
 
@@ -79,7 +79,7 @@ Record model, Android build, Chrome version, tag type/supplier, NDEF state, app 
 5. Interrupt network before verification and during confirmation; prove the same operation produces at most one passage after recovery.
 6. Compare recorded server outcomes with guard observations; record failures and latency without claiming perfect identity assurance.
 
-The vivo and four repurposed NTAG215 coins are available. Initial issuance, staged Entry/Exit, blank rejection and saved revocation denials have evidence in the Phase 6 report. The guarded writer and remaining interruption/device cases still require physical acceptance; mock/browser checks do not establish RF readiness.
+The vivo and four repurposed NTAG215 coins are available. Initial issuance, staged Entry/Exit, blank rejection and saved revocation denials have evidence in the Phase 6 report. The controlled guarded-writer and mismatched-read checks are complete as user-reported phone tests with saved backend state independently verified. Remaining interruption/device cases still require physical acceptance; mock/browser checks do not establish RF readiness.
 
 ### Guard simulator handoff — Phase 5
 
