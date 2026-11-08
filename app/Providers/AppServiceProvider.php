@@ -51,6 +51,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('gate-write', fn (Request $request) => Limit::perMinute(120)->by(config('database.connections.mysql.database').':'.$request->user()->id));
         RateLimiter::for('gate-read', fn (Request $request) => Limit::perMinute(180)->by(config('database.connections.mysql.database').':'.$request->user()->id));
         RateLimiter::for('guard-setup', fn (Request $request) => Limit::perMinute(5)->by(config('database.connections.mysql.database').':'.$request->user()->id));
+        RateLimiter::for('report-export', fn (Request $request) => Limit::perMinute(10)->by(config('database.connections.mysql.database').':'.$request->user()->id));
         ResetPassword::createUrlUsing(fn (User $user, string $token): string => rtrim(config('app.url'), '/').'/reset-password/'.rawurlencode($token).'?email='.rawurlencode($user->email));
     }
 }

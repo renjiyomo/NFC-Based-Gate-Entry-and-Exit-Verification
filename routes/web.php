@@ -12,6 +12,8 @@ use App\Http\Controllers\Management\ChoiceController;
 use App\Http\Controllers\Management\GateController;
 use App\Http\Controllers\Management\GuardController;
 use App\Http\Controllers\Management\PersonController;
+use App\Http\Controllers\Monitoring\ExportController;
+use App\Http\Controllers\Monitoring\MonitoringController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Middleware\EnsureLocalPreview;
@@ -44,7 +46,12 @@ Route::middleware(['auth', 'auth.session', EnsurePasswordChanged::class])->group
             Route::get('/{gate}/attempts/{attempt}/photo', [OperationController::class, 'photo'])->whereNumber('gate')->whereUuid('attempt')->middleware('throttle:gate-read')->name('photo');
         });
     }
-    Route::get('/admin/history', [ActivityController::class, 'index'])->middleware('can:admin.workspace')->name('operations.history');
+    foreach (['dashboard', 'history', 'analytics', 'reports'] as $section) {
+        Route::get('/admin/'.$section, [MonitoringController::class, 'index'])->defaults('section', $section)->middleware('can:admin.workspace')->name($section === 'dashboard' ? 'admin.dashboard' : ($section === 'history' ? 'operations.history' : 'monitoring.'.$section));
+    }
+    Route::get('/admin/reports/export', ExportController::class)->middleware(['can:admin.workspace', 'throttle:report-export'])->name('monitoring.export');
+    Route::get('/admin/history/{view}/{id}', [MonitoringController::class, 'show'])->whereIn('view', ['passages', 'attempts'])->whereUuid('id')->middleware('can:admin.workspace')->name('monitoring.show');
+    Route::post('/admin/history/passages/{event}/corrections', [MonitoringController::class, 'correct'])->whereUuid('event')->middleware(['can:admin.workspace', 'throttle:management'])->name('monitoring.correct');
     Route::get('/admin/history/feed', [ActivityController::class, 'feed'])->middleware(['can:admin.workspace', 'throttle:gate-read'])->name('operations.history.feed');
     Route::get('/guard/activity/feed', [ActivityController::class, 'feed'])->middleware(['can:guard.workspace', 'throttle:gate-read'])->name('operations.activity.feed');
     Route::get('/guard/gates/{gate}/activity', [ActivityController::class, 'feed'])->whereNumber('gate')->middleware(['can:guard.workspace', 'can:operate,gate', 'throttle:gate-read'])->name('operations.station.activity');
@@ -96,7 +103,6 @@ Route::middleware(['auth', 'auth.session', EnsurePasswordChanged::class])->group
         Route::delete('/gates/{gate}/assignments/{assignment}', [AssignmentController::class, 'gateDestroy'])->withTrashed()->middleware('throttle:management')->name('assignments.destroy');
         Route::delete('/guards/{guard}/assignments/{assignment}', [AssignmentController::class, 'guardDestroy'])->withTrashed()->middleware('throttle:management')->name('guards.assignments.destroy');
     });
-    Route::get('/admin/dashboard', [WorkspaceController::class, 'admin'])->middleware('can:admin.workspace')->name('admin.dashboard');
     Route::get('/admin/{page}', [WorkspaceController::class, 'admin'])->middleware('can:admin.workspace')->name('admin.workspace');
     Route::get('/guard/scanner', [ActivityController::class, 'scanner'])->middleware('can:guard.workspace')->name('guard.scanner');
     Route::get('/guard/activity', [ActivityController::class, 'index'])->middleware('can:guard.workspace')->name('guard.activity');

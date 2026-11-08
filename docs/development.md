@@ -89,9 +89,11 @@ The launcher restores PATH/Composer environment changes after use. MySQL/Mailpit
 
 ## Routes
 
+Phase 7 connects administrator `/admin/dashboard`, `/admin/history`, `/admin/analytics` and `/admin/reports`. History details are `/admin/history/{passages|attempts}/{uuid}`. POST `/admin/history/passages/{uuid}/corrections` appends a reasoned note/void/reinstatement with a current revision. GET `/admin/reports/export` accepts `format=csv|xlsx|pdf` and `dataset=summary|passages|attempts` plus the same validated filters. Exports are private, audited and throttled; limits are 10,000 rows for CSV/Excel and 500 for PDF. See [definitions and checks](phase-7-report.md). These features are administrator-only. The PHP minimum is now 8.4; the prepared runtime remains 8.5.12.
+
 - Guest: GET/POST `/login`, `/forgot-password`; GET `/reset-password/{token}`, POST `/reset-password`.
 - Signed-in: POST `/logout`, GET/PUT `/account/password`.
-- Administrators: connected `/admin/students`, `/admin/employees`, `/admin/gates`, `/admin/guards` resources and their create/detail/edit/archive/restore actions. Person photo/grant and gate/guard assignment endpoints are scoped to those records. `/admin/choices/{gates|guards}` supplies bounded searchable choices. Dashboard and later modules retain their honest unavailable states.
+- Administrators: connected `/admin/students`, `/admin/employees`, `/admin/gates`, `/admin/guards` resources and their create/detail/edit/archive/restore actions. Person photo/grant and gate/guard assignment endpoints are scoped to those records. `/admin/choices/{gates|guards}` supplies bounded searchable choices. Monitoring routes above are connected; anomaly/AI modules remain deferred.
 - Guards: `/guard/scanner`, `/guard/activity`; `/guard/gates/{gate}/scanner` additionally requires the exact effective assignment and active gate. NFC verification, separate identity review, confirmation and recent activity are connected; real NFC hardware remains untested.
 - Optional previews: `/preview/login`, `/preview/{page}`, disabled by default. Production always rejects previews.
 - `/up`: lightweight application health, not database readiness.

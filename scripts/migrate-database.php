@@ -49,7 +49,7 @@ foreach ($schemas as $schema => $environment) {
             throw new RuntimeException('Unexpected table identifier.');
         }
         $permissions = match ($table) {
-            'audit_logs', 'scan_attempts', 'access_events' => 'SELECT, INSERT', 'migrations' => 'SELECT', default => 'SELECT, INSERT, UPDATE, DELETE'
+            'audit_logs', 'scan_attempts', 'access_events', 'passage_corrections' => 'SELECT, INSERT', 'migrations' => 'SELECT', default => 'SELECT, INSERT, UPDATE, DELETE'
         };
         $db->exec("GRANT $permissions ON `$schema`.`$table` TO '$user'@'127.0.0.1'");
         if ($table === 'scan_attempts') {

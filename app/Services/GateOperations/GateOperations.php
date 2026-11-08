@@ -82,7 +82,7 @@ class GateOperations
                 $this->fail('identity_method', 'The identity photograph is unavailable. Review a trusted campus identity document or cancel.');
             }
             // The stable person lock serializes different guards and request IDs too.
-            $duplicate = AccessEvent::where('person_id', $attempt->person_id)->where('gate_id', $station->id)->where('direction', $attempt->direction)->where('source', $source)->where('confirmed_at', '>', now()->subSeconds($attempt->duplicate_window_seconds)->format('Y-m-d H:i:s.u'))->where('confirmed_at', '<=', now()->format('Y-m-d H:i:s.u'))->latest('confirmed_at')->latest('id')->sharedLock()->first();
+            $duplicate = AccessEvent::effective()->where('person_id', $attempt->person_id)->where('gate_id', $station->id)->where('direction', $attempt->direction)->where('source', $source)->where('confirmed_at', '>', now()->subSeconds($attempt->duplicate_window_seconds)->format('Y-m-d H:i:s.u'))->where('confirmed_at', '<=', now()->format('Y-m-d H:i:s.u'))->latest('confirmed_at')->latest('id')->sharedLock()->first();
             if ($duplicate) {
                 $this->transition($attempt, 'cancelled', 'duplicate_passage', $guard, $duplicate);
 
@@ -204,12 +204,12 @@ class GateOperations
 
     private function eventData(?AccessEvent $event): ?array
     {
-        return $event ? ['id' => $event->public_id, 'direction' => $event->direction, 'confirmed_at' => $event->confirmed_at->toISOString(), 'source' => $event->source, 'identity_method' => $event->identity_method, 'sequence_notice' => $event->sequence_notice] : null;
+        return $event ? ['id' => $event->public_id, 'direction' => $event->direction, 'confirmed_at' => $event->confirmed_at->toISOString(), 'source' => $event->source, 'identity_method' => $event->identity_method, 'sequence_notice' => $event->sequence_notice, 'voided' => $event->latestDecision?->action === 'void'] : null;
     }
 
     private function sequence(int $personId, string $direction, string $source): ?string
     {
-        $last = AccessEvent::where('person_id', $personId)->where('source', $source)->latest('confirmed_at')->latest('id')->sharedLock()->first();
+        $last = AccessEvent::effective()->where('person_id', $personId)->where('source', $source)->latest('confirmed_at')->latest('id')->sharedLock()->first();
 
         return $last ? ($last->direction === $direction ? 'repeated_'.$direction : null) : ($direction === 'exit' ? 'exit_without_recorded_entry' : null);
     }

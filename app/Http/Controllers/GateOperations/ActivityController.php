@@ -42,7 +42,7 @@ class ActivityController
         $validator = Validator::make($request->query(), ['gate_id' => ['nullable', 'integer', 'min:1']]);
         abort_if($validator->fails(), 422, 'Invalid activity filter.');
         $source = EnsureNfcSimulator::available($request) ? 'simulated' : 'physical';
-        $query = ScanAttempt::with(['gate', 'guardUser', 'person', 'passage', 'duplicate'])->where('source', $source);
+        $query = ScanAttempt::with(['gate', 'guardUser', 'person', 'passage.latestDecision', 'duplicate'])->where('source', $source);
         if (! $admin) {
             abort_unless($user->isGuard(), 403);
             $query->where('received_at', '>=', now()->subMinutes(config('nfcheck.guard_activity_minutes')))
@@ -52,7 +52,7 @@ class ActivityController
         if ($gateId) {
             $query->where('gate_id', $gateId);
         }
-        $records = $query->latest('received_at')->latest('id')->limit($admin ? 50 : 30)->get()->map(fn ($attempt) => ['id' => $attempt->public_id, 'person' => ($admin || $attempt->outcome === 'allowed') ? $attempt->person?->full_name : null, 'gate' => $attempt->gate->code.' · '.$attempt->gate->name, 'guard' => $attempt->guardUser->name, 'direction' => $attempt->direction, 'source' => $attempt->source, 'outcome' => $attempt->outcome, 'reason' => $attempt->reason, 'review_status' => $attempt->effectiveReviewStatus(), 'review_reason' => $attempt->review_reason, 'received_at' => $attempt->received_at->toIso8601String(), 'confirmed_at' => $attempt->passage?->confirmed_at->toIso8601String(), 'duplicate' => $attempt->duplicate_of_event_id !== null]);
+        $records = $query->latest('received_at')->latest('id')->limit($admin ? 50 : 30)->get()->map(fn ($attempt) => ['id' => $attempt->public_id, 'person' => ($admin || $attempt->outcome === 'allowed') ? $attempt->person?->full_name : null, 'gate' => $attempt->gate->code.' · '.$attempt->gate->name, 'guard' => $attempt->guardUser->name, 'direction' => $attempt->direction, 'source' => $attempt->source, 'outcome' => $attempt->outcome, 'reason' => $attempt->reason, 'review_status' => $attempt->effectiveReviewStatus(), 'review_reason' => $attempt->review_reason, 'received_at' => $attempt->received_at->toIso8601String(), 'confirmed_at' => $attempt->passage?->confirmed_at->toIso8601String(), 'voided' => $attempt->passage?->latestDecision?->action === 'void', 'duplicate' => $attempt->duplicate_of_event_id !== null]);
 
         return response()->json(['records' => $records, 'server_time' => now()->toIso8601String(), 'minutes' => $admin ? null : config('nfcheck.guard_activity_minutes'), 'limit' => $admin ? 50 : 30]);
     }

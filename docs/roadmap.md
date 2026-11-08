@@ -1,6 +1,6 @@
 # Phase-by-phase implementation strategy
 
-Status: **Phases 0–5 completed for their approved scopes. Core Phase 6 implementation and the controlled vivo/NTAG215 session are complete; full physical readiness remains partial with unperformed cases listed in the report.** Every phase ends with a report and an explicit stop. Successful tests do not authorize the next phase. See [Phase 6 status](phase-6-report.md). Phase 7 is not started.
+Status: **Phases 0–5 completed for their approved scopes. Core Phase 6 implementation and the controlled vivo/NTAG215 session are complete; full physical readiness remains partial with unperformed cases listed in the report.** Every phase ends with a report and an explicit stop. Successful tests do not authorize the next phase. See [Phase 6 status](phase-6-report.md). Phase 7 is complete for local development: see [the report](phase-7-report.md). Phase 8 is not started.
 
 ## Phase acceptance gates
 

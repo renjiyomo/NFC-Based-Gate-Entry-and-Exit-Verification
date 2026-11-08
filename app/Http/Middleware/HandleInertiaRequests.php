@@ -18,7 +18,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'app' => [
                 'name' => config('app.name'),
-                'phase' => 6,
+                'phase' => 7,
                 'preview' => $preview,
                 'simulator' => EnsureNfcSimulator::available($request),
                 'hardwareLab' => EnsureHardwareWorkspace::available($request),

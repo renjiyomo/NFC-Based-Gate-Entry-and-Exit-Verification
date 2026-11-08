@@ -113,13 +113,15 @@ export default function Scanner({
                 : 0,
         );
         setStatus(
-            result.passage
-                ? `${result.source === 'simulated' ? 'Simulated passage' : 'Observed passage'} recorded: ${result.passage.direction}.`
-                : result.duplicate_of
-                  ? 'Duplicate suppressed. The earlier passage is linked; no second passage was recorded.'
-                  : result.review.status === 'pending'
-                    ? 'Credential authorized. Review the person before confirming passage.'
-                    : reasonLabel(result.review.reason ?? result.verification.reason),
+            result.passage?.voided
+                ? 'The original passage is retained but was voided by an administrator.'
+                : result.passage
+                  ? `${result.source === 'simulated' ? 'Simulated passage' : 'Observed passage'} recorded: ${result.passage.direction}.`
+                  : result.duplicate_of
+                    ? 'Duplicate suppressed. The earlier passage is linked; no second passage was recorded.'
+                    : result.review.status === 'pending'
+                      ? 'Credential authorized. Review the person before confirming passage.'
+                      : reasonLabel(result.review.reason ?? result.verification.reason),
         );
         void activity.refresh();
     }
@@ -471,17 +473,27 @@ export default function Scanner({
                     className="identity-operation-panel"
                     action={
                         <Badge
-                            tone={identity ? 'blue' : operation?.passage ? 'success' : 'neutral'}
+                            tone={
+                                operation?.passage?.voided
+                                    ? 'warning'
+                                    : identity
+                                      ? 'blue'
+                                      : operation?.passage
+                                        ? 'success'
+                                        : 'neutral'
+                            }
                         >
                             {identity
                                 ? `${remaining}s remaining`
-                                : operation?.passage
-                                  ? 'Passage recorded'
-                                  : uncertain
-                                    ? 'Recover status'
-                                    : operation
-                                      ? reviewStatusLabel(operation.review.status)
-                                      : 'Awaiting credential'}
+                                : operation?.passage?.voided
+                                  ? 'Passage voided'
+                                  : operation?.passage
+                                    ? 'Passage recorded'
+                                    : uncertain
+                                      ? 'Recover status'
+                                      : operation
+                                        ? reviewStatusLabel(operation.review.status)
+                                        : 'Awaiting credential'}
                         </Badge>
                     }
                 >
@@ -547,17 +559,19 @@ export default function Scanner({
                         <div className="identity-empty">
                             <UserRound size={50} />
                             <h3>
-                                {operation?.passage
-                                    ? `${operation.passage.direction === 'entry' ? 'Entry' : 'Exit'} passage recorded`
-                                    : operation?.duplicate_of
-                                      ? 'Duplicate passage suppressed'
-                                      : uncertain
-                                        ? 'Server outcome needs recovery'
-                                        : operation?.review.status === 'expired'
-                                          ? 'Review expired'
-                                          : operation?.verification.outcome === 'denied'
-                                            ? 'Credential denied'
-                                            : 'No identity to review'}
+                                {operation?.passage?.voided
+                                    ? 'Original passage voided by an administrator'
+                                    : operation?.passage
+                                      ? `${operation.passage.direction === 'entry' ? 'Entry' : 'Exit'} passage recorded`
+                                      : operation?.duplicate_of
+                                        ? 'Duplicate passage suppressed'
+                                        : uncertain
+                                          ? 'Server outcome needs recovery'
+                                          : operation?.review.status === 'expired'
+                                            ? 'Review expired'
+                                            : operation?.verification.outcome === 'denied'
+                                              ? 'Credential denied'
+                                              : 'No identity to review'}
                             </h3>
                             <p>
                                 {operation?.passage

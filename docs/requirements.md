@@ -1,6 +1,6 @@
 # Requirements and scope proposal
 
-Status: **Requirements baseline created in Phase 0.** Authentication, management, credential lifecycles and assigned-guard verification/passage are implemented as recorded in [the Phase 5 report](phase-5-report.md); later modules remain planned. Physical NFC behavior remains untested. Source: the supplied NFCheck master development prompt, especially Parts 1, 6–8, 10–12, and 16. The revised gate monitoring direction is authoritative over the old-title manuscript.
+Status: **Requirements baseline created in Phase 0.** Authentication, management, credential lifecycles and assigned-guard verification/passage are implemented as recorded in [the Phase 5 report](phase-5-report.md); Phase 7 history, corrections, monitoring and reports are implemented as recorded in [the Phase 7 report](phase-7-report.md). Core physical NFC was tested in the controlled vivo session; broader physical readiness remains partial under [Phase 6](phase-6-report.md). Anomaly review and AI remain planned. Source: the supplied NFCheck master development prompt, especially Parts 1, 6–8, 10–12, and 16. The revised gate monitoring direction is authoritative over the old-title manuscript.
 
 ## Research objective
 

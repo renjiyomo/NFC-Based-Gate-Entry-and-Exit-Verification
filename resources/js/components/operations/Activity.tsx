@@ -116,16 +116,20 @@ export default function Activity({
                                 <td>
                                     <Badge
                                         tone={
-                                            record.confirmed_at
-                                                ? 'success'
-                                                : record.review_status === 'pending'
-                                                  ? 'blue'
-                                                  : 'neutral'
+                                            record.voided
+                                                ? 'warning'
+                                                : record.confirmed_at
+                                                  ? 'success'
+                                                  : record.review_status === 'pending'
+                                                    ? 'blue'
+                                                    : 'neutral'
                                         }
                                     >
-                                        {record.confirmed_at
-                                            ? 'Passage recorded'
-                                            : reviewStatusLabel(record.review_status)}
+                                        {record.voided
+                                            ? 'Passage voided'
+                                            : record.confirmed_at
+                                              ? 'Passage recorded'
+                                              : reviewStatusLabel(record.review_status)}
                                     </Badge>
                                     {record.review_reason && (
                                         <span className="table-secondary">

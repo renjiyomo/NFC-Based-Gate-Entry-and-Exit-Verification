@@ -1,6 +1,12 @@
 # NFCheck database and ERD proposal
 
-Status: **Phase 5 guard verification and passage implemented** in isolated Oracle MySQL 8.4.13. The larger ERD includes future modules. See [database setup](database-setup.md) and [the Phase 5 report](phase-5-report.md).
+Status: **Phase 7 monitoring, corrections and reporting implemented** in isolated Oracle MySQL 8.4.13. The larger ERD includes future modules. See [database setup](database-setup.md) and [the Phase 7 report](phase-7-report.md). Historical sections below describe their own checkpoints.
+
+## Implemented Phase 7 additions
+
+Migration 16 adds `passage_corrections`: public UUID, event/actor foreign keys, note/void/reinstate action, reason and UTC microsecond creation time. It is append-only through model restrictions and SELECT/INSERT-only runtime grants. The latest void/reinstate action determines effectiveness; notes leave it unchanged. Stable person locking and expected correction revisions protect concurrent confirmation/correction. Original attempts and passages remain retained. All four recognized schemas now have 16 migrations.
+
+Compound indexes on source/confirmation time, source/person/confirmation time and source/gate/confirmation time support passages; source/received time supports attempts. Reporting does not require duplicate analytics tables. Common queries implement Manila periods and source isolation. [Query evidence and metric definitions](phase-7-report.md).
 
 ## Implemented Phase 5 additions
 

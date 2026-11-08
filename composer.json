@@ -5,9 +5,11 @@
     "description": "NFCheck campus gate verification and monitoring system",
     "license": "proprietary",
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
+        "dompdf/dompdf": "^3.1.6",
         "inertiajs/inertia-laravel": "^3.0",
-        "laravel/framework": "^13.40"
+        "laravel/framework": "^13.40",
+        "openspout/openspout": "^5.13"
     },
     "require-dev": {
         "laravel/pint": "^1.27",

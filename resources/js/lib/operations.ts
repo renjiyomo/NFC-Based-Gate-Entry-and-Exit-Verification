@@ -5,6 +5,7 @@ export interface Station {
     name: string;
 }
 export interface Passage {
+    voided?: boolean;
     id: string;
     direction: Direction;
     confirmed_at: string;
@@ -38,6 +39,7 @@ export interface Operation {
     duplicate_of: Passage | null;
 }
 export interface ActivityRecord {
+    voided?: boolean;
     id: string;
     person: string | null;
     gate: string;

@@ -38,9 +38,11 @@ export function ManagementPage({
                         ? 'Gate operations'
                         : page === 'history'
                           ? 'Gate activity'
-                          : page === 'students' || page === 'employees'
-                            ? 'People'
-                            : 'Access management'
+                          : page === 'dashboard' || page === 'analytics' || page === 'reports'
+                            ? 'Gate monitoring'
+                            : page === 'students' || page === 'employees'
+                              ? 'People'
+                              : 'Access management'
                 }
                 title={title}
                 description={description}
