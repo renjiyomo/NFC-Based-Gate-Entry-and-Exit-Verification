@@ -1,0 +1,44 @@
+{
+  "verified_at_utc": "2026-11-07T16:00:53.5475839Z",
+  "composer_source_commit": "472b418967419c6124edd91dc6310a3bec091dae",
+  "composer_phar_sha256": "B0C703EC8BE3B20C674ED93FAB15F5CD06A9388A64FBF632010707DA3EA0D3F8",
+  "build_manifest_sha256": "0BF10933AF9F42DEE72DB356C9876471C069D9B5B4440C76BE5878326C068F37",
+  "build_lock_sha256": "C2D084C63D956C90CEDC48DE4AAF654A3EC69D0D536C49CBD37070FFD0F41A80",
+  "compiler_patch_sha256": "86A05E3C91A5057243D46D1868558B2D24F69A45D72A9050B5F6DE361F8A07AA",
+  "mode": "verify-only",
+  "artifacts": [
+    {
+      "name": "PHP 8.5.12-1 x64 NTS",
+      "url": "https://downloads.php.net/~windows/releases/archives/php-8.5.12-1-nts-Win32-vs17-x64.zip",
+      "file": "downloads/php.zip",
+      "sha256": "2a36a2edcb7a5b9252f638fd5e4cf84d7f6e066092654220dc0b63e5cf4e9723",
+      "extract_to": "php"
+    },
+    {
+      "name": "Node 24.22.2 x64",
+      "url": "https://nodejs.org/dist/v24.22.2/node-v24.22.2-win-x64.zip",
+      "file": "downloads/node.zip",
+      "sha256": "ca1bff5d8ead13c9f2ea404a176db46bd430704d5b5113734049fa365e7799e2",
+      "extract_to": "node"
+    },
+    {
+      "name": "MinGit 2.56.0.windows.4 x64",
+      "url": "https://github.com/git-for-windows/git/releases/download/v2.56.0.windows.4/MinGit-2.56.0.4-64-bit.zip",
+      "file": "downloads/git.zip",
+      "sha256": "e3bf78351fe777fba47ddee5950082f8a98bb0f02604fdc7ba3ee2cb68ffa877",
+      "extract_to": "git"
+    },
+    {
+      "name": "Official Composer 2.11.1 bootstrap PHAR",
+      "url": "https://getcomposer.org/download/2.11.1/composer.phar",
+      "file": "composer.phar",
+      "sha256": "6f1b891e1d4927d62740276c540fb490e47689e19e102c49e8da849794882f8c"
+    },
+    {
+      "name": "Mozilla CA bundle, 5 November 2026",
+      "url": "https://curl.se/ca/cacert-2026-11-05.pem",
+      "file": "php/cacert.pem",
+      "sha256": "427c064216761a1e72a8b30f0d954d08cb6e4435a82091fb865afd20c8497285"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+diff --git a/src/Composer/Compiler.php b/src/Composer/Compiler.php
+index c11617e..bf93a84 100644
+--- a/src/Composer/Compiler.php
++++ b/src/Composer/Compiler.php
+@@ -144,6 +144,8 @@ public function compile(string $pharFile = 'composer.phar'): void
+             CaBundle::getBundledCaBundlePath(),
+             __DIR__ . '/../../vendor/symfony/console/Resources/bin/hiddeninput.exe',
+             __DIR__ . '/../../vendor/symfony/console/Resources/completion.bash',
++            __DIR__ . '/../../vendor/symfony/console/Resources/completion.fish',
++            __DIR__ . '/../../vendor/symfony/console/Resources/completion.zsh',
+         ] as $file) {
+             $extraFiles[$file] = realpath($file);
+             if (!file_exists($file)) {

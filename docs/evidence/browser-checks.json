@@ -1,0 +1,165 @@
+{
+  "date": "2026-11-08",
+  "responsiveChecks": [
+    {
+      "h1": "Gate monitoring overview",
+      "missingImages": 0,
+      "overflow": false,
+      "path": "/preview/dashboard",
+      "width": 360
+    },
+    {
+      "h1": "Employee directory",
+      "missingImages": 0,
+      "overflow": false,
+      "path": "/preview/employees",
+      "width": 360
+    },
+    {
+      "h1": "NFC credentials",
+      "missingImages": 0,
+      "overflow": false,
+      "path": "/preview/credentials",
+      "width": 360
+    },
+    {
+      "h1": "Security personnel",
+      "missingImages": 0,
+      "overflow": false,
+      "path": "/preview/guards",
+      "width": 360
+    },
+    {
+      "h1": "Gate stations",
+      "missingImages": 0,
+      "overflow": false,
+      "path": "/preview/gates",
+      "width": 360
+    },
+    {
+      "h1": "Entry & exit history",
+      "missingImages": 0,
+      "overflow": false,
+      "path": "/preview/history",
+      "width": 360
+    },
+    {
+      "h1": "Activity reports",
+      "overflow": false,
+      "path": "/preview/reports",
+      "width": 360
+    },
+    {
+      "h1": "Campus access analytics",
+      "missingImages": 0,
+      "overflow": false,
+      "path": "/preview/analytics",
+      "width": 360
+    },
+    {
+      "h1": "Workspace settings",
+      "missingImages": 0,
+      "overflow": false,
+      "path": "/preview/settings",
+      "width": 360
+    },
+    {
+      "h1": "Student directory",
+      "missingImages": 0,
+      "overflow": false,
+      "path": "/preview/students",
+      "width": 360
+    },
+    {
+      "h1": "Gate scanner",
+      "missingImages": 0,
+      "overflow": false,
+      "path": "/preview/scanner",
+      "width": 360
+    },
+    {
+      "h1": "Verify identity.Record observed passage.",
+      "overflow": false,
+      "path": "/login",
+      "width": 360
+    },
+    {
+      "h1": "Gate monitoring overview",
+      "overflow": false,
+      "path": "/preview/dashboard",
+      "width": 768
+    },
+    {
+      "h1": "Gate scanner",
+      "overflow": false,
+      "path": "/preview/scanner",
+      "width": 768
+    },
+    {
+      "h1": "Verify identity.Record observed passage.",
+      "overflow": false,
+      "path": "/login",
+      "width": 1440
+    },
+    {
+      "h1": "Gate monitoring overview",
+      "overflow": false,
+      "path": "/preview/dashboard",
+      "width": 1440
+    },
+    {
+      "h1": "Gate monitoring overview",
+      "note": "Reflow width equivalent to a 1280px viewport at 200%; browser keyboard zoom did not apply.",
+      "overflow": false,
+      "path": "/preview/dashboard",
+      "width": 640
+    }
+  ],
+  "finalDom": {
+    "focusedLabel": "About this preview",
+    "imagesLoaded": true,
+    "overflow": false,
+    "width": 1280
+  },
+  "tokenContrast": [
+    {
+      "foreground": "--text",
+      "background": "--surface",
+      "ratio": 14
+    },
+    {
+      "foreground": "--muted",
+      "background": "--surface",
+      "ratio": 8.86
+    },
+    {
+      "foreground": "--subtle",
+      "background": "--surface",
+      "ratio": 6.81
+    },
+    {
+      "foreground": "--on-primary",
+      "background": "--primary",
+      "ratio": 8.21
+    }
+  ],
+  "zoomBefore": {
+    "dpr": 1.0000000149011612,
+    "width": 1280
+  },
+  "zoomAfter": {
+    "dpr": 1.0000000149011612,
+    "overflow": false,
+    "width": 1280
+  },
+  "consoleLogs": [],
+  "interactions": {
+    "mobileDrawerEscapeRestoresFocus": true,
+    "navigationFocusAndAnnouncement": true,
+    "exitSelectionAndDisabledScanner": true,
+    "monthlyReportSelectionAndDisabledGeneration": true,
+    "passwordVisibilityAndDisabledSignIn": true,
+    "keyboardScrollableTableRegion": true,
+    "previewDialogEscapeRestoresFocus": true
+  }
+}
