@@ -22,6 +22,9 @@ class GateManagement
             }
             $gate->fill(Arr::only($data, ['code', 'name', 'status']));
             $gate->forceFill(['record_version' => $target ? (int) $gate->record_version + 1 : 1])->save();
+            if (isset($data['username'])) {
+                app(GateAccounts::class)->save($actor, $gate, $data);
+            }
             $this->audit->record($target ? 'gate.updated' : 'gate.created', $actor, $gate, ['status' => $gate->status->value]);
 
             return $gate;
@@ -38,6 +41,10 @@ class GateManagement
                 return $gate;
             }
             $gate->forceFill(['status' => 'inactive', 'record_version' => (int) $gate->record_version + 1])->save();
+            if ($gate->account) {
+                $gate->account->status = 'inactive';
+                $gate->account->save();
+            }
             if ($restore) {
                 $gate->restore();
             } else {

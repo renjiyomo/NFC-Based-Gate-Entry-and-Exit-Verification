@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import { Panel } from '../../components/ui';
 import {
     ArchiveActions,
@@ -5,17 +6,8 @@ import {
     ManagementPage,
     RecordBadge,
 } from '../../components/management/Common';
-import { AssignmentForm, Assignments } from '../../components/management/Assignments';
-import type { Assignment, GateRecord, Paginated } from '../../lib/management';
-
-export default function GateShow({
-    record,
-    assignments,
-}: {
-    record: GateRecord;
-    assignments: Paginated<Assignment>;
-}) {
-    const enabled = !record.archived_at && record.status === 'active';
+import type { GateRecord } from '../../lib/management';
+export default function GateShow({ record }: { record: GateRecord }) {
     return (
         <ManagementPage
             page="gates"
@@ -31,32 +23,32 @@ export default function GateShow({
             }
         >
             <CurrentErrors />
-            <div className="record-detail-grid">
-                <Panel title="Station details">
-                    <dl className="record-facts">
-                        <div>
-                            <dt>Gate code</dt>
-                            <dd>{record.code}</dd>
-                        </div>
-                        <div>
-                            <dt>Record status</dt>
-                            <dd>
-                                <RecordBadge status={record.status} archived={record.archived_at} />
-                            </dd>
-                        </div>
-                        <div>
-                            <dt>Gate scanning</dt>
-                            <dd>Available to active guards with a current assignment</dd>
-                        </div>
-                    </dl>
-                    <p className="panel-message">
-                        An active station still requires an active guard and a current assignment
-                        before any future verification operation.
-                    </p>
-                </Panel>
-                <AssignmentForm context="gates" id={record.id} enabled={enabled} />
-            </div>
-            <Assignments records={assignments} context="gates" id={record.id} enabled={enabled} />
+            <Panel title="Gate account">
+                <dl className="record-facts">
+                    <div>
+                        <dt>Gate code</dt>
+                        <dd>{record.code}</dd>
+                    </div>
+                    <div>
+                        <dt>Username</dt>
+                        <dd>{record.username ?? 'Account not created'}</dd>
+                    </div>
+                    <div>
+                        <dt>Gate status</dt>
+                        <dd>
+                            <RecordBadge status={record.status} archived={record.archived_at} />
+                        </dd>
+                    </div>
+                </dl>
+                <p className="panel-message">
+                    Guards use this gate login across shifts. University guard schedules are managed
+                    outside NFCheck. Valid NFC scans record the selected Entry or Exit
+                    automatically.
+                </p>
+                <Link className="button button-primary" href={`/admin/gates/${record.id}/edit`}>
+                    Edit gate or reset password
+                </Link>
+            </Panel>
         </ManagementPage>
     );
 }

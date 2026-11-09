@@ -1,33 +1,17 @@
-# Security guard guide
+# Gate monitoring guide
 
-Use your assigned account, approved phone and gate. The current physical workflow is a synthetic hardware lab, not permission to operate a campus gate. Do not share operator credentials.
+1. Sign in with this gate's username/password. Its active station appears automatically. All guards assigned by the university to that gate use its session; there is no shift/date form or individual guard sign-in. Normal idle/security session expiry still applies.
+2. Choose **Entry** or **Exit** for the lane. Direction stays selected; it never alternates automatically.
+3. Tap **Scan NFC coin** on the compatible Android NFC phone, then present one coin. A valid active credential for an active person is recorded automatically. No identity checkbox or Confirm button is required. The result shows the person and the saved direction/time, and may display their private photo for monitoring.
+4. Read the result. Recorded means the backend saved it. Duplicate suppressed means no additional passage was added within the same-person/gate/direction ten-second window. Rejected means no passage was saved. Continue scanning the next person without clearing the previous result first.
+5. Monitor the gate and follow the university's own escalation and emergency procedures. The record identifies the gate account, not the individual guard on duty. A coin scan alone does not prove who carried it or that they crossed the gate. Report a concern or ask an administrator for a reasoned correction when needed.
 
-## Start a shift
+## Connection and phone issues
 
-Open the approved HTTPS site in compatible Android Chrome. For the laptop USB lab, use http://localhost:8003 after authorized USB reverse forwarding is restored. Enable NFC, keep the phone unlocked and deliberately allow this site's NFC permission. File Transfer alone does not authorize debugging. Never bypass certificate warnings or enable insecure-browser flags.
+If a request loses connection, preserve the page and use **Recover request status** after reconnection. The original may already be saved. Use **Retry the same request** when offered. If the token was cleared, reread under that same request/direction; do not invent a replacement event for an uncertain scan. No offline success or trusted offline queue exists.
 
-Sign in, select your assigned active station and confirm its name. If none appears, ask the administrator to check your account/assignment. Choose **Entry** or **Exit** for the observed movement before scanning. Direction never alternates automatically. Keep station/direction visible and only one coin near the phone.
+NFC must be on, the phone unlocked and Chrome visible. Permission denial, locking/backgrounding and timeout stop the reader; start again deliberately. NFC setup's reference-format read is diagnostic only and creates no passage. Desktop Chrome/IAB NFC support is not assumed.
 
-## Verify and record
+Local physical testing uses http://localhost:8003 with the authorized USB reverse connection; the current gate username is `hw-gate-01`, with its password in the private operator account file. Old `hardware.guard1`/`guard2` logins are retired. Reconnect/unlock/authorize USB debugging and ask the operator to restore forwarding after a cable disconnect. A real deployment needs trusted HTTPS on the chosen phone-access origin.
 
-1. Tap Start NFC scan and present the coin. The reader stops afterward. Unknown, revoked, expired, cancelled, malformed or unauthorized references provide no identity to confirm and create no passage.
-2. A valid reference opens identity review; **passage is not recorded yet**. Compare the person with permitted identity/photo information. The campus-document option used in development is synthetic; real document review and missing-photo procedures need institutional approval.
-3. Confirm only after establishing identity and the selected observed passage under that procedure. Check the acknowledgement and confirm within the displayed 30 seconds. The server rechecks account, assignment, person, grant and credential before saving.
-4. Read the result. Passage recorded means the server saved that direction. Duplicate suppressed means no additional passage was saved within the same-person/gate/direction ten-second window. Denial, cancellation and expiry are not passages.
-5. Use identity mismatch when comparison fails; cancel when passage does not occur or review is interrupted. Do not confirm merely to clear the screen. Start a new deliberate check for the next person.
-
-NTAG215 contents can be copied/shared; a coin alone does not establish holder identity. Report concerns through the available workflow and approved escalation procedure. A flag/presence estimate is not wrongdoing evidence. Never copy raw references into notes, photos or messages.
-
-## Outages and uncertain results
-
-- After scan connection loss, preserve the same page/request. Restore connection and use **Recover request status**. If not found and offered, **Retry the same request**; do not create a fresh scan to replace an uncertain one.
-- After confirmation connection loss, do not assume success or rescan/confirm immediately. Recover the original status. A saved operation returns its passage; an expired/closed review cannot be confirmed. A new check is a separate observed operation, not permission to recreate an uncertain past one.
-- Hiding/locking, cancellation and timeout stop NFC. Return to a new deliberate button tap. NFC setup handles unsupported/permission/NFC-off diagnostics. Read reference format checks format only, not registration, identity or passage.
-- After a lab USB disconnect, reconnect/unlock/authorize debugging if prompted and ask the operator to restore forwarding with the documented connect-phone command. Link to Windows/Wi-Fi pairing is separate from ADB. Preserve uncertain pages while reconnecting.
-- For continuing outages, contact the campus supervisor and follow the **institution-approved manual and emergency-egress procedure**. NFCheck has no offline authorization, trusted offline queue or barrier control. That institutional procedure has not been supplied/exercised. Do not invent access permissions or let a presence estimate decide emergency egress.
-
-Keep an approved manual ledger separate, with minimum approved fields/access. There is no backdated manual-passage import; never fabricate scans to recreate it. An accountable administrator decides later reconciliation while preserving immutable evidence.
-
-## End a shift
-
-Finish/cancel pending review, recover uncertain results, sign out and secure the phone/coins. Report unresolved issues. Recent station activity is a bounded view of permitted attempts; administrators handle global history and corrections.
+For continuing outages use the institution-approved manual/emergency procedure; do not infer emergency egress from estimated presence. Manual ledgers remain separate: there is no backdated manual-passage import. Sign out when closing the station, secure the device and report unresolved issues. See [the current workflow](workflow-redesign.md) and [final readiness](final-readiness.md).

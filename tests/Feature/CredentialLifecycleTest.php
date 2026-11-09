@@ -312,7 +312,7 @@ class CredentialLifecycleTest extends ManagementTestCase
         $receipt = $this->issue($person, ['valid_until' => now('Asia/Manila')->addHour()->format('Y-m-d\TH:i')]);
         $credential = $this->activate($receipt);
         $verifier = app(CredentialVerifier::class);
-        $this->assertSame('access_not_authorized', $verifier->inspect($receipt['payload'])['reason']);
+        $this->assertSame('eligible_for_review', $verifier->inspect($receipt['payload'])['reason']);
         $grant = $person->authorizations()->create(['status' => 'active', 'valid_from' => now()->subMinute(), 'valid_until' => now()->addMinutes(20), 'granted_by' => $this->admin->id]);
         $this->assertTrue($verifier->inspect($receipt['payload'])['eligible']);
         $person->fresh()->update(['status' => 'inactive']);
@@ -321,7 +321,7 @@ class CredentialLifecycleTest extends ManagementTestCase
         $this->assertSame('not_selected', $verifier->inspect($receipt['payload'])['reason']);
         $person->fresh()->forceFill(['active_credential_assignment_id' => $credential->assignment->id])->save();
         $this->travelTo($grant->valid_until);
-        $this->assertSame('access_not_authorized', $verifier->inspect($receipt['payload'])['reason']);
+        $this->assertSame('eligible_for_review', $verifier->inspect($receipt['payload'])['reason']);
         $this->travelTo($credential->valid_until);
         $this->assertSame('expired', $verifier->inspect($receipt['payload'])['reason']);
     }

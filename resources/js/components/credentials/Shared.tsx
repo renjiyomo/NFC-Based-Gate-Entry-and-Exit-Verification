@@ -33,7 +33,7 @@ export function SimulatorNotice() {
             <p>
                 Uses synthetic lab people and the shared credential verifier. Credential inspection
                 records no gate decision or passage. The separate guard workflow records labeled
-                simulated passages after explicit confirmation.
+                simulated NFC scan records automatically.
             </p>
             <Link href="/simulator">Open simulator</Link>
         </div>

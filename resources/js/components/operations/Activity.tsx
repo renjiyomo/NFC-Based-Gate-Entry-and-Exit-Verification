@@ -152,7 +152,7 @@ export default function Activity({
                         <p className="panel-bottom-note">
                             Showing up to {feed.limit} latest attempts
                             {feed.minutes
-                                ? ` from the last ${feed.minutes} minutes at currently assigned active gates`
+                                ? ` from the last ${feed.minutes} minutes at this active gate`
                                 : ''}
                             . Last refreshed {manilaTime(feed.server_time)}.
                         </p>

@@ -13,7 +13,7 @@ class CredentialVerifier
     public function inspect(#[\SensitiveParameter] string $payload, bool $allowSimulated = false): array
     {
         return DB::transaction(function () use ($payload, $allowSimulated): array {
-            $check = $this->lockedPayload($payload, $allowSimulated);
+            $check = $this->lockedPayload($payload, $allowSimulated, false);
             if (! $check->eligible()) {
                 return ['eligible' => false, 'reason' => $check->reason];
             }
@@ -23,7 +23,7 @@ class CredentialVerifier
     }
 
     // Transaction lock order: person -> credential -> assignment -> grant.
-    public function lockedPayload(#[\SensitiveParameter] string $payload, bool $allowSimulated = false): CredentialCheck
+    public function lockedPayload(#[\SensitiveParameter] string $payload, bool $allowSimulated = false, bool $requireGrant = true): CredentialCheck
     {
         $digest = $this->tokens->digest($payload);
         if (! $digest) {
@@ -31,10 +31,10 @@ class CredentialVerifier
         }
         $id = NfcCredential::where('token_digest', $digest)->value('id');
 
-        return $id ? $this->lockedCredential((int) $id, $allowSimulated) : new CredentialCheck('unknown');
+        return $id ? $this->lockedCredential((int) $id, $allowSimulated, $requireGrant) : new CredentialCheck('unknown');
     }
 
-    public function lockedCredential(int $id, bool $allowSimulated = false): CredentialCheck
+    public function lockedCredential(int $id, bool $allowSimulated = false, bool $requireGrant = true): CredentialCheck
     {
         if (DB::transactionLevel() < 1) {
             throw new \LogicException('Credential decisions require a transaction.');
@@ -59,6 +59,9 @@ class CredentialVerifier
         }
         if (! $assignment || $assignment->ended_at || $person->active_credential_assignment_id !== $assignment->id) {
             return $denied('not_selected');
+        }
+        if (! $requireGrant) {
+            return new CredentialCheck('eligible_for_review', $credential, $person, $assignment);
         }
         $grant = $person->authorizations()->effective()->lockForUpdate()->first();
 

@@ -1,5 +1,7 @@
 # Isolated database and recovery mail
 
+Current update: **The user-approved [gate-account workflow](workflow-redesign.md) supersedes earlier individual-guard, scheduled-assignment, separate-grant and manual-confirmation instructions.** Migration 19 / 26 tables; 196 PHP tests / 2,062 assertions, 25 NFC tests and ten concurrency scenarios passed. Program/department catalogues and academic year/semester are implemented. New automatic-flow physical acceptance remains pending; no GitHub publication or Vercel deployment occurred.
+
 Phase 2 uses **Oracle MySQL 8.4.13 LTS**, bound to **127.0.0.1:3307**, in `.tools/mysql/mysql-8.4.13-winx64`. Data resides in private `.tools/mysql-data`; config is `.tools/mysql/my.ini`. Existing XAMPP MariaDB on 3306 is unchanged. MySQL X, local infile, general/slow query logs and server-side file import/export are disabled. Storage uses UTC; campus display uses Asia/Manila.
 
 **Mailpit 1.33.1** captures SMTP on 127.0.0.1:1025, with the [inbox on 127.0.0.1:8025](http://127.0.0.1:8025). It has no outbound relay and retains at most 100 messages. Its private data/logs in `.tools/mail` may contain reset links.

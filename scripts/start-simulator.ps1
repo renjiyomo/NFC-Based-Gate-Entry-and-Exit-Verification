@@ -7,6 +7,8 @@ foreach ($simScript in @('bootstrap-simulator.php', 'migrate-database.php', 'see
     & $simPhp (Join-Path $PSScriptRoot $simScript)
     if ($LASTEXITCODE -ne 0) { throw "Simulator setup failed: $simScript" }
 }
+& $simPhp (Join-Path $PSScriptRoot 'initialize-gate-accounts.php') simulator
+if ($LASTEXITCODE -ne 0) { throw 'Simulator gate-account initialization failed.' }
 # Apply private-file ACLs after creating the environment.
 & (Join-Path $PSScriptRoot 'start-services.ps1')
 $simListeners = @(Get-NetTCPConnection -LocalPort 8002 -State Listen -ErrorAction SilentlyContinue)
@@ -19,4 +21,4 @@ if ($simListeners.Count) {
     # PHP loads the dedicated environment in the launcher before serving public files.
     Start-Process -FilePath $simPhp -ArgumentList @(('"'+(Join-Path $PSScriptRoot 'serve-simulator.php')+'"')) -WorkingDirectory $simRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $simRoot '.tools/artifacts/simulator.stdout.log') -RedirectStandardError (Join-Path $simRoot '.tools/artifacts/simulator.stderr.log') | Out-Null
 }
-Write-Host 'Isolated simulator: http://localhost:8002/login; private account: .tools/secrets/simulator-account.json'
+Write-Host 'Isolated simulator: http://localhost:8002/login; private accounts: .tools/secrets/operator-accounts.json'

@@ -72,6 +72,7 @@ class AssignmentController
 
     public function store(ManagementRequest $request, AccessManagement $access): RedirectResponse
     {
+        abort(410, 'Scheduled assignments and separate access grants are retired.');
         $back = $this->parent($request);
         $request->run(fn () => $access->assign($request->user(), $request->validated()));
 
@@ -80,6 +81,7 @@ class AssignmentController
 
     public function update(ManagementRequest $request, AccessManagement $access): RedirectResponse
     {
+        abort(410, 'Scheduled assignments and separate access grants are retired.');
         $assignment = $request->route('assignment');
         $back = $this->parent($request, $assignment);
         $request->run(fn () => $access->assign($request->user(), $request->validated(), $assignment));
@@ -89,6 +91,7 @@ class AssignmentController
 
     public function destroy(ManagementRequest $request, AccessManagement $access): RedirectResponse
     {
+        abort(410, 'Scheduled assignments and separate access grants are retired.');
         $assignment = $request->route('assignment');
         $back = $this->parent($request, $assignment);
         $request->run(fn () => $access->revokeAssignment($request->user(), $assignment));

@@ -1,5 +1,7 @@
 # Deployment preparation
 
+Current update: **The user-approved [gate-account workflow](workflow-redesign.md) supersedes earlier individual-guard, scheduled-assignment, separate-grant and manual-confirmation instructions.** Migration 19 / 26 tables; 196 PHP tests / 2,062 assertions, 25 NFC tests and ten concurrency scenarios passed. Program/department catalogues and academic year/semester are implemented. New automatic-flow physical acceptance remains pending; no GitHub publication or Vercel deployment occurred.
+
 Phase 11 prepares a reviewable release procedure; it does not deploy this workstation or authorize live campus operation. Current main/simulator/hardware services remain loopback-only. The shared XAMPP Apache project URL must continue returning 403.
 
 ## Candidate configuration and boundaries

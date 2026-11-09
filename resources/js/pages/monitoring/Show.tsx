@@ -58,10 +58,15 @@ export default function Show({
                             r.passage_id
                                 ? r.voided
                                     ? 'Original retained; excluded from effective totals'
-                                    : 'Effective confirmed passage'
+                                    : 'Effective recorded passage'
                                 : 'No passage recorded',
                         ],
-                        ['Identity review method', r.identity_method ?? 'Not confirmed'],
+                        [
+                            'Recording method',
+                            r.identity_method === 'nfc_scan'
+                                ? 'Automatic NFC scan; no manual identity confirmation'
+                                : (r.identity_method ?? 'No passage'),
+                        ],
                         ['Sequence notice', r.sequence_notice ?? 'None'],
                     ].map(([label, value]) => (
                         <div key={label}>

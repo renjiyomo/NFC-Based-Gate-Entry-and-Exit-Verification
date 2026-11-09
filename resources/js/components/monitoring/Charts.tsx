@@ -23,7 +23,7 @@ export function Trend({ rows }: { rows: Summary['trend'] }) {
             {total ? (
                 <svg viewBox="0 0 720 245" role="img" aria-labelledby={id}>
                     <title id={id}>
-                        Effective confirmed entries and exits by Manila date. Data table follows.
+                        Effective recorded entries and exits by Manila date. Data table follows.
                     </title>
                     {[0, Math.ceil(max / 2), max].map((t) => (
                         <g key={t}>
@@ -57,7 +57,7 @@ export function Trend({ rows }: { rows: Summary['trend'] }) {
                     )}
                 </svg>
             ) : (
-                <p className="report-empty">No effective confirmed passages in this period.</p>
+                <p className="report-empty">No effective recorded passages in this period.</p>
             )}
             <details className="chart-data">
                 <summary>View daily data table</summary>

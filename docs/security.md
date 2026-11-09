@@ -1,5 +1,7 @@
 # Security and privacy controls
 
+Current update: **The user-approved [gate-account workflow](workflow-redesign.md) supersedes earlier individual-guard, scheduled-assignment, separate-grant and manual-confirmation instructions.** Migration 19 / 26 tables; 196 PHP tests / 2,062 assertions, 25 NFC tests and ten concurrency scenarios passed. Program/department catalogues and academic year/semester are implemented. New automatic-flow physical acceptance remains pending; no GitHub publication or Vercel deployment occurred.
+
 Status: **Implemented local controls reviewed in Phase 10, November 9, 2026.** See [the Phase 10 report](phase-10-report.md) for findings, fixes, exact tests and limits. This is not an independent penetration test, ASVS certification or assurance of complete security. Earlier [environment audit](environment-audit.md) findings are historical; the project now uses its isolated patched toolchain and MySQL instance.
 
 ## Trust boundaries

@@ -52,8 +52,8 @@ class SecurityReviewTest extends ManagementTestCase
     {
         $this->app->instance('env', 'local');
         $token = str_repeat('c', 40);
-        $this->withSession(['_token' => $token])->post('/admin/gates', [...['code' => 'CSRF-CHECK', 'name' => 'Synthetic CSRF station', 'status' => 'active'], '_token' => 'wrong'])->assertStatus(419);
-        $this->withSession(['_token' => $token])->post('/admin/gates', ['code' => 'CSRF-CHECK', 'name' => 'Synthetic CSRF station', 'status' => 'active', '_token' => $token])->assertRedirect();
+        $this->withSession(['_token' => $token])->post('/admin/gates', [...['username' => 'csrf.gate', 'password' => self::PASSWORD, 'password_confirmation' => self::PASSWORD, 'code' => 'CSRF-CHECK', 'name' => 'Synthetic CSRF station', 'status' => 'active'], '_token' => 'wrong'])->assertStatus(419);
+        $this->withSession(['_token' => $token])->post('/admin/gates', ['username' => 'csrf.gate', 'password' => self::PASSWORD, 'password_confirmation' => self::PASSWORD, 'code' => 'CSRF-CHECK', 'name' => 'Synthetic CSRF station', 'status' => 'active', '_token' => $token])->assertRedirect();
     }
 
     public function test_sql_and_html_inputs_remain_data_and_do_not_expand_results_or_generate_scripts(): void

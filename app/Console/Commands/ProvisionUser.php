@@ -7,12 +7,17 @@ use Illuminate\Console\Command;
 
 class ProvisionUser extends Command
 {
-    protected $signature = 'nfcheck:provision-user {email} {--name=} {--role=guard} {--generate : Generate a local initial credential into the protected handoff file}';
+    protected $signature = 'nfcheck:provision-user {email} {--name=} {--role=admin} {--generate : Generate a local initial credential into the protected handoff file}';
 
     protected $description = 'Privately provision an operator account; no public registration exists';
 
     public function handle(AccountService $accounts): int
     {
+        if ($this->option('role') !== 'admin') {
+            $this->error('Create gate accounts together with their gates in Gate stations.');
+
+            return self::FAILURE;
+        }
         if ($this->option('generate') && ! app()->environment(['local', 'testing'])) {
             $this->error('Generated-file handoff is local-only.');
 

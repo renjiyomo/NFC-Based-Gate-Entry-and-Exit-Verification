@@ -190,8 +190,9 @@ export default function Setup() {
                     {hardwareLab
                         ? 'This workspace uses synthetic identities and test passage records.'
                         : 'Use the separate hardware test workspace for synthetic acceptance tests.'}{' '}
-                    A readable NFC reference can be copied. The guard must still compare identity
-                    and confirm observed passage.
+                    A readable NFC reference can be copied. A valid scan records the selected Entry
+                    or Exit automatically; it does not prove who carried the coin or that a physical
+                    crossing occurred.
                 </p>
                 <Link
                     href={user?.role === 'admin' ? '/admin/credentials' : '/guard/scanner'}

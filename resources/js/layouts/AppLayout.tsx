@@ -28,7 +28,7 @@ function Navigation({ page, close }: { page: PageId; close?: () => void }) {
                 <div className="nav-group" key={group}>
                     <p className="nav-group-label">{group}</p>
                     {navigation
-                        .filter((item) => item.group === group)
+                        .filter((item) => item.group === group && item.id !== 'guards')
                         .map(({ id, label, icon: Icon }) => (
                             <Link
                                 href={pageUrl(id)}
@@ -112,7 +112,7 @@ export default function AppLayout({ page, children }: { page: PageId; children: 
                             <span className="account-label">
                                 <strong>{user?.name}</strong>
                                 <span>
-                                    {user?.role === 'admin' ? 'Administrator' : 'Security guard'}
+                                    {user?.role === 'admin' ? 'Administrator' : 'Gate account'}
                                 </span>
                             </span>
                         )}
@@ -214,7 +214,7 @@ export default function AppLayout({ page, children }: { page: PageId; children: 
                 <p>
                     {preview
                         ? 'Explore the navigation, layouts, and gate direction controls. No operational data is saved from this preview.'
-                        : 'Account security, people, gates, credentials and assigned-guard verification are connected. Every passage requires a separate identity review and explicit guard confirmation.'}
+                        : 'Gate accounts, people and NFC credentials are connected. Valid scans record the selected Entry or Exit automatically.'}
                 </p>
                 <div className="dialog-note">
                     <strong>Before gate operations</strong>

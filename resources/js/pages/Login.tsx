@@ -19,7 +19,7 @@ import { virtualTagLabel } from '../lib/nfc';
 export default function Login({ preview = false }: { preview?: boolean }) {
     const [showPassword, setShowPassword] = useState(false);
     const { flash, simulator, hardwareLab } = useWorkspace();
-    const form = useForm({ email: '', password: '' });
+    const form = useForm({ username: '', password: '' });
     return (
         <div className="login-page">
             <Head title="Sign in" />
@@ -52,13 +52,13 @@ export default function Login({ preview = false }: { preview?: boolean }) {
                     </div>
                     <p className="eyebrow">Campus gate workspace</p>
                     <h1 id="login-introduction-title">
-                        Verify identity.
+                        Tap your credential.
                         <br />
-                        Record observed passage.
+                        Record Entry or Exit.
                     </h1>
                     <p className="login-description">
-                        A dedicated workspace for reviewing campus credentials and recording
-                        observed entry and exit.
+                        A dedicated workspace for validating campus credentials and recording NFC
+                        entry and exit scans.
                     </p>
                     <div className="login-workflow">
                         {[
@@ -69,13 +69,13 @@ export default function Login({ preview = false }: { preview?: boolean }) {
                             },
                             {
                                 icon: BadgeCheck,
-                                title: 'Review the person’s identity',
-                                description: 'Compare the visible identity information.',
+                                title: 'Validate the credential',
+                                description: 'Check the active person and NFC record.',
                             },
                             {
                                 icon: Check,
-                                title: 'Confirm observed passage',
-                                description: 'Keep verification and passage distinct.',
+                                title: 'Record the selected direction',
+                                description: 'Valid scans are recorded automatically.',
                             },
                         ].map(({ icon: Icon, title, description }) => (
                             <div key={title}>
@@ -90,8 +90,8 @@ export default function Login({ preview = false }: { preview?: boolean }) {
                         ))}
                     </div>
                     <p className="login-institution-note">
-                        <ShieldCheck size={16} aria-hidden="true" /> Built around the security
-                        guard’s review
+                        <ShieldCheck size={16} aria-hidden="true" /> Campus entry and exit
+                        monitoring
                     </p>
                 </section>
                 <section className="login-form-panel" id="sign-in" aria-labelledby="sign-in-title">
@@ -135,23 +135,27 @@ export default function Login({ preview = false }: { preview?: boolean }) {
                         }}
                     >
                         <div className="form-field">
-                            <label htmlFor="email">Email address</label>
+                            <label htmlFor="username">Username</label>
                             <input
-                                id="email"
-                                type="email"
-                                name="email"
+                                id="username"
+                                type="text"
+                                name="username"
                                 autoComplete={preview ? 'off' : 'username'}
-                                placeholder={preview ? 'Enter a sample email' : 'you@nfcheck.test'}
-                                value={form.data.email}
-                                onChange={(event) => form.setData('email', event.target.value)}
+                                placeholder={
+                                    preview ? 'Enter a sample username' : 'e.g. alexi or gate1'
+                                }
+                                value={form.data.username}
+                                onChange={(event) => form.setData('username', event.target.value)}
                                 required
                                 maxLength={255}
-                                aria-invalid={!!form.errors.email}
-                                aria-describedby={form.errors.email ? 'email-error' : undefined}
+                                aria-invalid={!!form.errors.username}
+                                aria-describedby={
+                                    form.errors.username ? 'username-error' : undefined
+                                }
                             />
-                            {form.errors.email && (
-                                <p id="email-error" className="field-error" role="alert">
-                                    {form.errors.email}
+                            {form.errors.username && (
+                                <p id="username-error" className="field-error" role="alert">
+                                    {form.errors.username}
                                 </p>
                             )}
                         </div>
@@ -201,9 +205,9 @@ export default function Login({ preview = false }: { preview?: boolean }) {
                                 Forgot password?
                             </button>
                         ) : (
-                            <Link href="/forgot-password" className="recovery-link">
-                                Forgot password?
-                            </Link>
+                            <span className="field-hint">
+                                Ask an administrator if you need a password reset.
+                            </span>
                         )}
                         <button
                             className="button button-primary login-submit"

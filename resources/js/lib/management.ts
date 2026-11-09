@@ -11,12 +11,17 @@ export interface PersonRecord {
     program: string | null;
     year_level: number | null;
     academic_term: string | null;
+    academic_year: string | null;
+    semester: string | null;
     department: string | null;
     position: string | null;
     access_active: boolean;
     nfc_credential?: { label: string; status: 'active' } | null;
 }
 export interface GateRecord {
+    username: string | null;
+    account_id: number | null;
+    account_status: string | null;
     id: number;
     code: string;
     name: string;
@@ -26,6 +31,8 @@ export interface GateRecord {
     assignments_count: number;
 }
 export interface GuardRecord {
+    username: string | null;
+    gate_id: number | null;
     id: number;
     name: string;
     email: string;

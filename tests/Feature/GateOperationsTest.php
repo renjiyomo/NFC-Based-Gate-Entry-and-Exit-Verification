@@ -254,13 +254,14 @@ class GateOperationsTest extends ManagementTestCase
         Storage::fake('local');
         $path = app(PersonPhotos::class)->store(UploadedFile::fake()->image('synthetic.png', 120, 120));
         $this->person->update(['photo_path' => $path]);
+        $this->guard->forceFill(['gate_id' => $this->station->id])->save();
         $this->signIn($this->guard);
         $base = '/guard/gates/'.$this->station->id;
         $result = $this->postJson($base.'/scan', ['payload' => $this->receipt['payload'], 'request_id' => (string) Str::uuid(), 'direction' => 'entry'])->assertOk()->json();
         $this->withCredentials()->withCookie(config('session.cookie'), app('session')->getId());
         $photo = $this->get($result['identity']['photo_url'])->assertOk()->assertHeader('Content-Type', 'image/jpeg');
         $this->assertStringContainsString('no-store', $photo->headers->get('Cache-Control'));
-        $this->travel(30)->seconds();
+        $this->travel(31)->minutes();
         $this->get($result['identity']['photo_url'])->assertNotFound();
     }
 
@@ -283,11 +284,11 @@ class GateOperationsTest extends ManagementTestCase
     public function test_photo_requires_live_owned_review_and_cannot_browse_person_directory(): void
     {
         $result = $this->scan();
+        $this->guard->forceFill(['gate_id' => $this->station->id])->save();
         $this->signIn($this->guard);
         $base = '/guard/gates/'.$this->station->id;
         $this->get($base.'/attempts/'.$result['id'].'/photo')->assertNotFound();
         $this->get('/admin/students/'.$this->person->id.'/photo')->assertForbidden();
-        $this->review($result, ['action' => 'cancel']);
         $this->get($base.'/attempts/'.$result['id'].'/photo')->assertNotFound();
     }
 
@@ -407,15 +408,16 @@ class GateOperationsTest extends ManagementTestCase
     {
         $base = '/guard/gates/'.$this->station->id;
         $this->postJson($base.'/scan', [])->assertForbidden();
+        $this->guard->forceFill(['gate_id' => $this->station->id])->save();
         $this->signIn($this->guard);
         $this->post($base.'/scan', [])->assertStatus(406);
         $data = ['payload' => $this->receipt['payload'], 'request_id' => (string) Str::uuid(), 'direction' => 'entry', 'source' => 'simulated'];
-        $response = $this->postJson($base.'/scan', $data)->assertOk()->assertJsonPath('source', 'physical')->assertJsonPath('review.status', 'pending');
+        $response = $this->postJson($base.'/scan', $data)->assertOk()->assertJsonPath('source', 'physical')->assertJsonPath('review.status', 'confirmed');
         $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
         $this->withCredentials()->withCookie(config('session.cookie'), app('session')->getId());
         $this->getJson($base.'/requests/'.$data['request_id'])->assertOk()->assertJsonPath('id', $response->json('id'));
         $this->postJson($base.'/attempts/'.$response->json('id').'/review', ['action' => 'confirm', 'identity_checked' => false, 'identity_method' => 'campus_document'])->assertUnprocessable();
-        $this->postJson($base.'/attempts/'.$response->json('id').'/review', ['action' => 'confirm', 'identity_checked' => true, 'identity_method' => 'campus_document'])->assertOk()->assertJsonPath('review.status', 'confirmed');
+        $this->postJson($base.'/attempts/'.$response->json('id').'/review', ['action' => 'confirm', 'identity_checked' => true, 'identity_method' => 'campus_document'])->assertStatus(410);
     }
 
     public function test_guard_activity_is_limited_to_current_assignments_window_and_does_not_leak_denied_identity(): void
@@ -423,8 +425,9 @@ class GateOperationsTest extends ManagementTestCase
         $this->scan();
         $this->person->update(['status' => 'inactive']);
         $this->scan();
+        $this->guard->forceFill(['gate_id' => $this->station->id])->save();
         $this->signIn($this->guard)->getJson('/guard/activity/feed')->assertOk()->assertJsonCount(2, 'records')->assertJsonPath('records.0.person', null)->assertJsonPath('minutes', 30);
-        $this->assignment->update(['revoked_at' => now()]);
+        $this->station->update(['status' => 'inactive']);
         $this->getJson('/guard/activity/feed')->assertOk()->assertJsonCount(0, 'records');
         $this->getJson('/admin/history/feed')->assertForbidden();
         $this->signIn($this->admin)->getJson('/admin/history/feed')->assertOk()->assertJsonCount(2, 'records');

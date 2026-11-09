@@ -1,42 +1,30 @@
-# Final project readiness — November 9, 2026
+# Current readiness — gate-account revision
 
-**Ready for continued local demonstration and controlled synthetic testing. Not yet approved for production deployment, real campus operation or participant research.** Phase 11 preparation is complete; public deployment has not occurred. This assessment preserves the narrower physical acceptance status from Phase 6.
+**The redesigned software flow is verified locally. Physical acceptance of automatic recording and production deployment remain pending.** The user could not connect the NFC phone for this revision. Earlier manual-flow physical tests do not prove the new interaction. See [current workflow](workflow-redesign.md) and [verification report](workflow-redesign-report.md).
 
-## Scope reconciliation
+## Current flow
 
-| Requirement | Implemented evidence | Remaining boundary |
-| --- | --- | --- |
-| R01 Authentication | Private provisioning, password/reset/session controls, throttles and server roles | Production SMTP, HTTPS/host acceptance and institutional account ownership |
-| R02–R03 Students/employees | Validated profiles, retained archives, private raster photos, search/pagination | Approved real fields/data, dual-affiliation policy if needed, missing-photo procedure |
-| R04 Accounts/gates/assignments | Active operators, gates, bounded assignments and fresh confirmation checks | Real inventory, assignment schedules and operating responsibilities |
-| R05 Credentials | Digest-only references, permanent ownership, check/write/read-back/activate, revocation/replacement and retained history | NTAG215 remains clonable; external erasure needs reconciliation |
-| R06 NFC | Android Chrome NDEF adapter, permission/lifecycle/error handling, controlled vivo/NTAG215 session | Broader phone/tag matrix, two-guard and remaining interrupted/post-commit cases in Phase 6 |
-| R07 Passage | Explicit direction, guard identity/observed-passage confirmation, expiry, retries and duplicates | Human accuracy, supervised guard acceptance and approved outage/egress procedure |
-| R08–R10 History/monitoring/reports | Immutable events and append-only corrections, reconciled Manila periods/charts, private CSV/XLSX/PDF | Presence is estimated; peak-volume load and retention/research permissions |
-| R11 Anomaly review | Versioned deterministic rules, evidence, human decisions, stale-review/concurrent detection protection | Local thresholds are development hypotheses; after-hours disabled; no ML or guilt inference |
-| R12 AI summaries | Gemini Free Tier synthetic aggregates, fact-ID selection/backend wording, provenance, bounded jobs and review | Main/real-data/production AI excluded; no paid fallback or billing ever; not unrestricted generated incident prose |
-| R13 Audit/settings | Allowlisted audits, narrow runtime grants, validated operational settings, recovery and logging runbooks | No tamper-proof external audit, automatic retention purge or institutional incident authorization |
+Two roles: Administrator and Gate account. Each gate has one username/password login, shared by guards whose schedules stay outside the app. The administrator registers a person and activates a checked NFC coin. The gate chooses Entry/Exit; a valid scan saves immediately. No separate access grant, dated guard assignment or manual confirmation is required. Students/employees are identity records, not login roles.
 
-No student portal, classroom attendance, facial recognition, GPS tracking, automatic barrier control, UID authentication, native phone app, separate Node backend, mass import or ML model is implied by this implementation. The revised gate-verification title/scope governs the older manuscript. Gate records do not prove attendance, continuous presence or wrongdoing.
+Catalogue dropdowns contain the supplied 17 BU Polangui programs and six departments. Year level is bounded, currently 1–4 per program; academic year and semester are separate. Initial/legacy values remain retained until deliberately updated. Registrar confirmation of program maxima/legacy curricula is still required for institutional rollout.
 
-## Verification and preserved state
+## Verified evidence
 
-Final full check: **196 PHP tests / 2,151 assertions, 25 NFC adapter tests and eight real overlapping MySQL race scenarios** passed, with build/typecheck/style and dependency audits. Phase 10 includes targeted desktop/mobile/keyboard/CSP and 10,001-row query evidence; those timings are not production throughput or full WCAG certification. Phase 11 adds encrypted-archive/configuration-preflight tests and successful full 24-table restore drills for main/simulator/hardware. See [recovery receipts](evidence/phase-11-recovery.json).
+- 196 PHP tests / 2,062 assertions, 25 NFC software tests and ten actual overlapping MySQL concurrency scenarios passed. Build/typecheck/style and dependency audits passed; final browser copy/layout also passed a fresh build.
+- Direct real gate-account sign-in, automatic gate selection, combined gate/account form, catalogue form and mobile scanner were inspected in the browser. There is no manual identity checkbox/Confirm button or shift/date input. These browser checks created no passages and do not replace RF tests.
+- Four isolated schemas retain 19 migrations/26 tables and reference catalogues; test business fixtures/quota values were restored. Existing immutable records and selected physical coins remain intact. Runtime immutable/catalogue mutation probes were denied. No private credential value or NFC plaintext pattern appeared in the checked repository/log scope.
+- Post-revision encrypted restore drills matched all 26 tables in main, simulator and hardware, preserved each source, and removed their owned disposable schemas and temporary plaintext. See [recovery receipts](evidence/workflow-redesign-recovery.json). All three currently have zero private photos; production-sized/off-device/host-loss/photo acceptance is still pending.
 
-The main database retains four users, two people, one gate and zero credentials/attempts/passages/flags/summaries. All three requested administrators remain active. Simulator retains 11 attempts, five passages, three corrections, three flags and one approved summary. Hardware retains 26 attempts, six staged physical-source passages and nine credential records, with separate active student HW-TAG-09 and employee HW-TAG-08. No pending hardware review exists. All four schemas retain 18 migrations; isolated testing fixtures are cleaned up. No password/coin/history was reset and no new live AI call occurred. Shared XAMPP, source-path 403 and existing app/summary processes remain intact.
+## Data meaning
 
-## Acceptance still required
+New records identify an authenticated gate account and a valid credential scan in the chosen direction. They do not independently establish who held the coin or whether a physical crossing occurred. Earlier manual observations retain their original methods; new scans use nfc_scan/gate-auto-v2. Presence is estimated from recorded directions, not a census or classroom attendance. Rule flags are not misconduct findings. AI stays Gemini Free Tier synthetic lab-only, with no billing/payment/paid fallback and no main/production generation.
 
-| Accountable party | Evidence needed before live use |
-| --- | --- |
-| Institution/security operator | Named owners; real gates/assignments/access rules; identity/missing-photo and emergency/manual-outage procedures; approval of review/duplicate/anomaly timing |
-| Host/network operator | Chosen supported host/domain; trusted phone HTTPS/certificate renewal; approved migration-target identity and grants; proxy/perimeter review; SMTP delivery; patching, clock and monitoring ownership |
-| Recovery owner | Separate encrypted off-device backups/key escrow; approved RPO/RTO/retention; production-sized and host-loss restore drill, including photos; reconciliation of post-backup revocations and manual records |
-| DPO/research authority | Lawful purpose/basis, notice/minimum data, retention/holds, authorized users/processors, incident handling and study/participant permission |
-| Research/security lead | Independent labeled evaluation, supervised usability/accessibility, peak-volume load, broader physical NFC/two-guard/response-loss cases; truthful reporting of failures and unknowns |
+## Before campus operation or publication
 
-Local recovery archives and their key are currently on the same laptop; the production environment/Nginx files remain templates. The preflight correctly fails on this development installation and never substitutes for those acceptance decisions. Passing automated tests does not make the system completely secure or operationally approved.
+1. Complete the new phone Entry/Exit/duplicate/recovery check and the remaining relevant device/failure matrix. No rewrite of the current coins is needed.
+2. Confirm campus identity/access, missing-photo, external guard schedule, outage/emergency and incident responsibilities. Approve registrar catalogue values and study/privacy/retention permissions.
+3. Choose and validate a real host/domain, trusted phone HTTPS, supported database/migration target, durable private storage/session/cache, monitoring/patch/clock ownership and mail/recovery arrangements where applicable. Local-only migration guards remain intact.
+4. Establish separate off-device backups/key escrow, approved RPO/RTO/retention, production-sized restore/load evidence, and reconciliation of post-backup revocations before reopening.
+5. Review GitHub visibility/content and a specific hosting design only after the flow is accepted. No public repository or Vercel deployment was created. PHP community runtime support does not make the existing local MySQL/private-file/polling-worker arrangement a one-click serverless deployment.
 
-## Practical next steps
-
-Review the [administrator](administrator-guide.md), [guard](security-guard-guide.md), [NFC](nfc-integration.md), [deployment](deployment.md), [operations](environment-and-operations.md) and [recovery](backup-and-recovery.md) guides. Choose whether the next work is completing physical acceptance, preparing a supervised research/demo session, or planning a specific deployment target. Each needs an explicit next instruction and its applicable institutional inputs. There is no automatic Phase 12 or public cutover.
+Use the [administrator](administrator-guide.md), [gate monitoring](security-guard-guide.md), [deployment](deployment.md) and [backup/recovery](backup-and-recovery.md) guides. Earlier phase reports remain dated historical checkpoints; the current workflow supersedes their individual-guard/grant/manual-confirmation instructions.

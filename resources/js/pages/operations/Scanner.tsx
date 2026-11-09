@@ -1,682 +1,344 @@
-import { Link, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
+import { Button, Panel, Badge } from '../../components/ui';
+import { ManagementPage, FormErrors, Portrait } from '../../components/management/Common';
+import { useWorkspace } from '../../lib/workspace';
+import { NdefAdapter, nfcAvailable, readVirtualTag, acceptVirtualTagHandoff } from '../../lib/nfc';
 import {
-    ArrowDownLeft,
-    ArrowUpRight,
-    ScanLine,
-    ShieldCheck,
-    UserRound,
-    Wifi,
-    WifiOff,
-} from 'lucide-react';
-import { FormErrors, ManagementPage, Select } from '../../components/management/Common';
-import Activity, { useActivity } from '../../components/operations/Activity';
-import NfcStatus from '../../components/credentials/NfcStatus';
-import { Badge, Button, Panel } from '../../components/ui';
-import { manilaTime } from '../../lib/management';
-import {
-    NdefAdapter,
-    acceptVirtualTagHandoff,
-    nfcAvailable,
-    readVirtualTag,
-    unknownReference,
-    virtualTagLabel,
-} from '../../lib/nfc';
-import {
-    OperationError,
     operationBase,
-    operationErrors,
     operationRequest,
+    operationErrors,
+    OperationError,
     reasonLabel,
-    reviewStatusLabel,
-    sequenceLabel,
-    type Direction,
     type Operation,
     type Station,
+    type Direction,
 } from '../../lib/operations';
-import { useWorkspace } from '../../lib/workspace';
+import { manilaTime } from '../../lib/management';
+import { useActivity } from '../../components/operations/Activity';
 
 export default function Scanner({
-    stations,
     station,
-    requestId,
-    reviewSeconds,
     duplicateSeconds,
+    requestId,
+    requestDirection,
 }: {
-    stations: Station[];
     station: Station | null;
-    requestId: string | null;
-    reviewSeconds: number;
     duplicateSeconds: number;
+    requestId: string | null;
+    requestDirection: Direction | null;
 }) {
     const { simulator } = useWorkspace();
-    const [direction, setDirection] = useState<Direction | null>(null);
-    const [operation, setOperation] = useState<Operation | null>(null);
+    const [direction, setDirection] = useState<Direction | null>(requestDirection);
+    const [result, setResult] = useState<Operation | null>(null);
     const [busy, setBusy] = useState(false);
     const [reading, setReading] = useState(false);
-    const busyRef = useRef(false);
-    const [online, setOnline] = useState(navigator.onLine);
     const [uncertain, setUncertain] = useState(Boolean(requestId));
-    const [notFound, setNotFound] = useState(false);
+    const [missing, setMissing] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [status, setStatus] = useState('');
-    const [identityChecked, setIdentityChecked] = useState(false);
-    const [identityMethod, setIdentityMethod] = useState('campus_document');
-    const [photoFailed, setPhotoFailed] = useState(false);
-    const [remaining, setRemaining] = useState(0);
-    const payload = useRef<string | null>(null);
-    const lastRequest = useRef<string | null>(requestId);
-    const frozenDirection = useRef<Direction | null>(null);
     const active = useRef<AbortController | null>(null);
-    const clock = useRef<{ expires: number; server: number; received: number } | null>(null);
+    const request = useRef<string | null>(requestId);
+    const payload = useRef<string | null>(null);
+    const frozen = useRef<Direction | null>(requestDirection);
+    const locked = useRef(false);
     const mounted = useRef(true);
-    const base = station ? operationBase(station.id, simulator) : null;
     const activity = useActivity(station ? `/guard/gates/${station.id}/activity` : null);
-    const pending = operation?.review.status === 'pending';
-    const blocked = busy || pending || uncertain;
-    function working(value: boolean) {
-        busyRef.current = value;
-        setBusy(value);
-    }
+    const base = station ? operationBase(station.id, simulator) : null;
     function locate(id: string | null) {
-        lastRequest.current = id;
+        request.current = id;
         if (station)
             router.replace({
-                url: `/guard/gates/${station.id}/scanner${id ? `?request_id=${id}` : ''}`,
+                url: `/guard/gates/${station.id}/scanner${id ? `?request_id=${id}&direction=${frozen.current}` : ''}`,
                 preserveState: true,
                 preserveScroll: true,
             });
     }
-    function accept(result: Operation, keepReview = false) {
-        if (result.source === 'simulated') acceptVirtualTagHandoff();
-        setOperation(result);
-        setDirection(result.direction);
-        frozenDirection.current = result.direction;
+    function accept(r: Operation) {
+        if (!mounted.current) return;
+        setResult(r);
         setUncertain(false);
-        setNotFound(false);
+        setMissing(false);
         payload.current = null;
-        if (!keepReview || !result.identity) {
-            setIdentityChecked(false);
-            setPhotoFailed(false);
-            setIdentityMethod(result.identity?.photo_url ? 'photo' : 'campus_document');
-        }
-        clock.current = result.review.expires_at
-            ? {
-                  expires: Date.parse(result.review.expires_at),
-                  server: Date.parse(result.server_time),
-                  received: performance.now(),
-              }
-            : null;
-        setRemaining(
-            clock.current
-                ? Math.max(0, Math.ceil((clock.current.expires - clock.current.server) / 1000))
-                : 0,
-        );
         setStatus(
-            result.passage?.voided
-                ? 'The original passage is retained but was voided by an administrator.'
-                : result.passage
-                  ? `${result.source === 'simulated' ? 'Simulated passage' : 'Observed passage'} recorded: ${result.passage.direction}.`
-                  : result.duplicate_of
-                    ? 'Duplicate suppressed. The earlier passage is linked; no second passage was recorded.'
-                    : result.review.status === 'pending'
-                      ? 'Credential authorized. Review the person before confirming passage.'
-                      : reasonLabel(result.review.reason ?? result.verification.reason),
+            r.passage
+                ? `${r.direction === 'entry' ? 'Entry' : 'Exit'} recorded.`
+                : r.duplicate_of
+                  ? 'Duplicate suppressed. No additional passage recorded.'
+                  : 'Credential rejected. No passage recorded.',
         );
+        if (simulator) acceptVirtualTagHandoff();
         void activity.refresh();
     }
-    async function send(id: string, selected: Direction, value: string) {
-        if (!base) return;
-        const controller = new AbortController();
-        active.current = controller;
+    async function recover() {
+        if (!base || !request.current || locked.current) return;
+        locked.current = true;
+        setBusy(true);
+        setErrors({});
         try {
-            const result = await operationRequest<Operation>(
-                `${base}/scan`,
-                { request_id: id, direction: selected, payload: value },
-                controller.signal,
+            accept(await operationRequest<Operation>(`${base}/requests/${request.current}`));
+        } catch (e) {
+            setErrors(operationErrors(e));
+            if (e instanceof OperationError && e.status === 404) setMissing(true);
+        } finally {
+            locked.current = false;
+            if (mounted.current) setBusy(false);
+        }
+    }
+    async function send() {
+        if (!base || !payload.current || !request.current || !frozen.current) return;
+        setUncertain(true);
+        try {
+            accept(
+                await operationRequest<Operation>(`${base}/scan`, {
+                    request_id: request.current,
+                    payload: payload.current,
+                    direction: frozen.current,
+                }),
             );
-            if (mounted.current && !controller.signal.aborted) accept(result);
-        } catch (error) {
-            if (mounted.current) {
-                setErrors(operationErrors(error));
-                setUncertain(true);
+        } catch (e) {
+            setErrors(operationErrors(e));
+            if (e instanceof OperationError && [403, 419, 422, 429].includes(e.status)) {
+                setStatus('Request rejected. Recover its status before starting another scan.');
             }
         }
     }
-    async function scan(probe?: 'unknown' | 'malformed') {
-        if (!station || !direction || busyRef.current || pending || uncertain) return;
-        working(true);
+    async function scan(reuse = false) {
+        if (!base || !direction || locked.current || (uncertain && !reuse)) return;
+        locked.current = true;
+        setBusy(true);
+        setReading(true);
         setErrors({});
-        setOperation(null);
-        setIdentityChecked(false);
-        setStatus(
-            simulator ? 'Reading simulated input…' : 'Hold the intended tag near the NFC reader…',
-        );
-        active.current?.abort();
-        const controller = new AbortController();
-        active.current = controller;
-        let submitted = false;
+        setResult(null);
+        setStatus('Present one NFC coin.');
+        active.current = new AbortController();
         try {
-            setReading(!simulator);
-            const value = simulator
-                ? probe === 'unknown'
-                    ? unknownReference()
-                    : probe === 'malformed'
-                      ? 'invalid-NDEF-record'
-                      : readVirtualTag()
-                : await new NdefAdapter().read(
-                      AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]),
-                  );
-            setReading(false);
-            controller.abort();
-            if (!value)
-                throw new Error(
-                    'No virtual tag is available. Ask the lab administrator to issue and hand off one in this tab.',
-                );
-            if (!mounted.current) return;
-            payload.current = value;
-            frozenDirection.current = direction;
-            const id = crypto.randomUUID();
-            locate(id);
-            submitted = true;
-            setStatus('Checking the reference with the server…');
-            await send(id, direction, value);
-        } catch (error) {
-            if (mounted.current) {
-                setErrors({
-                    nfc:
-                        error instanceof Error
-                            ? error.message
-                            : 'The tag could not be read. Tap again to retry.',
-                });
-                if (!submitted) {
-                    payload.current = null;
-                    setStatus('No server verification was submitted.');
-                }
+            const ref = simulator
+                ? readVirtualTag()
+                : await new NdefAdapter().read(active.current.signal);
+            if (!ref) throw new Error('No virtual tag available');
+            payload.current = ref;
+            if (!reuse) {
+                frozen.current = direction;
+                locate(crypto.randomUUID());
             }
+            setReading(false);
+            await send();
+        } catch {
+            setStatus('Reader stopped. No scan request was sent.');
+            setErrors({ nfc: 'The coin could not be read. Start a fresh scan when ready.' });
         } finally {
-            controller.abort();
+            locked.current = false;
             if (mounted.current) {
-                working(false);
+                setBusy(false);
                 setReading(false);
             }
         }
     }
-    async function recover(poll = false) {
-        if (
-            !base ||
-            !lastRequest.current ||
-            busyRef.current ||
-            !navigator.onLine ||
-            document.visibilityState === 'hidden'
-        )
-            return;
-        working(true);
-        if (!poll) setErrors({});
-        const controller = new AbortController();
-        active.current = controller;
-        try {
-            const result = await operationRequest<Operation>(
-                `${base}/requests/${lastRequest.current}`,
-                undefined,
-                controller.signal,
-            );
-            if (mounted.current && !controller.signal.aborted) accept(result, poll);
-        } catch (error) {
-            if (mounted.current && !controller.signal.aborted) {
-                setErrors(operationErrors(error));
-                setUncertain(true);
-                setNotFound(error instanceof OperationError && error.status === 404);
-                setOperation((old) => (old ? { ...old, identity: null } : null));
-            }
-        } finally {
-            if (mounted.current) working(false);
-        }
-    }
-    async function review(action: 'confirm' | 'cancel' | 'identity_mismatch') {
-        if (!base || !operation || busyRef.current || !online) return;
-        working(true);
+    async function retry() {
+        if (locked.current) return;
+        locked.current = true;
+        setBusy(true);
         setErrors({});
-        const controller = new AbortController();
-        active.current = controller;
         try {
-            const result = await operationRequest<Operation>(
-                `${base}/attempts/${operation.id}/review`,
-                {
-                    action,
-                    ...(action === 'confirm'
-                        ? { identity_checked: identityChecked, identity_method: identityMethod }
-                        : {}),
-                },
-                controller.signal,
-            );
-            if (mounted.current && !controller.signal.aborted) accept(result);
-        } catch (error) {
-            if (mounted.current) {
-                setErrors(operationErrors(error));
-                if (!(error instanceof OperationError && error.status === 422)) {
-                    setUncertain(true);
-                    setOperation((old) => (old ? { ...old, identity: null } : null));
-                }
-            }
+            await send();
         } finally {
-            if (mounted.current) working(false);
+            locked.current = false;
+            if (mounted.current) setBusy(false);
         }
     }
-    function clear() {
+    function next() {
         payload.current = null;
-        locate(null);
-        setOperation(null);
-        setUncertain(false);
-        setNotFound(false);
+        frozen.current = null;
+        setResult(null);
         setErrors({});
-        setStatus('Ready for an explicit new scan.');
-        setIdentityChecked(false);
+        setStatus('');
+        setMissing(false);
+        setUncertain(false);
+        locate(null);
     }
     useEffect(() => {
         mounted.current = true;
-        const interrupt = () => {
-            active.current?.abort();
-            payload.current = null;
-            setOperation((old) => (old ? { ...old, identity: null } : null));
-            setIdentityChecked(false);
-            if (lastRequest.current) setUncertain(true);
+        const hide = () => {
+            if (document.hidden) {
+                active.current?.abort();
+                payload.current = null;
+                setReading(false);
+            }
         };
-        const visibility = () => {
-            if (document.visibilityState === 'hidden') interrupt();
-        };
-        const connection = () => {
-            setOnline(navigator.onLine);
-            if (!navigator.onLine) interrupt();
-        };
-        window.addEventListener('pagehide', interrupt);
-        document.addEventListener('visibilitychange', visibility);
-        window.addEventListener('online', connection);
-        window.addEventListener('offline', connection);
+        document.addEventListener('visibilitychange', hide);
         if (requestId && station) void recover();
         return () => {
             mounted.current = false;
             active.current?.abort();
             payload.current = null;
-            window.removeEventListener('pagehide', interrupt);
-            document.removeEventListener('visibilitychange', visibility);
-            window.removeEventListener('online', connection);
-            window.removeEventListener('offline', connection);
+            document.removeEventListener('visibilitychange', hide);
         };
-        // This page remounts when the station changes; operation IDs are metadata, never a credential.
     }, []);
-    useEffect(() => {
-        const timer = setInterval(() => {
-            const c = clock.current;
-            if (c)
-                setRemaining(
-                    Math.max(
-                        0,
-                        Math.ceil((c.expires - c.server - (performance.now() - c.received)) / 1000),
-                    ),
-                );
-        }, 250);
-        return () => clearInterval(timer);
-    }, []);
-    useEffect(() => {
-        if (!pending) return;
-        const timer = setInterval(() => void recover(true), 5000);
-        return () => clearInterval(timer);
-    }, [operation?.id, pending]);
-    const identity = !uncertain && remaining > 0 ? operation?.identity : null;
-    const ConnectionIcon = online ? Wifi : WifiOff;
     return (
         <ManagementPage
             page="scanner"
             title="Gate scanner"
-            description="Read a credential. Review identity. Confirm observed passage."
-            action={
-                <Badge tone={online ? 'neutral' : 'warning'}>
-                    <ConnectionIcon size={14} aria-hidden="true" />
-                    {online ? 'Browser online' : 'Browser offline'}
-                </Badge>
-            }
+            description="Choose Entry or Exit. Each valid NFC scan records automatically."
         >
-            {simulator && (
-                <p className="credential-notice">
-                    <strong>Isolated guard simulator</strong>
-                    <br />
-                    Every scan and passage here is simulated. Virtual tag:{' '}
-                    {virtualTagLabel() ?? 'not available in this tab'}.
-                </p>
-            )}
-            {!online && (
-                <p className="form-errors" role="alert">
-                    Offline. A server response is required before any passage can be confirmed.
-                    Recover the current request after reconnecting.
-                </p>
-            )}
             <FormErrors errors={errors} />
-            <div className="scanner-station">
-                <div className="station-select">
-                    <label htmlFor="gate-station">Assigned gate station</label>
-                    <select
-                        id="gate-station"
-                        value={station?.id ?? ''}
-                        disabled={blocked || !stations.length}
-                        onChange={(e) => {
-                            if (e.target.value)
-                                router.get(`/guard/gates/${e.target.value}/scanner`);
-                        }}
+            <Panel
+                title={
+                    station ? `${station.code} · ${station.name}` : 'Gate account not configured'
+                }
+                subtitle={
+                    station
+                        ? `Gate session · ${duplicateSeconds}-second duplicate protection`
+                        : 'Ask an administrator to link this account to an active gate.'
+                }
+            >
+                <div className="automatic-scanner-body">
+                    <div
+                        className="automatic-direction"
+                        role="group"
+                        aria-label="Passage direction"
                     >
-                        <option value="">
-                            {stations.length
-                                ? 'Choose an assigned station'
-                                : 'No current gate assignments'}
-                        </option>
-                        {stations.map((gate) => (
-                            <option key={gate.id} value={gate.id}>
-                                {gate.code} · {gate.name}
-                            </option>
+                        {(['entry', 'exit'] as const).map((d) => (
+                            <Button
+                                key={d}
+                                variant={direction === d ? 'primary' : 'secondary'}
+                                disabled={busy || uncertain}
+                                aria-pressed={direction === d}
+                                onClick={() => setDirection(d)}
+                            >
+                                {d === 'entry' ? 'Entry' : 'Exit'}
+                            </Button>
                         ))}
-                    </select>
-                </div>
-                <div className="station-session">
-                    <ShieldCheck size={20} />
-                    <div>
-                        <strong>
-                            {station
-                                ? `${station.code} · ${station.name}`
-                                : 'Station selection required'}
-                        </strong>
-                        <span>
-                            {reviewSeconds}-second review · {duplicateSeconds}-second duplicate
-                            window · server checks every action
-                        </span>
                     </div>
-                </div>
-            </div>
-            <div className="scanner-grid">
-                <Panel className="scan-panel">
-                    <div className="scan-panel-heading">
-                        <h2>Passage direction</h2>
-                        <span className="small-muted">Choose before scanning</span>
-                    </div>
-                    <div className="direction-choices" role="group" aria-label="Passage direction">
-                        {(['entry', 'exit'] as const).map((value) => {
-                            const Icon = value === 'entry' ? ArrowDownLeft : ArrowUpRight;
-                            return (
-                                <Button
-                                    key={value}
-                                    className={
-                                        direction === value
-                                            ? 'operation-direction selected'
-                                            : 'operation-direction'
-                                    }
-                                    aria-pressed={direction === value}
-                                    disabled={blocked}
-                                    onClick={() => setDirection(value)}
-                                >
-                                    <Icon size={22} />
-                                    {value === 'entry' ? 'Entry' : 'Exit'}
-                                </Button>
-                            );
-                        })}
-                    </div>
-                    <div className="scan-target">
-                        <div className="scan-frame">
-                            <ScanLine size={60} strokeWidth={1.2} />
-                        </div>
-                        <h3>
-                            {direction
-                                ? `Ready for ${direction === 'entry' ? 'Entry' : 'Exit'}`
-                                : 'Select Entry or Exit'}
-                        </h3>
-                        <p>
-                            A credential match opens a separate identity review. It does not record
-                            passage.
+                    <h2>
+                        {direction
+                            ? `Ready for ${direction === 'entry' ? 'Entry' : 'Exit'}`
+                            : 'Select Entry or Exit'}
+                    </h2>
+                    <p className="panel-message">
+                        The selected direction stays in place for the next scan. It never alternates
+                        automatically.
+                    </p>
+                    <Button
+                        variant="primary"
+                        disabled={
+                            !station ||
+                            !direction ||
+                            busy ||
+                            uncertain ||
+                            (!simulator && !nfcAvailable())
+                        }
+                        onClick={() => void scan()}
+                    >
+                        {reading ? 'Reading coin…' : 'Scan NFC coin'}
+                    </Button>
+                    {reading && (
+                        <Button onClick={() => active.current?.abort()}>Cancel NFC read</Button>
+                    )}
+                    {!simulator && !nfcAvailable() && (
+                        <p className="form-note">
+                            Web NFC is unavailable in this browser. Use the compatible Android NFC
+                            phone.
                         </p>
-                        <Button
-                            variant="primary"
-                            className="scan-button"
-                            disabled={
-                                !station ||
-                                !direction ||
-                                blocked ||
-                                !online ||
-                                (!simulator && !nfcAvailable())
-                            }
-                            onClick={() => void scan()}
-                        >
-                            {busy ? 'Working…' : simulator ? 'Scan virtual tag' : 'Start NFC scan'}
-                        </Button>
-                        {reading && (
-                            <Button onClick={() => active.current?.abort()}>Cancel NFC scan</Button>
-                        )}
-                        {!simulator && <NfcStatus />}
-                    </div>
-                    {simulator && (
-                        <div className="operation-probes">
-                            <Button
-                                disabled={!station || !direction || blocked || !online}
-                                onClick={() => void scan('unknown')}
-                            >
-                                Simulate unknown tag
-                            </Button>
-                            <Button
-                                disabled={!station || !direction || blocked || !online}
-                                onClick={() => void scan('malformed')}
-                            >
-                                Simulate malformed tag
-                            </Button>
-                        </div>
                     )}
-                </Panel>
-                <Panel
-                    title="Identity review"
-                    subtitle="Confirm only after comparing the person and observing the selected passage."
-                    className="identity-operation-panel"
-                    action={
-                        <Badge
-                            tone={
-                                operation?.passage?.voided
-                                    ? 'warning'
-                                    : identity
-                                      ? 'blue'
-                                      : operation?.passage
+                    <p role="status" aria-live="polite">
+                        {status}
+                    </p>
+                    {result && (
+                        <div>
+                            <Badge
+                                tone={
+                                    result.passage
                                         ? 'success'
-                                        : 'neutral'
-                            }
-                        >
-                            {identity
-                                ? `${remaining}s remaining`
-                                : operation?.passage?.voided
-                                  ? 'Passage voided'
-                                  : operation?.passage
-                                    ? 'Passage recorded'
-                                    : uncertain
-                                      ? 'Recover status'
-                                      : operation
-                                        ? reviewStatusLabel(operation.review.status)
-                                        : 'Awaiting credential'}
-                        </Badge>
-                    }
-                >
-                    {identity ? (
-                        <div className="operation-identity">
-                            <div className="operation-portrait">
-                                {identity.photo_url && !photoFailed ? (
-                                    <img
-                                        src={identity.photo_url}
-                                        alt={`${identity.name}, verification photograph`}
-                                        onError={() => {
-                                            setPhotoFailed(true);
-                                            setIdentityMethod('campus_document');
-                                            setIdentityChecked(false);
-                                        }}
-                                    />
-                                ) : (
-                                    <UserRound
-                                        size={70}
-                                        aria-label="No verification photograph available"
-                                    />
-                                )}
-                            </div>
-                            <h3>{identity.name}</h3>
-                            <p>
-                                {identity.number} · {identity.kind}
-                            </p>
-                            <Badge tone="blue">Credential authorized · passage not recorded</Badge>
-                            {identity.sequence_notice && (
-                                <p className="credential-notice">
-                                    {sequenceLabel(identity.sequence_notice)}
-                                </p>
-                            )}
-                            <Select
-                                name="identity_method"
-                                label="Identity review method"
-                                value={identityMethod}
-                                onChange={(e) => {
-                                    setIdentityMethod(e.target.value);
-                                    setIdentityChecked(false);
-                                }}
-                            >
-                                <option value="photo" disabled={!identity.photo_url || photoFailed}>
-                                    Compare with the photograph
-                                </option>
-                                <option value="campus_document">
-                                    Review a trusted campus identity document
-                                </option>
-                            </Select>
-                            <label className="operation-confirm-check">
-                                <input
-                                    type="checkbox"
-                                    checked={identityChecked}
-                                    onChange={(e) => setIdentityChecked(e.target.checked)}
-                                />
-                                <span>
-                                    I checked the person’s identity using the selected method and
-                                    observed this {operation?.direction} passage.
-                                </span>
-                            </label>
-                        </div>
-                    ) : (
-                        <div className="identity-empty">
-                            <UserRound size={50} />
-                            <h3>
-                                {operation?.passage?.voided
-                                    ? 'Original passage voided by an administrator'
-                                    : operation?.passage
-                                      ? `${operation.passage.direction === 'entry' ? 'Entry' : 'Exit'} passage recorded`
-                                      : operation?.duplicate_of
-                                        ? 'Duplicate passage suppressed'
-                                        : uncertain
-                                          ? 'Server outcome needs recovery'
-                                          : operation?.review.status === 'expired'
-                                            ? 'Review expired'
-                                            : operation?.verification.outcome === 'denied'
-                                              ? 'Credential denied'
-                                              : 'No identity to review'}
-                            </h3>
-                            <p>
-                                {operation?.passage
-                                    ? manilaTime(operation.passage.confirmed_at)
-                                    : operation?.review.reason
-                                      ? reasonLabel(operation.review.reason)
-                                      : operation
-                                        ? reasonLabel(operation.verification.reason)
-                                        : 'Choose your assigned station and direction, then scan a credential.'}
-                            </p>
-                            {operation?.duplicate_of && (
-                                <p>
-                                    Earlier {operation.duplicate_of.direction}:{' '}
-                                    {manilaTime(operation.duplicate_of.confirmed_at)}. No second
-                                    passage was created.
-                                </p>
-                            )}
-                            {pending && remaining <= 0 && (
-                                <p>Recover server status or cancel before a new scan.</p>
-                            )}
-                        </div>
-                    )}
-                    {pending && !uncertain && (
-                        <div className="identity-actions">
-                            <Button
-                                variant="primary"
-                                disabled={
-                                    busy ||
-                                    !online ||
-                                    !identity ||
-                                    !identityChecked ||
-                                    remaining <= 0
+                                        : result.duplicate_of
+                                          ? 'neutral'
+                                          : 'warning'
                                 }
-                                onClick={() => void review('confirm')}
                             >
-                                Confirm observed{' '}
-                                {operation.direction === 'entry' ? 'Entry' : 'Exit'}
-                            </Button>
-                            <div>
-                                <Button
-                                    disabled={busy || !online}
-                                    onClick={() => void review('identity_mismatch')}
-                                >
-                                    Identity mismatch
-                                </Button>
-                                <Button
-                                    disabled={busy || !online}
-                                    onClick={() => void review('cancel')}
-                                >
-                                    Cancel review
-                                </Button>
-                            </div>
+                                {result.passage
+                                    ? 'Recorded'
+                                    : result.duplicate_of
+                                      ? 'Duplicate suppressed'
+                                      : 'Rejected'}
+                            </Badge>
+                            {result.identity && (
+                                <>
+                                    <Portrait
+                                        src={result.identity.photo_url}
+                                        name={result.identity.name}
+                                    />
+                                    <h2>{result.identity.name}</h2>
+                                    <p>
+                                        {result.identity.number} · {result.identity.kind}
+                                    </p>
+                                </>
+                            )}
+                            {result.passage ? (
+                                <p>
+                                    {result.direction === 'entry' ? 'Entry' : 'Exit'} ·{' '}
+                                    {manilaTime(result.passage.confirmed_at)}
+                                </p>
+                            ) : (
+                                !result.duplicate_of && (
+                                    <p>{reasonLabel(result.verification.reason)}</p>
+                                )
+                            )}
+                            <p className="form-note">Recorded by this gate account.</p>
                         </div>
                     )}
-                    {lastRequest.current && (
-                        <div className="operation-recovery">
-                            <Button disabled={busy || !online} onClick={() => void recover()}>
+                    {uncertain && (
+                        <div>
+                            <p className="form-note">
+                                The server may have saved this scan. Recover the same request before
+                                continuing.
+                            </p>
+                            <Button disabled={busy} onClick={() => void recover()}>
                                 Recover request status
                             </Button>
-                            {notFound && payload.current && frozenDirection.current && (
-                                <Button
-                                    disabled={busy || !online}
-                                    onClick={() => {
-                                        working(true);
-                                        void send(
-                                            lastRequest.current!,
-                                            frozenDirection.current!,
-                                            payload.current!,
-                                        ).finally(() => {
-                                            if (mounted.current) working(false);
-                                        });
-                                    }}
-                                >
+                            {missing && payload.current && (
+                                <Button disabled={busy} onClick={() => void retry()}>
                                     Retry the same request
                                 </Button>
                             )}
-                            {(!pending && !uncertain) || notFound ? (
-                                <Button disabled={busy} onClick={clear}>
-                                    {notFound ? 'Discard local request' : 'Start another check'}
+                            {missing && !payload.current && (
+                                <Button
+                                    disabled={busy || !frozen.current}
+                                    onClick={() => void scan(true)}
+                                >
+                                    Read coin for same request
                                 </Button>
-                            ) : null}
+                            )}
                         </div>
                     )}
-                </Panel>
-            </div>
-            <p role="status" aria-live="polite" className="credential-feedback">
-                {status}
-            </p>
-            {station ? (
-                <Activity
-                    station
-                    feed={activity.feed}
-                    error={activity.error}
-                    refresh={() => void activity.refresh()}
-                />
-            ) : (
-                <p className="panel-message">
-                    Select an assigned station to load permitted recent activity.
-                </p>
-            )}
-            <p className="availability-note">
-                Recorded direction never changes automatically. Activity reflects guard observations
-                and missing scans; it does not prove continued campus presence.{' '}
-                <Link href="/guard/activity">View assigned-gate activity</Link>
-            </p>
+                    {result && !uncertain && (
+                        <Button disabled={busy} onClick={next}>
+                            Clear result
+                        </Button>
+                    )}
+                </div>
+            </Panel>
+            <Panel title="Recent gate activity" subtitle="Latest permitted scans at this gate">
+                <Button onClick={() => void activity.refresh()}>Refresh activity</Button>
+                {activity.error && (
+                    <p role="alert" className="form-errors">
+                        {activity.error}
+                    </p>
+                )}
+                {activity.feed?.records.length === 0 && (
+                    <p className="panel-message">No recent scans at this gate.</p>
+                )}
+                {activity.feed?.records.slice(0, 10).map((r) => (
+                    <p key={r.id}>
+                        <strong>{r.person ?? 'Unidentified coin'}</strong> · {r.direction} ·{' '}
+                        {r.duplicate
+                            ? 'Duplicate suppressed'
+                            : r.confirmed_at
+                              ? 'Recorded'
+                              : 'Rejected'}{' '}
+                        · {manilaTime(r.received_at)}
+                    </p>
+                ))}
+            </Panel>
         </ManagementPage>
     );
 }

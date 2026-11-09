@@ -1,5 +1,7 @@
 # NFC integration and credential lifecycle
 
+Current update: **The user-approved [gate-account workflow](workflow-redesign.md) supersedes earlier individual-guard, scheduled-assignment, separate-grant and manual-confirmation instructions.** Migration 19 / 26 tables; 196 PHP tests / 2,062 assertions, 25 NFC tests and ten concurrency scenarios passed. Program/department catalogues and academic year/semester are implemented. New automatic-flow physical acceptance remains pending; no GitHub publication or Vercel deployment occurred.
+
 Status: **Core Phase 6 implementation and the controlled vivo session are complete; full physical readiness remains partial**. The current phone is **vivo V2318 / Android 16 / Chrome 156.0.8078.79**. The user reports NFC access, coin write/read-back/activation, Entry/Exit and blank rejection. Employee HW-TAG-08 and restored student HW-TAG-09 are active/selected on two separate coins. Controlled safety01 tests report live-coin blocks, wrong destination rejected before write, correct destination write, wrong read-back rejection, and invalidation after an earlier matching read. Safety01 is cancelled with no activation; the two current selections and passages are unchanged. Initial HW-TAG-01 is revoked/withdrawn after reported overwrite, with history retained. Campus-document comparisons were synthetic lab exercises. RF/button results are user-reported; saved backend state is independently checked. See [Phase 6 status](phase-6-report.md) for checkpoints and remaining cases.
 
 ## Operator handoff after Phase 11

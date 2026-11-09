@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -18,7 +19,7 @@ class User extends Authenticatable
 
     public const DELETED_AT = 'archived_at';
 
-    protected $fillable = ['name', 'email', 'password', 'role', 'status', 'person_id', 'must_change_password'];
+    protected $fillable = ['name', 'email', 'username', 'gate_id', 'password', 'role', 'status', 'person_id', 'must_change_password'];
 
     protected $hidden = ['password', 'remember_token', 'auth_version'];
 
@@ -27,16 +28,25 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return ['password' => 'hashed', 'role' => UserRole::class, 'status' => RecordStatus::class,
-            'auth_version' => 'integer', 'record_version' => 'integer', 'archived_at' => 'immutable_datetime', 'must_change_password' => 'boolean', 'last_login_at' => 'immutable_datetime'];
+            'gate_id' => 'integer', 'auth_version' => 'integer', 'record_version' => 'integer', 'archived_at' => 'immutable_datetime', 'must_change_password' => 'boolean', 'last_login_at' => 'immutable_datetime'];
     }
 
     protected static function booted(): void
     {
+        static::creating(function (User $user): void {
+            if (! $user->username) {
+                $base = substr(strtolower(preg_replace('/[^a-zA-Z0-9._-]/', '', explode('@', $user->email)[0])), 0, 48) ?: 'operator';
+                $user->username = $base;
+                while (User::withTrashed()->where('username', $user->username)->exists()) {
+                    $user->username = $base.'-'.Str::lower(Str::random(6));
+                }
+            }
+        });
         static::updating(function (User $user): void {
             if ($user->isDirty(['name', 'email', 'role', 'status']) && ! $user->isDirty('record_version')) {
                 $user->record_version = (int) $user->getOriginal('record_version') + 1;
             }
-            if ($user->isDirty(['password', 'role', 'status'])) {
+            if ($user->isDirty(['password', 'role', 'status', 'username', 'gate_id'])) {
                 $user->auth_version = (int) $user->getOriginal('auth_version') + 1;
             }
         });

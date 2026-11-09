@@ -29,7 +29,7 @@ export function ManagementPage({
             {back && (
                 <Link href={back} className="management-back">
                     <ArrowLeft size={16} aria-hidden="true" />
-                    Back to {page === 'guards' ? 'security personnel' : page}
+                    Back to {page === 'guards' ? 'gate accounts' : page}
                 </Link>
             )}
             <PageHeading
@@ -256,18 +256,7 @@ export function DirectoryFilters({
                     <option value="archived">Archived records</option>
                     <option value="all">All records</option>
                 </Select>
-                {groupLabel && (
-                    <Select
-                        name="access"
-                        label="Campus access"
-                        value={form.data.access}
-                        onChange={(e) => form.setData('access', e.target.value)}
-                    >
-                        <option value="">All access states</option>
-                        <option value="authorized">Currently authorized</option>
-                        <option value="not_authorized">Not currently authorized</option>
-                    </Select>
-                )}
+
                 {gates && (
                     <ChoicePicker
                         kind="gates"
@@ -406,7 +395,7 @@ export function ArchiveActions({
                     version={record.record_version}
                     label="Restore record"
                     title={`Restore ${name}?`}
-                    description="The record will return as inactive. Previously revoked access grants or gate assignments remain revoked."
+                    description="The record will return as inactive. Review its status and credential before enabling scanning."
                 />
             ) : (
                 <>
@@ -418,7 +407,7 @@ export function ArchiveActions({
                         version={record.record_version}
                         label="Archive record"
                         title={`Archive ${name}?`}
-                        description="This record will be made inactive and hidden from current directories. Access grants or gate assignments will be revoked. Its details and history are retained, and it can be restored later."
+                        description="This record will be made inactive and hidden from current directories. Scanning will be blocked. Its details and history are retained, and it can be restored later."
                     />
                 </>
             )}

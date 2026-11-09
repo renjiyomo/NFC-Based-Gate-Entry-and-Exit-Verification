@@ -1,5 +1,7 @@
 # Local development and maintenance
 
+Current update: **The user-approved [gate-account workflow](workflow-redesign.md) supersedes earlier individual-guard, scheduled-assignment, separate-grant and manual-confirmation instructions.** Migration 19 / 26 tables; 196 PHP tests / 2,062 assertions, 25 NFC tests and ten concurrency scenarios passed. Program/department catalogues and academic year/semester are implemented. New automatic-flow physical acceptance remains pending; no GitHub publication or Vercel deployment occurred.
+
 Phases 1–11 are implemented/prepared for their approved local scopes. Credential issuance, controlled physical NFC, guard passage, monitoring/reports, anomaly review and synthetic Gemini Free Tier summaries are connected. Broader physical/institutional/production acceptance remains pending. Follow [AGENTS.md](../AGENTS.md), [final readiness](final-readiness.md), [operator guides](administrator-guide.md), [deployment preparation](deployment.md) and [backup/recovery](backup-and-recovery.md). Historical sections below describe earlier checkpoints.
 
 ## Current workstation

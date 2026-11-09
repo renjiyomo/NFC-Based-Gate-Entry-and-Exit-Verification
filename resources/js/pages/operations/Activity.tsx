@@ -13,7 +13,7 @@ export default function Activity({ admin, stations }: { admin: boolean; stations
         <ManagementPage
             page="history"
             title={admin ? 'Gate activity' : 'Recent assigned-gate activity'}
-            description="A credential check and an observed passage are separate records."
+            description="Valid NFC scans record automatically. Rejected and duplicate scans remain separate."
         >
             {simulator && (
                 <p className="credential-notice">

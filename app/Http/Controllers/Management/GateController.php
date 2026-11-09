@@ -18,7 +18,7 @@ class GateController
     {
         Policy::authorize('viewAny', Gate::class);
         $filters = DirectoryData::filters($request);
-        $query = DirectoryData::records(Gate::query(), $filters)->withCount(['assignments' => fn ($q) => $q->effective()]);
+        $query = DirectoryData::records(Gate::query(), $filters)->with('account');
         if ($filters['q'] !== '') {
             $like = DirectoryData::like($filters['q']);
             $query->where(fn ($q) => $q->whereRaw("name LIKE ? ESCAPE '!'", [$like])->orWhereRaw("code LIKE ? ESCAPE '!'", [$like]));
@@ -45,8 +45,7 @@ class GateController
     {
         Policy::authorize('view', $gate);
 
-        return Inertia::render('management/GateShow', ['record' => DirectoryData::gate($gate),
-            'assignments' => AssignmentController::list($gate->assignments())]);
+        return Inertia::render('management/GateShow', ['record' => DirectoryData::gate($gate)]);
     }
 
     public function edit(Gate $gate): Response
@@ -70,7 +69,7 @@ class GateController
         Policy::authorize('archive', $gate);
         $request->run(fn () => $gates->archive($request->user(), $gate, $request->integer('record_version')));
 
-        return redirect('/admin/gates')->with('status', 'Gate archived and assignments revoked. History is retained.');
+        return redirect('/admin/gates')->with('status', 'Gate archived and its login disabled. History is retained.');
     }
 
     public function restore(ManagementRequest $request, Gate $gate, GateManagement $gates): RedirectResponse
@@ -78,6 +77,6 @@ class GateController
         Policy::authorize('archive', $gate);
         $request->run(fn () => $gates->archive($request->user(), $gate, $request->integer('record_version'), true));
 
-        return redirect('/admin/gates/'.$gate->id)->with('status', 'Gate restored as inactive. Assignments remain revoked.');
+        return redirect('/admin/gates/'.$gate->id)->with('status', 'Gate restored as inactive. Edit the gate to enable its login.');
     }
 }

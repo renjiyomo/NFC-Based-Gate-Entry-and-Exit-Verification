@@ -37,10 +37,10 @@ class ManagementChoicesTest extends ManagementTestCase
         $gate = Gate::create(['code' => 'TEST', 'name' => 'Test station', 'status' => 'active']);
         $assignment = GuardGateAssignment::create(['guard_id' => $guard->id, 'gate_id' => $gate->id, 'assigned_by' => $this->admin->id, 'starts_at' => now()->subMinute()]);
         app(AccountService::class)->changeAccess($guard, UserRole::Guard, RecordStatus::Inactive);
-        $this->put('/admin/guards/'.$guard->id, ['name' => 'Stale update', 'status' => 'active', 'record_version' => 1])->assertSessionHasErrors('record_version');
+        $this->put('/admin/guards/'.$guard->id, ['name' => 'Stale update', 'status' => 'active', 'record_version' => 1])->assertStatus(410);
         $this->assertSame('inactive', $guard->fresh()->status->value);
         app(AccountService::class)->changeAccess($guard, UserRole::Admin, RecordStatus::Active);
-        $this->delete('/admin/gates/'.$gate->id.'/assignments/'.$assignment->id)->assertSessionHasNoErrors();
-        $this->assertNotNull($assignment->fresh()->revoked_at);
+        $this->delete('/admin/gates/'.$gate->id.'/assignments/'.$assignment->id)->assertStatus(410);
+        $this->assertNull($assignment->fresh()->revoked_at);
     }
 }

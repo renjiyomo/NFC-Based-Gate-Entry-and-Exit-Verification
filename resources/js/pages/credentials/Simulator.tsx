@@ -123,7 +123,7 @@ export default function Simulator() {
                 <Panel className="credential-panel" title="Verification result">
                     <div className="credential-result" role="status">
                         <Badge tone={result.eligible ? 'success' : 'warning'}>
-                            {result.eligible ? 'Eligible for review' : 'Rejected'}
+                            {result.eligible ? 'Credential accepted' : 'Rejected'}
                         </Badge>
                         <h2>{result.reason.replaceAll('_', ' ')}</h2>
                         {result.person && (

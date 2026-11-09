@@ -44,6 +44,6 @@ class ReportTable
             return [CarbonImmutable::parse($d['time'])->setTimezone('Asia/Manila')->format('Y-m-d H:i:s.u'), $d['person']['name'] ?? 'Unidentified', $d['person']['number'] ?? '', $d['person']['kind'] ?? '', $d['gate']['code'], $d['guard'], $d['direction'], $d['outcome'], $d['reason'], $d['review'], $d['review_reason'] ?? '', $d['voided'] ? 'Voided' : ($d['passage_id'] ? 'Effective passage' : 'No passage'), $d['credential'] ?? '', $d['sequence_notice'] ?? ''];
         })->all();
 
-        return ['headers' => ['Time (Asia/Manila)', 'Person', 'Campus number', 'Person type', 'Gate', 'Guard', 'Direction', 'Verification', 'Reason', 'Review', 'Review reason', 'Passage state', 'Credential label', 'Sequence notice'], 'rows' => $rows];
+        return ['headers' => ['Time (Asia/Manila)', 'Person', 'Campus number', 'Person type', 'Gate', 'Gate account', 'Direction', 'Verification', 'Reason', 'Review', 'Review reason', 'Passage state', 'Credential label', 'Sequence notice'], 'rows' => $rows];
     }
 }

@@ -21,20 +21,14 @@ export default function GatesIndex({
         <ManagementPage
             page="gates"
             title="Gate stations"
-            description="Manage campus gates and scheduled security assignments."
+            description="Create a gate together with its username and password."
             action={<AddLink href="/admin/gates/create">Add gate station</AddLink>}
         >
             <Panel title="Campus gates" subtitle="Station identities and record status">
                 <DirectoryFilters filters={filters} url="/admin/gates" />
                 <DataTable
                     caption="Campus gates"
-                    columns={[
-                        'Gate station',
-                        'Gate code',
-                        'Record status',
-                        'Current schedules',
-                        'Details',
-                    ]}
+                    columns={['Gate station', 'Gate code', 'Record status', 'Username', 'Details']}
                     empty="No gate stations match these filters"
                     count={records.data.length}
                 >
@@ -47,7 +41,7 @@ export default function GatesIndex({
                             <td>
                                 <RecordBadge status={gate.status} archived={gate.archived_at} />
                             </td>
-                            <td>{gate.assignments_count}</td>
+                            <td>{gate.username ?? 'Not configured'}</td>
                             <td>
                                 <Link
                                     className="row-link"

@@ -108,11 +108,11 @@ export default function Filters({
                 </Select>
                 <Select
                     name="guard_id"
-                    label="Guard"
+                    label="Gate account"
                     value={form.data.guard_id}
                     onChange={(e) => form.setData('guard_id', e.target.value)}
                 >
-                    <option value="">All guards</option>
+                    <option value="">All gate accounts</option>
                     {guards.map((g) => (
                         <option key={g.id} value={g.id}>
                             {g.name}

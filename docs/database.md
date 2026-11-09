@@ -1,5 +1,7 @@
 # NFCheck database and ERD
 
+Current update: **The user-approved [gate-account workflow](workflow-redesign.md) supersedes earlier individual-guard, scheduled-assignment, separate-grant and manual-confirmation instructions.** Migration 19 / 26 tables; 196 PHP tests / 2,062 assertions, 25 NFC tests and ten concurrency scenarios passed. Program/department catalogues and academic year/semester are implemented. New automatic-flow physical acceptance remains pending; no GitHub publication or Vercel deployment occurred.
+
 Status: **18 migrations / 24 tables in all four isolated Oracle MySQL 8.4.13 schemas**, including monitoring/corrections, anomaly evidence/reviews and summary snapshots/jobs/reviews. Phases 10–11 add no persistent schema changes. All three operating schemas passed encrypted isolated restore drills; see [recovery](backup-and-recovery.md). See [database setup](database-setup.md). Historical sections below describe their own checkpoints; proposed future ERD elements are not automatically implemented.
 
 ## Implemented Phase 7 additions

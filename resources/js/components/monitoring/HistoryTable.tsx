@@ -8,7 +8,14 @@ export default function HistoryTable({ rows }: { rows: HistoryRow[] }) {
     return (
         <DataTable
             caption="Gate activity records"
-            columns={['Time · Manila', 'Person', 'Gate / guard', 'Direction', 'Result', 'Details']}
+            columns={[
+                'Time · Manila',
+                'Person',
+                'Gate / account',
+                'Direction',
+                'Result',
+                'Details',
+            ]}
             count={rows.length}
             empty="No matching records"
             emptyDescription="Choose another period or adjust filters. Denied and unconfirmed scans do not count as passage."

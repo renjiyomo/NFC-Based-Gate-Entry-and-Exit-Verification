@@ -24,16 +24,17 @@ class SessionController
     public function store(LoginRequest $request, AuditLogger $audit): RedirectResponse
     {
         $credentials = $request->validated();
-        $subject = $audit->fingerprint($credentials['email']);
+        $field = isset($credentials['username']) ? 'username' : 'email';
+        $subject = $audit->fingerprint($credentials[$field]);
         $ip = $audit->fingerprint((string) $request->ip());
         $key = 'login:'.$subject.':'.$ip;
         if (RateLimiter::tooManyAttempts($key, 5) || RateLimiter::tooManyAttempts('login-ip:'.$ip, 30)) {
             $audit->record('login.throttled', metadata: ['subject_hash' => $subject, 'ip_hash' => $ip], outcome: 'denied');
-            throw ValidationException::withMessages(['email' => 'Too many sign-in attempts. Wait a minute and try again.'])->redirectTo(route('login'));
+            throw ValidationException::withMessages([$field => 'Too many sign-in attempts. Wait a minute and try again.'])->redirectTo(route('login'));
         }
         try {
-            $authenticated = DB::transaction(function () use ($credentials, $audit, $subject, $ip): bool {
-                User::where('email', $credentials['email'])->lockForUpdate()->first();
+            $authenticated = DB::transaction(function () use ($credentials, $audit, $subject, $ip, $field): bool {
+                User::where($field, $credentials[$field])->lockForUpdate()->first();
                 if (! Auth::attempt([...$credentials, 'status' => 'active'], false)) {
                     $audit->record('login.failed', metadata: ['subject_hash' => $subject, 'ip_hash' => $ip], outcome: 'failure');
 
@@ -54,7 +55,7 @@ class SessionController
         if (! $authenticated) {
             RateLimiter::hit($key, 60);
             RateLimiter::hit('login-ip:'.$ip, 60);
-            throw ValidationException::withMessages(['email' => 'These credentials could not be verified.'])->redirectTo(route('login'));
+            throw ValidationException::withMessages([$field => 'These credentials could not be verified.'])->redirectTo(route('login'));
         }
         RateLimiter::clear($key);
         $request->session()->regenerate(true);

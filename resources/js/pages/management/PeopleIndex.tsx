@@ -26,14 +26,14 @@ export default function PeopleIndex({
         <ManagementPage
             page={directory}
             title={student ? 'Student directory' : 'Employee directory'}
-            description="Manage identity records and campus access grants."
+            description="Manage student and employee identities and their NFC credentials."
             action={
                 <AddLink href={`${base}/create`}>Add {student ? 'student' : 'employee'}</AddLink>
             }
         >
             <Panel
                 title={student ? 'Students' : 'Employees'}
-                subtitle="Identity records and current campus access"
+                subtitle="Identity records and NFC status"
             >
                 <DirectoryFilters
                     filters={filters}
@@ -47,7 +47,6 @@ export default function PeopleIndex({
                         student ? 'Student number' : 'Employee number',
                         student ? 'Program / year' : 'Department / position',
                         'Record status',
-                        'Campus access',
                         'NFC credential',
                         'Details',
                     ]}
@@ -84,11 +83,6 @@ export default function PeopleIndex({
                                 <RecordBadge status={person.status} archived={person.archived_at} />
                             </td>
                             <td>
-                                <Badge tone={person.access_active ? 'success' : 'neutral'}>
-                                    {person.access_active ? 'Authorized' : 'Not authorized'}
-                                </Badge>
-                            </td>
-                            <td>
                                 <Badge tone={person.nfc_credential ? 'success' : 'neutral'}>
                                     {person.nfc_credential
                                         ? `Active · ${person.nfc_credential.label}`
@@ -110,9 +104,7 @@ export default function PeopleIndex({
                 <Pagination records={records} />
             </Panel>
             <p className="availability-note">
-                Person status, campus access and NFC credential status are separate. An active
-                person may have no NFC credential. Check the physical coin before issuing or reusing
-                it.
+                An active person and selected active NFC credential are required for scanning.
             </p>
         </ManagementPage>
     );

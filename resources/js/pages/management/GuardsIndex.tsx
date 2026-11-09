@@ -1,15 +1,14 @@
 import { Link } from '@inertiajs/react';
 import { Panel } from '../../components/ui';
 import {
-    AddLink,
     DataTable,
     DirectoryFilters,
     ManagementPage,
     Pagination,
     RecordBadge,
+    AddLink,
 } from '../../components/management/Common';
 import type { Filters, GuardRecord, Paginated } from '../../lib/management';
-
 export default function GuardsIndex({
     records,
     filters,
@@ -20,46 +19,31 @@ export default function GuardsIndex({
     return (
         <ManagementPage
             page="guards"
-            title="Security personnel"
-            description="Manage guard accounts and their gate assignments."
-            action={<AddLink href="/admin/guards/create">Add security guard</AddLink>}
+            title="Gate accounts"
+            description="One username and password per gate. Guards share the gate session across shifts."
+            action={<AddLink href="/admin/gates/create">Add gate and account</AddLink>}
         >
             <Panel
-                title="Security guards"
-                subtitle="Administrator accounts are managed separately and do not receive guard permissions."
+                title="Gate logins"
+                subtitle="Passwords are set or reset by an administrator. No email activation is required."
             >
-                <DirectoryFilters filters={filters} url="/admin/guards" gates />
+                <DirectoryFilters filters={filters} url="/admin/guards" />
                 <DataTable
-                    caption="Security guard accounts"
-                    columns={[
-                        'Security guard',
-                        'Email',
-                        'Account status',
-                        'Password setup',
-                        'Current schedules',
-                        'Details',
-                    ]}
-                    empty="No security guards match these filters"
+                    caption="Gate accounts"
+                    columns={['Gate', 'Username', 'Status', 'Manage']}
+                    empty="No gate accounts"
                     count={records.data.length}
                 >
-                    {records.data.map((guard) => (
-                        <tr key={guard.id}>
+                    {records.data.map((a) => (
+                        <tr key={a.id}>
+                            <td>{a.name}</td>
+                            <td>{a.username}</td>
                             <td>
-                                <strong>{guard.name}</strong>
+                                <RecordBadge status={a.status} archived={a.archived_at} />
                             </td>
-                            <td>{guard.email}</td>
                             <td>
-                                <RecordBadge status={guard.status} archived={guard.archived_at} />
-                            </td>
-                            <td>{guard.must_change_password ? 'Pending' : 'Completed'}</td>
-                            <td>{guard.assignments_count}</td>
-                            <td>
-                                <Link
-                                    href={`/admin/guards/${guard.id}`}
-                                    className="row-link"
-                                    aria-label={`View ${guard.name}`}
-                                >
-                                    View account
+                                <Link className="row-link" href={`/admin/gates/${a.gate_id}/edit`}>
+                                    Edit account
                                 </Link>
                             </td>
                         </tr>

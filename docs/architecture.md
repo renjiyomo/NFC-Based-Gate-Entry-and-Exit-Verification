@@ -1,5 +1,7 @@
 # NFCheck architecture proposal
 
+Current revision: [gate-account workflow](workflow-redesign.md) and [verification report](workflow-redesign-report.md) supersede the individual-guard/manual-review/access-grant design below for new operations. AutomaticPassages commits a valid scan and selected Entry/Exit atomically, using gate-auto-v2/nfc_scan; gates have one username/password account, and academic choices use database catalogues. Legacy rows/contracts remain for history. The old 30-second review limit applies only to legacy operations; the ten-second duplicate window still applies to new scans. Software checks passed; the revised physical phone interaction is pending.
+
 Status: **Phases 1–9 implemented for their authorized local scopes**, including guard verification/passage, controlled vivo NFC testing, reporting/corrections and explainable anomaly review. See [Phase 8](phase-8-report.md), [Phase 7](phase-7-report.md) and the remaining physical limits in [Phase 6](phase-6-report.md). Development defaults remain 30-second review validity and a 10-second duplicate window. Later proposals below are conditional; anomaly detection currently runs on demand with bounded selections and does not alter gate authorization. Phase 9 AI-assisted aggregate fact selection is approved and implemented only for synthetic lab schemas using Gemini Free Tier, with no billing or paid fallback; see [Phase 9](phase-9-report.md). Main/real-data AI remains excluded.
 
 ## Purpose and boundaries

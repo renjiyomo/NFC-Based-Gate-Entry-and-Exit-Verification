@@ -12,7 +12,7 @@ class StudentProfile extends Model
 
     public $incrementing = false;
 
-    protected $fillable = ['person_id', 'program', 'year_level', 'academic_term'];
+    protected $fillable = ['person_id', 'program', 'year_level', 'academic_term', 'academic_year', 'semester'];
 
     protected static function booted(): void
     {

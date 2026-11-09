@@ -381,9 +381,9 @@ export default function Issue({
                             onChange={(e) => setUntil(e.target.value)}
                         />
                         <p className="field-hint">
-                            The person must be active. Campus access still needs a separate grant.
-                            This reference is delivered once; leaving or hiding this page clears the
-                            issuance receipt.
+                            The person must be active. An activated, selected credential enables
+                            gate scanning. This reference is delivered once; leaving or hiding this
+                            page clears the issuance receipt.
                         </p>
                         {mode === 'replace' && (
                             <p className="credential-notice">

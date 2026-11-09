@@ -1,0 +1,40 @@
+# Workflow redesign verification — November 9, 2026
+
+The user's requested revision is implemented for local software use. The current operating procedure is [gate-account workflow](workflow-redesign.md). No public GitHub/Vercel publication occurred. The user could not connect the phone for a new RF test; physical acceptance of the automatic flow remains pending.
+
+## Implemented changes
+
+- One database-backed username/password account per gate, created atomically with its gate. Unique gate binding prevents a second account; direct login was verified. No email activation or date/shift form. Gate status controls the login and scanning. One combined Gates & accounts navigation entry replaces duplicate gate/guard setup. Old individual guards are inactive retained actors; shifts remain the university's responsibility.
+- New valid scans commit Entry/Exit immediately through AutomaticPassages. No confirmation checkbox, identity method selection, countdown or Confirm button. The account is restricted to its own station. Direction remains explicit and stays selected between scans. A deliberate Scan NFC coin action starts the one-shot reader; it does not require another confirmation after reading.
+- The active person and selected active/unexpired credential determine eligibility; no current grant is consulted by automatic scans or credential inspection. Retired grant/dated-assignment mutation routes return 410. Existing rows remain for historical foreign keys and audit interpretation.
+- Database reference tables contain the supplied 17 programs/six departments. Student fields use bounded year dropdowns and academic year/semester. Unknown, out-of-range, malformed-array and nonconsecutive-year input is rejected by the backend. Existing legacy profile values were not silently reclassified.
+- Existing checked-coin writing/read-back/activation, loss revocation and replacement safeguards remain. New event method `nfc_scan`/policy `gate-auto-v2` distinguishes automatic credential scans from earlier human observations. No new scan is labeled as a manual identity confirmation.
+- Existing passwords/coins and passage/anomaly/summary history were retained. New gate passwords are in the private ignored operator handoff; personal administrator passwords were not reset. Private CLI provisioning now creates administrators; gate accounts are created with their gate.
+
+## Verification
+
+The final full `scripts/dev.ps1 check` passed **196 PHP tests / 2,062 assertions, 25 NFC adapter tests and ten real MySQL race scenarios**. Composer validation/audit, npm audit, PHP/frontend style, TypeScript and production build passed. Final UI copy/layout changes also passed frontend formatting and a fresh production build.
+
+After removing unused assignment props/counts from gate screens and updating archive/restore feedback, the focused gate/account/catalogue/automatic-flow regression run passed 12 tests / 132 assertions. PHP style and both startup PowerShell syntax checks passed. Final runtime/catalogue privilege and private-value checks passed again.
+
+The tests explicitly cover atomic gate/account save and direct username login without mail or assignment; unique usernames and rollback; password retention/reset and session versioning; inactive/wrong-gate rejection; program/year/department/year-semester validation, including arrays; automatic Entry/Exit without grant/assignment; same-request replay/recovery; changed-request rejection; duplicate suppression; revoked and inactive-person denial; recent identity limits; and retained immutable legacy records. Earlier manual/scheduling HTTP acceptance cases were replaced with current-flow/retirement assertions; legacy service regression cases remain for historical contracts. The test count is not inflated by keeping obsolete UI acceptance criteria.
+
+Two new observed-overlap process races prove automatic recording with concurrent distinct request IDs produces one event plus one duplicate, and concurrent same-ID retry produces one attempt/event. Eight prior anomaly/summary/legacy-operation races still pass. Test fixtures and quota singleton values were restored through captured-ID cleanup. A microsecond cutoff bug in the new duplicate query was caught during testing and fixed before the passing run.
+
+All four schemas have **19 migrations / 26 tables**. Runtime accounts still reject 23 immutable-table privilege probes and now reject six catalogue mutation probes each. All retain 17 program/six department reference rows. Private-value scanning includes new gate passwords and the backup key; no private credentials were found in reviewable files, and no NFC plaintext pattern was found in checked application/lab logs.
+
+Post-revision encrypted restore drills matched all 26 tables in main (125 rows), simulator (264 rows) and hardware (282 rows). Each preserved the source and removed only its owned disposable schema and temporary plaintext. [Sanitized receipts](evidence/workflow-redesign-recovery.json) retain the exact results. Current sources have zero private photos, so this is not photo, off-device or host-loss acceptance.
+
+Lab startup now initializes the shared gate account after guarded migration/seeding. Fresh seed code uses catalogue values and no longer creates individual guards, grants or dated assignments; existing rows are left unchanged. Re-running the seed/initializer against the current workspaces preserved business counts, passwords and account status. Startup PowerShell syntax and PHP style were checked without restarting the existing servers/workers.
+
+Browser QA verified the real hardware gate username/password login and automatic station selection; mobile scanner layout/direction controls with no manual checkbox or time fields; the 17-program/1–4-year/academic-year/semester form; six department options; gate username/password/confirmation fields without email/scheduling; and combined navigation. Mobile forms/scanner had no document overflow. No console errors/warnings were observed on the checked screens. The viewport was reset and browser test sessions signed out. Screenshots: ignored `.tools/artifacts/flow-gate-account.png`, `flow-student-mobile.png`, `flow-scanner-mobile.png`. Backend creation tests roll back; browser inspection created no new people, coins or passages.
+
+## Retained state
+
+Main: six operator rows (three active admins, two active gate accounts, one inactive legacy guard), two people, two gates, zero credentials/attempts/passages/anomalies/summaries. Simulator: four operators, two people, one gate, seven closed credential records, 11 attempts/five passages/three corrections/three flags/one approved summary. Hardware: four operators, two people, one gate, nine credential records, 26 attempts/six staged physical-source passages, no pending reviews/flags/summaries. Active student HW-TAG-09 and employee HW-TAG-08 remain selected on their separate coins. No new live Gemini call occurred. Shared XAMPP and existing app/summary-worker processes were preserved.
+
+## Remaining acceptance
+
+Software flow is verified; the revised **physical** automatic interaction has not been tested because no debugging device was detected and the user could not connect it. When available, sign in on phone Chrome as `hw-gate-01` using the private handoff, choose Entry and read an active coin, then choose Exit and read it again. Each valid read should save directly, with no Confirm step; verify the server ledger and duplicate/connection recovery. No coin rewrite is needed.
+
+Programme year maxima currently use the standard four-year undergraduate default; registrar confirmation of each programme/legacy case remains a rollout input. Original Phase 6 broader device/tag/two-guard/response-loss gaps remain historical acceptance limits, interpreted for the revised shared-gate flow. Trusted HTTPS/host/database/durable private storage, approved privacy/retention/outage policies, production-sized load/recovery and any GitHub/Vercel release plan remain separate preparation. No claim of physical identity assurance, exact occupancy, complete security or production approval is made.

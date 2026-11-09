@@ -13,6 +13,7 @@ class AuthorizationController
 {
     public function store(ManagementRequest $request, string $directory, Person $person, AccessManagement $access): RedirectResponse
     {
+        abort(410, 'Scheduled assignments and separate access grants are retired.');
         Gate::authorize('update', $person);
         abort_unless($person->person_type->value === ($directory === 'students' ? 'student' : 'employee'), 404);
         $request->run(fn () => $access->grant($request->user(), $person, $request->validated()));
@@ -22,6 +23,7 @@ class AuthorizationController
 
     public function destroy(ManagementRequest $request, string $directory, Person $person, AccessAuthorization $grant, AccessManagement $access): RedirectResponse
     {
+        abort(410, 'Scheduled assignments and separate access grants are retired.');
         Gate::authorize('update', $person);
         abort_unless($person->person_type->value === ($directory === 'students' ? 'student' : 'employee'), 404);
         $request->run(fn () => $access->revokeGrant($request->user(), $person, $grant));

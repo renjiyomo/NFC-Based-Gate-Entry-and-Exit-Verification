@@ -1,5 +1,7 @@
 # Environment and operations reference
 
+Current update: **The user-approved [gate-account workflow](workflow-redesign.md) supersedes earlier individual-guard, scheduled-assignment, separate-grant and manual-confirmation instructions.** Migration 19 / 26 tables; 196 PHP tests / 2,062 assertions, 25 NFC tests and ten concurrency scenarios passed. Program/department catalogues and academic year/semester are implemented. New automatic-flow physical acceptance remains pending; no GitHub publication or Vercel deployment occurred.
+
 The [production template](../deploy/production.env.example) is unapplied. `.env.example` remains the local-development template. Actual secrets are excluded from Git and must be handed off privately.
 
 | Configuration | Purpose and handling |

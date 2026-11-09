@@ -57,7 +57,7 @@ class DirectoryData
         return ['id' => $person->id, 'kind' => $person->person_type->value, 'campus_number' => $person->campus_number, 'full_name' => $person->full_name,
             'status' => $person->status->value, 'record_version' => (int) $person->record_version, 'archived_at' => $person->archived_at?->toIso8601String(),
             'photo_url' => $person->photo_path ? '/admin/'.($person->person_type->value === 'student' ? 'students' : 'employees').'/'.$person->id.'/photo?v='.$person->record_version : null,
-            'program' => $profile?->program, 'year_level' => $profile?->year_level, 'academic_term' => $profile?->academic_term, 'department' => $profile?->department, 'position' => $profile?->position,
+            'program' => $profile?->program, 'year_level' => $profile?->year_level, 'academic_term' => $profile?->academic_term, 'academic_year' => $profile?->academic_year, 'semester' => $profile?->semester, 'department' => $profile?->department, 'position' => $profile?->position,
             'access_active' => (bool) ($person->access_active ?? false),
             'nfc_credential' => $credential?->effectiveStatus() === 'active' ? ['label' => $credential->label, 'status' => 'active'] : null];
     }
@@ -65,12 +65,12 @@ class DirectoryData
     public static function gate(Gate $gate): array
     {
         return ['id' => $gate->id, 'code' => $gate->code, 'name' => $gate->name, 'status' => $gate->status->value, 'record_version' => (int) $gate->record_version,
-            'archived_at' => $gate->archived_at?->toIso8601String(), 'assignments_count' => $gate->assignments_count ?? 0];
+            'archived_at' => $gate->archived_at?->toIso8601String(), 'assignments_count' => $gate->assignments_count ?? 0, 'account_id' => $gate->account?->id, 'username' => $gate->account?->username, 'account_status' => $gate->account?->status->value];
     }
 
     public static function guard(User $user): array
     {
-        return ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'status' => $user->status->value, 'record_version' => (int) $user->record_version,
+        return ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'username' => $user->username, 'gate_id' => $user->gate_id, 'status' => $user->status->value, 'record_version' => (int) $user->record_version,
             'archived_at' => $user->archived_at?->toIso8601String(), 'must_change_password' => $user->must_change_password, 'assignments_count' => $user->guard_assignments_count ?? 0];
     }
 }

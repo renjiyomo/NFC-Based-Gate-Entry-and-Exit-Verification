@@ -32,10 +32,10 @@ class PeopleManagementTest extends ManagementTestCase
         $this->assertDatabaseHas($table, ['person_id' => $person->id, $field => $data[$field]]);
         $this->get('/admin/'.$directory.'/'.$person->id)->assertOk()->assertInertia(fn (Assert $page) => $page->component('management/PersonShow')->where('record.full_name', $data['full_name'])->where('record.access_active', false)->missing('record.photo_path'));
         $this->get('/admin/'.$directory.'/'.$person->id.'/edit')->assertOk();
-        $this->put('/admin/'.$directory.'/'.$person->id, [...$data, 'full_name' => 'Updated synthetic identity', $field => 'Updated affiliation', 'record_version' => 1])->assertSessionHasNoErrors()->assertRedirect('/admin/'.$directory.'/'.$person->id);
+        $this->put('/admin/'.$directory.'/'.$person->id, [...$data, 'full_name' => 'Updated synthetic identity', $field => ($directory === 'students' ? 'BSIT' : 'Engineering Department'), 'record_version' => 1])->assertSessionHasNoErrors()->assertRedirect('/admin/'.$directory.'/'.$person->id);
         $this->assertSame('Updated synthetic identity', $person->fresh()->full_name);
         $this->assertSame(2, $person->fresh()->record_version);
-        $this->assertDatabaseHas($table, ['person_id' => $person->id, $field => 'Updated affiliation']);
+        $this->assertDatabaseHas($table, ['person_id' => $person->id, $field => ($directory === 'students' ? 'BSIT' : 'Engineering Department')]);
         $other = $directory === 'students' ? 'employees' : 'students';
         $this->get('/admin/'.$other.'/'.$person->id)->assertNotFound();
         $this->put('/admin/'.$other.'/'.$person->id, [...$data, 'record_version' => 2])->assertNotFound();

@@ -34,7 +34,7 @@ class PersonManagement
                 }
                 $person->forceFill(['record_version' => $target ? (int) $person->record_version + 1 : 1])->save();
                 $relation = $type === PersonType::Student ? $person->studentProfile() : $person->employeeProfile();
-                $fields = $type === PersonType::Student ? ['program', 'year_level', 'academic_term'] : ['department', 'position'];
+                $fields = $type === PersonType::Student ? ['program', 'year_level', 'academic_term', 'academic_year', 'semester'] : ['department', 'position'];
                 $relation->updateOrCreate(['person_id' => $person->id], Arr::only($data, $fields));
                 $this->audit->record($target ? 'person.updated' : 'person.created', $actor, $person, ['status' => $person->status->value]);
 

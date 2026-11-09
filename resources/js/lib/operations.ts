@@ -138,7 +138,9 @@ export function operationBase(gateId: number, simulated: boolean): string {
 }
 export function reasonLabel(reason: string): string {
     const labels: Record<string, string> = {
-        eligible_for_review: 'Credential authorized; identity review is required',
+        credential_valid: 'Credential accepted',
+        automatic_nfc_scan: 'Recorded automatically from NFC scan',
+        eligible_for_review: 'Credential accepted',
         malformed: 'The tag does not contain a valid NFCheck reference',
         unknown: 'Reference is not registered',
         revoked: 'Credential has been revoked',

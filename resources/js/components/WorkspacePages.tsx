@@ -266,9 +266,7 @@ export function AnalyticsPage() {
                     <div>
                         <ArrowDownLeft size={21} aria-hidden="true" />
                         <h3>Entries & exits</h3>
-                        <p>
-                            Count confirmed observed passages, with traceable corrections applied.
-                        </p>
+                        <p>Count recorded NFC passages, with traceable corrections applied.</p>
                     </div>
                     <div>
                         <ShieldAlert size={21} aria-hidden="true" />

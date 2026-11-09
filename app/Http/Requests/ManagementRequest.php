@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\NotCommonPassword;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -55,13 +57,16 @@ class ManagementRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        foreach (['full_name', 'campus_number', 'program', 'academic_term', 'department', 'position', 'name', 'code', 'email', 'reason'] as $field) {
+        foreach (['full_name', 'campus_number', 'program', 'academic_term', 'department', 'position', 'name', 'code', 'email', 'username', 'reason'] as $field) {
             if (is_string($this->input($field))) {
                 $this->merge([$field => trim($this->input($field))]);
             }
         }
         if (is_string($this->input('code'))) {
             $this->merge(['code' => strtoupper($this->input('code'))]);
+        }
+        if (is_string($this->input('username'))) {
+            $this->merge(['username' => mb_strtolower(trim($this->input('username')))]);
         }
         if (is_string($this->input('email'))) {
             $this->merge(['email' => mb_strtolower($this->input('email'))]);
@@ -74,7 +79,7 @@ class ManagementRequest extends FormRequest
             $this->routeIs('admin.people.store', 'admin.people.update') => $this->personRules(),
             $this->routeIs('admin.gates.store', 'admin.gates.update') => [
                 'code' => ['required', 'string', 'max:32', 'regex:/^[A-Z0-9][A-Z0-9_-]*$/D', Rule::unique('gates')->ignore($this->route('gate')?->id)],
-                'name' => $this->text(120), 'status' => ['required', Rule::in(['active', 'inactive'])], ...$this->versionRules()],
+                'name' => $this->text(120), 'status' => ['required', Rule::in(['active', 'inactive'])], ...$this->gateAccountRules(), ...$this->versionRules()],
             $this->routeIs('admin.guards.store') => ['name' => $this->text(120), 'email' => ['required', 'email', 'max:255', Rule::unique('users')]],
             $this->routeIs('admin.guards.update') => ['name' => $this->text(120), 'status' => ['required', Rule::in(['active', 'inactive'])], ...$this->versionRules()],
             $this->routeIs('admin.people.grants.store') => [...$this->timeRules(), 'reason' => $this->text(255), ...$this->versionRules()],
@@ -92,7 +97,20 @@ class ManagementRequest extends FormRequest
             'photo' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:min_width=32,min_height=32,max_width=4096,max_height=4096'],
             'remove_photo' => ['sometimes', 'boolean'], ...$this->versionRules()];
 
-        return [...$rules, ...($student ? ['program' => $this->text(120), 'year_level' => ['nullable', 'integer', 'min:1', 'max:255'], 'academic_term' => $this->text(50, false)] : ['department' => $this->text(120), 'position' => $this->text(120)])];
+        return [...$rules, ...($student ? ['program' => ['required', 'string', 'max:32', Rule::exists('campus_programs', 'code')], 'year_level' => ['required', 'integer', 'min:1', 'max:'.(DB::table('campus_programs')->where('code', is_string($this->input('program')) ? $this->input('program') : '')->value('max_year_level') ?? 4)], 'academic_year' => ['required', 'string', 'regex:/^20[0-9]{2}-20[0-9]{2}$/D', function ($attribute, $value, $fail) {
+            if (! is_string($value) || (int) substr($value, 5) !== (int) substr($value, 0, 4) + 1) {
+                $fail('Use consecutive academic years, for example 2026-2027.');
+            }
+        }], 'semester' => ['required', 'string', Rule::in(config('campus.semesters'))]] : ['department' => ['required', 'string', 'max:120', Rule::exists('campus_departments', 'name')], 'position' => $this->text(120)])];
+    }
+
+    private function gateAccountRules(): array
+    {
+        $account = $this->route('gate')?->account;
+
+        return ['username' => ['required', 'string', 'min:3', 'max:64', 'regex:/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/D', Rule::unique('users')->ignore($account?->id)],
+            'password' => [$account ? 'nullable' : 'required', 'string', 'min:15', 'max:128', 'confirmed', new NotCommonPassword],
+            'account_status' => ['sometimes', Rule::in(['active', 'inactive'])]];
     }
 
     private function versionRules(): array

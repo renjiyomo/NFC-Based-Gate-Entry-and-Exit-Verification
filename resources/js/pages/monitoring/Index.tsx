@@ -78,7 +78,7 @@ export default function Index(props: Props) {
         <ManagementPage
             page={section}
             title={titles[section]}
-            description="Confirmed passages, verification attempts and estimates from saved records."
+            description="Recorded passages, verification attempts and estimates from saved records."
             action={
                 <Button onClick={refresh} disabled={refreshing}>
                     <RefreshCw size={16} />
@@ -123,14 +123,14 @@ export default function Index(props: Props) {
                     <section className="metric-grid" aria-label="Filtered gate statistics">
                         {[
                             {
-                                label: 'Confirmed entries',
+                                label: 'Recorded entries',
                                 value: s.entries,
                                 icon: ArrowDownLeft,
                                 color: 'blue',
                                 note: 'Effective Entry passages in this period',
                             },
                             {
-                                label: 'Confirmed exits',
+                                label: 'Recorded exits',
                                 value: s.exits,
                                 icon: ArrowUpRight,
                                 color: 'teal',
@@ -195,7 +195,7 @@ export default function Index(props: Props) {
                         {manilaTime(s.presence.as_of)}; it ignores the gate/guard and period-start
                         filters. {number(s.presence.outside)} last recorded outside;{' '}
                         {number(s.presence.unknown)} retained people have no effective passage.
-                        Missing scans and guard observations limit this estimate. Gate activity is
+                        Missing scans and incomplete coverage limit this estimate. Gate activity is
                         not classroom attendance.
                     </p>
                 </>
@@ -234,7 +234,7 @@ export default function Index(props: Props) {
                     <div className="report-two-columns">
                         <Panel
                             title="Entry & exit trends"
-                            subtitle="Effective confirmed passages by Manila date"
+                            subtitle="Effective recorded passages by Manila date"
                         >
                             <Trend rows={s.trend} />
                         </Panel>
@@ -243,7 +243,7 @@ export default function Index(props: Props) {
                             subtitle={
                                 s.gates.length > 10
                                     ? 'Top 10 gates by effective passages'
-                                    : 'Effective confirmed passages across stations'
+                                    : 'Effective recorded passages across stations'
                             }
                         >
                             <Bars
@@ -274,7 +274,7 @@ export default function Index(props: Props) {
                         <div className="report-two-columns">
                             <Panel
                                 title="Student and employee activity"
-                                subtitle="Confirmed passages, not unique people"
+                                subtitle="Recorded passages, not unique people"
                             >
                                 <Bars
                                     label="Person type comparison"
@@ -296,13 +296,13 @@ export default function Index(props: Props) {
                             </Panel>
                             <Panel
                                 title="Activity by time of day"
-                                subtitle="Confirmed passages grouped by Manila hour"
+                                subtitle="Recorded passages grouped by Manila hour"
                             >
                                 <Bars rows={s.hourly} label="Hourly distribution" />
                             </Panel>
                             <Panel title="How totals are calculated">
                                 <p className="report-meaning">
-                                    Counts include effective confirmed passage records only.
+                                    Counts include effective recorded passage records only.
                                     Cancelled, expired and rejected reviews do not count.
                                     Administrative voids exclude an original passage; reinstatement
                                     includes it again. Duplicate scans remain in attempt history
@@ -348,7 +348,7 @@ export default function Index(props: Props) {
                                 onChange={(e) => setDataset(e.target.value)}
                             >
                                 <option value="summary">Activity summary and breakdowns</option>
-                                <option value="passages">Confirmed passage records</option>
+                                <option value="passages">Recorded passage records</option>
                                 <option value="attempts">Verification attempt records</option>
                             </Select>
                             <div className="form-actions">

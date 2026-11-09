@@ -1,5 +1,7 @@
 # Testing and research evaluation
 
+Current update: **The user-approved [gate-account workflow](workflow-redesign.md) supersedes earlier individual-guard, scheduled-assignment, separate-grant and manual-confirmation instructions.** Migration 19 / 26 tables; 196 PHP tests / 2,062 assertions, 25 NFC tests and ten concurrency scenarios passed. Program/department catalogues and academic year/semester are implemented. New automatic-flow physical acceptance remains pending; no GitHub publication or Vercel deployment occurred.
+
 Status: **Phase 10 local verification completed November 9, 2026:** 189 PHP tests / 2,128 assertions, 25 NFC adapter tests, eight observed-overlap MySQL race scenarios, audits/style/typecheck/build and targeted desktop/mobile/keyboard checks passed. Query measurements use 10,001 attempts/passages in a rolled-back test transaction. See [Phase 10 evidence](phase-10-report.md). Core physical NFC has user-reported RF/UI and independent server evidence under [Phase 6](phase-6-report.md); broader physical, peak-load, institutional usability and deployment/restore acceptance remain outstanding. No participant results or production capacity claims are implied.
 
 ## Coverage and remaining acceptance cases

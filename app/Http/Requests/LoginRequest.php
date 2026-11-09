@@ -15,6 +15,9 @@ class LoginRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        if (is_string($this->input('username'))) {
+            $this->merge(['username' => mb_strtolower(trim($this->input('username')))]);
+        }
         $email = $this->input('email');
         if (is_string($email)) {
             $this->merge(['email' => mb_strtolower(trim($email))]);
@@ -23,6 +26,6 @@ class LoginRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['email' => ['required', 'email', 'max:255'], 'password' => ['required', 'string', 'max:128']];
+        return ['username' => ['required_without:email', 'string', 'max:64'], 'email' => ['required_without:username', 'email', 'max:255'], 'password' => ['required', 'string', 'max:128']];
     }
 }

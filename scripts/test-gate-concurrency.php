@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Services\Anomalies\Detection;
 use App\Services\Anomalies\Review;
 use App\Services\Credentials\CredentialLifecycle;
+use App\Services\GateOperations\AutomaticPassages;
 use App\Services\GateOperations\GateOperations;
 use App\Services\Monitoring\ReportFilters;
 use App\Services\PersonManagement;
@@ -68,6 +69,11 @@ if (($argv[1] ?? '') === '--worker') {
         echo "READY\n";
         flush();
         $actor = User::findOrFail($input['actor']);
+        if ($input['action'] === 'auto_scan') {
+            $r = app(AutomaticPassages::class)->scan($actor, Gate::findOrFail($input['gate']), ['request_id' => $input['request'], 'payload' => $input['payload'], 'direction' => 'entry'], $input['session'], 'physical');
+            echo json_encode(['id' => $r['id'], 'passage' => $r['passage']['id'] ?? null, 'duplicate' => $r['duplicate_of']['id'] ?? null], JSON_THROW_ON_ERROR);
+            exit(0);
+        }
         if ($input['action'] === 'detect') {
             echo json_encode(app(Detection::class)->run(new ReportFilters, 'physical', $actor), JSON_THROW_ON_ERROR);
             exit(0);
@@ -262,6 +268,18 @@ try {
     $output = $run([['actor' => $admin->id, 'action' => 'summary', 'task' => $one->task->id, 'limit' => 1], ['actor' => $admin2->id, 'action' => 'summary', 'task' => $two->task->id, 'limit' => 1]], 'summary_controls', 1);
     $check(array_sum(array_column($output, 'processed')) === 1 && (int) DB::table('summary_controls')->value('claims') === 1 && SummaryResult::whereIn('summary_request_id', [$one->id, $two->id])->where('status', 'ready')->count() === 1 && SummaryResult::whereIn('summary_request_id', [$one->id, $two->id])->where('error_code', 'daily_limit')->count() === 1, 'Concurrent summary jobs exceeded the quota.');
     $results[] = 'different summary tasks / one remaining claim: one result and one daily-limit denial';
+    // Current gate-account contract: no grant, schedule or confirmation request.
+    $guard1->forceFill(['gate_id' => $gate->id])->save();
+    [$person,$receipt] = $fixture();
+    $one = ['actor' => $guard1->id, 'gate' => $gate->id, 'action' => 'auto_scan', 'session' => 'automatic-race', 'request' => (string) Str::uuid(), 'payload' => $receipt['payload']];
+    $output = $run([$one, [...$one, 'request' => (string) Str::uuid()]], 'users', $guard1->id);
+    $check(AccessEvent::where('person_id', $person->id)->count() === 1 && count(array_filter($output, fn ($r) => $r['duplicate'] !== null)) === 1, 'Automatic concurrent scans created duplicate passages.');
+    $results[] = 'gate account / concurrent different scan IDs: one automatic passage and one duplicate';
+    [$person,$receipt] = $fixture();
+    $one = [...$one, 'request' => (string) Str::uuid(), 'payload' => $receipt['payload']];
+    $output = $run([$one, $one], 'users', $guard1->id);
+    $check(AccessEvent::where('person_id', $person->id)->count() === 1 && ScanAttempt::where('person_id', $person->id)->count() === 1 && $output[0]['passage'] === $output[1]['passage'], 'Automatic same-request retry was not idempotent.');
+    $results[] = 'gate account / concurrent same scan ID: one attempt and one automatic passage';
 } finally {
     while (DB::transactionLevel() > 0) {
         DB::rollBack();
@@ -304,6 +322,7 @@ try {
         $execute('DELETE FROM nfcheck_testing.student_profiles WHERE person_id IN (:ids)', $ownedPeople);
         $execute('DELETE FROM nfcheck_testing.persons WHERE id IN (:ids)', $ownedPeople);
         $execute('DELETE FROM nfcheck_testing.guard_gate_assignments WHERE guard_id IN (:ids)', $ownedUsers);
+        $execute('UPDATE nfcheck_testing.users SET gate_id = NULL WHERE id IN (:ids)', $ownedUsers);
         $execute('DELETE FROM nfcheck_testing.gates WHERE id IN (:ids)', $ownedGate ? [$ownedGate] : []);
         $execute('DELETE FROM nfcheck_testing.audit_logs WHERE actor_id IN (:ids)', $ownedUsers);
         $execute('DELETE FROM nfcheck_testing.users WHERE id IN (:ids)', $ownedUsers);

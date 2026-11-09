@@ -3126,7 +3126,37 @@ html:has(dialog[open]) {
     margin-top: 12px;
 }
 
-/* Assigned-guard verification and explicit passage review */
+/* Automatic gate scanning */
+.automatic-scanner-body {
+    display: grid;
+    gap: 1rem;
+    padding: 1.5rem;
+}
+.automatic-scanner-body h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.4;
+}
+.automatic-scanner-body .panel-message,
+.automatic-scanner-body .form-note {
+    padding: 0;
+    margin: 0;
+}
+.automatic-direction {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+.automatic-direction .button {
+    min-height: 3.5rem;
+    font-size: 1rem;
+}
+.automatic-scanner-body > .button {
+    min-height: 3rem;
+    width: 100%;
+}
+
+/* Retained styling for historical verification components */
 .operation-direction {
     display: flex;
     justify-content: center;

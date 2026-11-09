@@ -49,9 +49,17 @@ foreach ($schemas as $schema => $environment) {
             throw new RuntimeException('Unexpected table identifier.');
         }
         $permissions = match ($table) {
-            'audit_logs', 'scan_attempts', 'access_events', 'passage_corrections', 'anomaly_flags', 'anomaly_evidence', 'anomaly_reviews', 'summary_requests', 'summary_results', 'summary_reviews', 'summary_tasks' => 'SELECT, INSERT', 'summary_controls', 'migrations' => 'SELECT', default => 'SELECT, INSERT, UPDATE, DELETE'
+            'audit_logs', 'scan_attempts', 'access_events', 'passage_corrections', 'anomaly_flags', 'anomaly_evidence', 'anomaly_reviews', 'summary_requests', 'summary_results', 'summary_reviews', 'summary_tasks' => 'SELECT, INSERT', 'summary_controls', 'migrations', 'campus_programs', 'campus_departments' => 'SELECT', default => 'SELECT, INSERT, UPDATE, DELETE'
         };
         $db->exec("GRANT $permissions ON `$schema`.`$table` TO '$user'@'127.0.0.1'");
+        if (in_array($table, ['campus_programs', 'campus_departments'], true)) {
+            $privileges = $db->prepare("SELECT PRIVILEGE_TYPE FROM information_schema.TABLE_PRIVILEGES WHERE GRANTEE = ? AND TABLE_SCHEMA = ? AND TABLE_NAME = ? AND PRIVILEGE_TYPE IN ('INSERT','UPDATE','DELETE')");
+            $privileges->execute(["'$user'@'127.0.0.1'", $schema, $table]);
+            $remove = $privileges->fetchAll(PDO::FETCH_COLUMN);
+            if ($remove) {
+                $db->exec('REVOKE '.implode(', ', $remove)." ON `$schema`.`$table` FROM '$user'@'127.0.0.1'");
+            }
+        }
         if ($table === 'scan_attempts') {
             $db->exec("GRANT UPDATE (review_status, reviewed_at, reviewed_by, review_reason, duplicate_of_event_id, updated_at) ON `$schema`.`scan_attempts` TO '$user'@'127.0.0.1'");
         }
