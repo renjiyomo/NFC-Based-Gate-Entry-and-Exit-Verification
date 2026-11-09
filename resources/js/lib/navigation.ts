@@ -24,6 +24,7 @@ export type PageId =
     | 'history'
     | 'reports'
     | 'analytics'
+    | 'anomalies'
     | 'settings'
     | 'nfc';
 
@@ -43,6 +44,7 @@ export const navigation: NavigationItem[] = [
     { id: 'gates', label: 'Gate stations', group: 'Access', icon: DoorOpen },
     { id: 'scanner', label: 'Gate scanner', group: 'Monitoring', icon: ScanLine },
     { id: 'history', label: 'Entry & exit history', group: 'Monitoring', icon: Activity },
+    { id: 'anomalies', label: 'Anomaly review', group: 'Monitoring', icon: ShieldCheck },
     { id: 'reports', label: 'Reports', group: 'Insights', icon: FileText },
     { id: 'analytics', label: 'Analytics', group: 'Insights', icon: BarChart3 },
     { id: 'settings', label: 'Settings', group: 'System', icon: Settings2 },

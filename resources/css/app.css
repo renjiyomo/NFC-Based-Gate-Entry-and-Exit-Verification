@@ -3490,3 +3490,26 @@ html:has(dialog[open]) {
     font-weight: 600;
     padding: 0.65rem 0;
 }
+.anomaly-panel {
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+.anomaly-panel > .panel-heading {
+    padding: 0 0 1rem;
+    margin-bottom: 1rem;
+}
+.anomaly-panel p {
+    line-height: 1.7;
+    margin-bottom: 1rem;
+}
+.anomaly-panel .report-filters {
+    margin-bottom: 0;
+}
+.anomaly-panel textarea {
+    width: 100%;
+    min-height: 8rem;
+}
+.anomaly-version {
+    overflow-wrap: anywhere;
+    font-family: monospace;
+}

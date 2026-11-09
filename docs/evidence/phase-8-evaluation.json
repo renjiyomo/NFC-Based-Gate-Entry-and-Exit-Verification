@@ -1,0 +1,130 @@
+{
+    "scope": "Synthetic recording-pattern labels, not misconduct or campus effectiveness",
+    "scenarios": [
+        {
+            "scenario": "First recorded Entry",
+            "rule": "repeated_entry",
+            "expected_pattern": false,
+            "detected": false
+        },
+        {
+            "scenario": "Entry follows Entry",
+            "rule": "repeated_entry",
+            "expected_pattern": true,
+            "detected": true
+        },
+        {
+            "scenario": "Exit follows Entry",
+            "rule": "exit_without_entry",
+            "expected_pattern": false,
+            "detected": false
+        },
+        {
+            "scenario": "Exit follows Exit",
+            "rule": "exit_without_entry",
+            "expected_pattern": true,
+            "detected": true
+        },
+        {
+            "scenario": "Exit with no earlier passage",
+            "rule": "exit_without_entry",
+            "expected_pattern": true,
+            "detected": true
+        },
+        {
+            "scenario": "Daytime is within configured hours",
+            "rule": "after_hours",
+            "expected_pattern": false,
+            "detected": false
+        },
+        {
+            "scenario": "Closing hour is outside daily interval",
+            "rule": "after_hours",
+            "expected_pattern": true,
+            "detected": true
+        },
+        {
+            "scenario": "Hours disabled without campus policy",
+            "rule": "after_hours",
+            "expected_pattern": false,
+            "detected": false
+        },
+        {
+            "scenario": "Opening hour included",
+            "rule": "after_hours",
+            "expected_pattern": false,
+            "detected": false
+        },
+        {
+            "scenario": "Overnight schedule includes 20:00",
+            "rule": "after_hours",
+            "expected_pattern": false,
+            "detected": false
+        },
+        {
+            "scenario": "Different gates separated by 29 seconds",
+            "rule": "cross_gate",
+            "expected_pattern": true,
+            "detected": true
+        },
+        {
+            "scenario": "Different gates separated by 30 seconds",
+            "rule": "cross_gate",
+            "expected_pattern": false,
+            "detected": false
+        },
+        {
+            "scenario": "Same gate is not cross-gate activity",
+            "rule": "cross_gate",
+            "expected_pattern": false,
+            "detected": false
+        },
+        {
+            "scenario": "4 suppressed confirmations",
+            "rule": "duplicate_burst",
+            "expected_pattern": false,
+            "detected": false
+        },
+        {
+            "scenario": "5 suppressed confirmations",
+            "rule": "duplicate_burst",
+            "expected_pattern": true,
+            "detected": true
+        },
+        {
+            "scenario": "2 uses of revoked credential",
+            "rule": "revoked_burst",
+            "expected_pattern": false,
+            "detected": false
+        },
+        {
+            "scenario": "3 uses of revoked credential",
+            "rule": "revoked_burst",
+            "expected_pattern": true,
+            "detected": true
+        },
+        {
+            "scenario": "4 denied attempts at gate",
+            "rule": "denied_burst",
+            "expected_pattern": false,
+            "detected": false
+        },
+        {
+            "scenario": "5 denied attempts at gate",
+            "rule": "denied_burst",
+            "expected_pattern": true,
+            "detected": true
+        }
+    ],
+    "confusion_matrix": {
+        "tp": 8,
+        "tn": 11,
+        "fp": 0,
+        "fn": 0
+    },
+    "precision": 1,
+    "recall": 1,
+    "false_positive_rate": 0,
+    "false_alarm_analysis": "A deliberately absent initial Entry still triggers the Exit rule. Human review can mark an authorized test exception as false_alarm; rule compliance does not measure whether an activity was improper.",
+    "transaction_rollback": true
+}

@@ -4,6 +4,8 @@ Status: **Phase 7 monitoring, corrections and reporting implemented** in isolate
 
 ## Implemented Phase 7 additions
 
+Phase 8 migration 17 additionally creates `anomaly_flags`, `anomaly_evidence` and `anomaly_reviews`; all four schemas now have 17 migrations. Immutable flags retain source/rule/version/configuration/anchor/evidence; status/reason/administrator history is append-only. The unique source/rule/version/anchor key prevents duplicate detection rows. Source/time and flag/review indexes support the review queue. Runtime grants are SELECT/INSERT only. Reviews serialize on the already lockable anchor-attempt row, then use current reads and a revision check. [Phase 8 evidence and limitations](phase-8-report.md).
+
 Migration 16 adds `passage_corrections`: public UUID, event/actor foreign keys, note/void/reinstate action, reason and UTC microsecond creation time. It is append-only through model restrictions and SELECT/INSERT-only runtime grants. The latest void/reinstate action determines effectiveness; notes leave it unchanged. Stable person locking and expected correction revisions protect concurrent confirmation/correction. Original attempts and passages remain retained. All four recognized schemas now have 16 migrations.
 
 Compound indexes on source/confirmation time, source/person/confirmation time and source/gate/confirmation time support passages; source/received time supports attempts. Reporting does not require duplicate analytics tables. Common queries implement Manila periods and source isolation. [Query evidence and metric definitions](phase-7-report.md).

@@ -1,6 +1,6 @@
 # NFCheck architecture proposal
 
-Status: **Phases 1–5 implemented locally**, including assigned-guard verification, identity review, confirmed passage and recent activity. Broader reporting/correction/anomaly design remains future work. See [the Phase 5 report](phase-5-report.md). Physical NFC is untested; Phase 6 awaits approval. User-selected development defaults are 30-second review validity and a 10-second duplicate window.
+Status: **Phases 1–8 implemented for their authorized local scopes**, including guard verification/passage, controlled vivo NFC testing, reporting/corrections and explainable anomaly review. See [Phase 8](phase-8-report.md), [Phase 7](phase-7-report.md) and the remaining physical limits in [Phase 6](phase-6-report.md). Development defaults remain 30-second review validity and a 10-second duplicate window. Later proposals below are conditional; anomaly detection currently runs on demand with bounded selections and does not alter gate authorization. Phase 9 AI is not approved.
 
 ## Purpose and boundaries
 

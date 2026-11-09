@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Anomalies\AnomalyController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\SessionController;
@@ -102,6 +103,12 @@ Route::middleware(['auth', 'auth.session', EnsurePasswordChanged::class])->group
         Route::put('/guards/{guard}/assignments/{assignment}', [AssignmentController::class, 'guardUpdate'])->middleware('throttle:management')->name('guards.assignments.update');
         Route::delete('/gates/{gate}/assignments/{assignment}', [AssignmentController::class, 'gateDestroy'])->withTrashed()->middleware('throttle:management')->name('assignments.destroy');
         Route::delete('/guards/{guard}/assignments/{assignment}', [AssignmentController::class, 'guardDestroy'])->withTrashed()->middleware('throttle:management')->name('guards.assignments.destroy');
+    });
+    Route::prefix('admin/anomalies')->middleware('can:admin.workspace')->group(function (): void {
+        Route::get('/', [AnomalyController::class, 'index'])->name('anomalies.index');
+        Route::post('/detect', [AnomalyController::class, 'detect'])->middleware('throttle:report-export');
+        Route::get('/{anomaly}', [AnomalyController::class, 'show'])->whereUuid('anomaly');
+        Route::post('/{anomaly}/reviews', [AnomalyController::class, 'review'])->whereUuid('anomaly')->middleware('throttle:management');
     });
     Route::get('/admin/{page}', [WorkspaceController::class, 'admin'])->middleware('can:admin.workspace')->name('admin.workspace');
     Route::get('/guard/scanner', [ActivityController::class, 'scanner'])->middleware('can:guard.workspace')->name('guard.scanner');

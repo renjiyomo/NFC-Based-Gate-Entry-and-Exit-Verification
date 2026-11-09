@@ -89,6 +89,8 @@ The launcher restores PATH/Composer environment changes after use. MySQL/Mailpit
 
 ## Routes
 
+Phase 8 adds administrator `/admin/anomalies`, POST `/admin/anomalies/detect`, GET `/admin/anomalies/{uuid}` and POST `/admin/anomalies/{uuid}/reviews`. Open **Run checks and inspect rules** to evaluate up to 31 days / 1,000 saved attempts. Detection is on demand; no scheduler or external notifications are installed. Local development thresholds are in `config/anomalies.php`; after-hours checks remain disabled pending campus hours. See [rules, review process and evaluation](phase-8-report.md).
+
 Phase 7 connects administrator `/admin/dashboard`, `/admin/history`, `/admin/analytics` and `/admin/reports`. History details are `/admin/history/{passages|attempts}/{uuid}`. POST `/admin/history/passages/{uuid}/corrections` appends a reasoned note/void/reinstatement with a current revision. GET `/admin/reports/export` accepts `format=csv|xlsx|pdf` and `dataset=summary|passages|attempts` plus the same validated filters. Exports are private, audited and throttled; limits are 10,000 rows for CSV/Excel and 500 for PDF. See [definitions and checks](phase-7-report.md). These features are administrator-only. The PHP minimum is now 8.4; the prepared runtime remains 8.5.12.
 
 - Guest: GET/POST `/login`, `/forgot-password`; GET `/reset-password/{token}`, POST `/reset-password`.

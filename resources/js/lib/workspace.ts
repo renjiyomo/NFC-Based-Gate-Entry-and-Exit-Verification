@@ -30,7 +30,7 @@ export function useWorkspace() {
     const user = auth?.user;
     const items = navigation.filter((item) =>
         app.preview
-            ? item.id !== 'nfc'
+            ? !['nfc', 'anomalies'].includes(item.id)
             : user?.role === 'admin'
               ? item.id !== 'scanner'
               : ['scanner', 'history', 'nfc'].includes(item.id),

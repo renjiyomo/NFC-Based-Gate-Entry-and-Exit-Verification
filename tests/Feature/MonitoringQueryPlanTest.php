@@ -3,12 +3,15 @@
 namespace Tests\Feature;
 
 use App\Models\AccessEvent;
+use App\Models\AnomalyFlag;
 use App\Models\ScanAttempt;
+use App\Services\Anomalies\Detection;
 use App\Services\Monitoring\ReportFilters;
 use App\Services\Monitoring\ReportQueries;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Tests\MonitoringTestCase;
 
 class MonitoringQueryPlanTest extends MonitoringTestCase
@@ -43,6 +46,13 @@ class MonitoringQueryPlanTest extends MonitoringTestCase
         $this->finishTime();
         $q = app(ReportQueries::class);
         $f = new ReportFilters(['date' => '2026-11-04']);
+        try {
+            app(Detection::class)->run($f, 'physical', $this->admin);
+            $this->fail('Detection must reject a selection exceeding 1,000 attempts');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('detection', $e->errors());
+            $this->assertSame(0, AnomalyFlag::count());
+        }
         $result = ['engine' => DB::selectOne('SELECT VERSION() version')->version, 'fixture_passages' => AccessEvent::count(), 'fixture_attempts' => ScanAttempt::count(), 'transaction_rollback' => true, 'queries' => []];
         foreach (['passages' => $q->events($f, 'physical')->selectRaw('COUNT(*) total'), 'attempts' => $q->attempts($f, 'physical')->selectRaw('COUNT(*) total')] as $name => $query) {
             $plan = DB::selectOne('EXPLAIN FORMAT=JSON '.$query->toSql(), $query->getBindings());
@@ -69,6 +79,6 @@ class MonitoringQueryPlanTest extends MonitoringTestCase
             $count = $query->first()->total;
             $result['queries'][$name] = ['keys' => $keys, 'access' => $access, 'matching_rows' => (int) $count, 'elapsed_ms' => round((microtime(true) - $started) * 1000, 3)];
         }
-        file_put_contents(base_path('.tools/artifacts/phase-7-query-plans.json'), json_encode($result,JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+        file_put_contents(base_path('.tools/artifacts/phase-7-query-plans.json'), json_encode($result, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
     }
 }

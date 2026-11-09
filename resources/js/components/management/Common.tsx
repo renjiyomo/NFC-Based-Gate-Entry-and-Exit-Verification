@@ -36,13 +36,15 @@ export function ManagementPage({
                 eyebrow={
                     page === 'scanner'
                         ? 'Gate operations'
-                        : page === 'history'
-                          ? 'Gate activity'
-                          : page === 'dashboard' || page === 'analytics' || page === 'reports'
-                            ? 'Gate monitoring'
-                            : page === 'students' || page === 'employees'
-                              ? 'People'
-                              : 'Access management'
+                        : page === 'anomalies'
+                          ? 'Human review'
+                          : page === 'history'
+                            ? 'Gate activity'
+                            : page === 'dashboard' || page === 'analytics' || page === 'reports'
+                              ? 'Gate monitoring'
+                              : page === 'students' || page === 'employees'
+                                ? 'People'
+                                : 'Access management'
                 }
                 title={title}
                 description={description}
