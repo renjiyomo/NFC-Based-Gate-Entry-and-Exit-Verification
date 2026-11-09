@@ -1,6 +1,6 @@
-# Local development — Phase 5
+# Local development and maintenance
 
-Authentication, student/employee management, private photos, gates, guards, access grants and gate assignments are implemented. Credential issuance, scanning and passage recording require later phase approvals. Follow [AGENTS.md](../AGENTS.md) and [the current report](phase-3-report.md).
+Phases 1–11 are implemented/prepared for their approved local scopes. Credential issuance, controlled physical NFC, guard passage, monitoring/reports, anomaly review and synthetic Gemini Free Tier summaries are connected. Broader physical/institutional/production acceptance remains pending. Follow [AGENTS.md](../AGENTS.md), [final readiness](final-readiness.md), [operator guides](administrator-guide.md), [deployment preparation](deployment.md) and [backup/recovery](backup-and-recovery.md). Historical sections below describe earlier checkpoints.
 
 ## Current workstation
 

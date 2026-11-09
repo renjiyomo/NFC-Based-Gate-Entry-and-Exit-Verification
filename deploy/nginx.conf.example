@@ -1,0 +1,52 @@
+# REVIEW TEMPLATE ONLY: include in nginx http context after operator review.
+# Linux/PHP-FPM illustration; not installed or syntax-tested on this Windows host.
+# Replace domain, certificate, release path and dedicated FPM socket.
+# No raw URI, query string, IP, user agent, cookie or request body in access logs.
+map $request_uri $nfcheck_category {
+    default unmatched;
+    ~^/up([?]|$) health;
+    ~^/login([?]|$) login;
+    ~^/logout([?]|$) logout;
+    ~^/(forgot-password|reset-password)(/|[?]|$) recovery;
+    ~^/admin/ administration;
+    ~^/guard/ guard;
+    ~^/nfc/ nfc;
+    ~^/account/ account;
+    ~^/(build|images)/ asset;
+}
+log_format nfcheck_private '$time_iso8601 $request_method $nfcheck_category $status $body_bytes_sent $request_time';
+
+server {
+    listen 80;
+    server_name nfcheck.example.invalid;
+    return 308 https://nfcheck.example.invalid$request_uri;
+}
+server {
+    listen 443 ssl;
+    server_name nfcheck.example.invalid;
+    root /srv/nfcheck/current/public;
+    index index.php;
+    server_tokens off;
+    autoindex off;
+    ssl_certificate /etc/nfcheck/tls/fullchain.pem;
+    ssl_certificate_key /etc/nfcheck/tls/private.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    # Start with a short HSTS duration during acceptance; increase after validation.
+    add_header Strict-Transport-Security "max-age=300" always;
+    client_max_body_size 3m;
+    access_log /var/log/nfcheck/access.log nfcheck_private;
+    # Error logs can contain request details: protect, redact and retain narrowly.
+    error_log /var/log/nfcheck/error.log warn;
+    location / { try_files $uri $uri/ /index.php?$query_string; }
+    location = /index.php {
+        internal;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $realpath_root/index.php;
+        fastcgi_param DOCUMENT_ROOT $realpath_root;
+        fastcgi_param HTTPS on;
+        fastcgi_pass unix:/run/php/nfcheck.sock;
+        fastcgi_hide_header X-Powered-By;
+    }
+    location ~ \.php$ { return 404; }
+    location ~ /\. { deny all; }
+}

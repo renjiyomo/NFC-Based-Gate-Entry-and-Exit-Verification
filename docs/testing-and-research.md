@@ -23,6 +23,12 @@ The implemented suite uses PHPUnit/Laravel on the exact isolated MySQL engine, N
 
 Tests verify testing environment, 127.0.0.1:3307/nfcheck_testing/nfcheck_test, MySQL 8.4.13 and the project data directory before operations. Feature/performance fixtures roll back. The multi-process harness requires empty testing history, captures owned fixture IDs, uses only scoped maintenance cleanup, and restores the quota singleton and baseline counts. It does not truncate/reset schemas or modify lab/main history. SQLite is not substituted for MySQL acceptance.
 
+## Phase 11 completion and research handoff
+
+The final full suite passed **196 PHP tests / 2,151 assertions, 25 NFC adapter tests and eight observed-overlap MySQL race scenarios**. Three encrypted backups restored all 24 tables into newly owned disposable schemas with identical row fingerprints and unchanged source, then removed the owned schemas/plaintext work files. See [recovery receipts](evidence/phase-11-recovery.json), [Phase 11](phase-11-report.md) and [final readiness](final-readiness.md). Configuration preflight is read-only; it deliberately fails on the local development environment and is not deployment approval.
+
+Research handoff must keep automated fixture results, simulator results, user-reported RF/UI plus independently checked backend evidence, and future institution-approved participant outcomes separate. No respondents, RF latency distribution, campus throughput, confusion matrix for actual incidents or usability scores have been invented. The Phase 8 synthetic rule evaluation and Phase 9 one-call aggregate evidence remain their own bounded datasets. Obtain approved design/truth labels, sampling, privacy/retention and participant permission before collecting research data; report denominators, failures, missing scans and unresolved cases. Broader NFC acceptance, peak-load/supervised usability, actual host/HTTPS/mail, off-device/key escrow and host-loss/photo recovery remain outstanding.
+
 ## Definitions for accurate analytics
 
 - **Scan attempt:** a validated operation request and its immutable verification decision; an exact network retry does not create another attempt.

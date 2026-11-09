@@ -2,7 +2,7 @@
 
 **NFC-Based Campus Gate Entry and Exit Verification and Monitoring System with Data Analytics, Anomaly Detection, and AI-Generated Summaries for Bicol University Polangui**
 
-Current checkpoint: **Core Phase 6 implementation and the controlled vivo/NTAG215 session are complete: issuance, coin-reuse safeguards, NFC diagnostics, duplicate suppression and connection-loss recovery are verified with user-reported RF/UI results and independently checked server state. Full physical readiness remains partially verified; broader device/tag, two-guard and post-commit response-loss cases are unperformed. Phase 7 monitoring, history, analytics, corrections and CSV/Excel/PDF exports are complete; Phase 8 explainable anomaly review is complete for local development; Phase 9 AI-assisted summaries are complete for synthetic labs using Gemini Free Tier only; Phase 10 security/testing/optimization is complete for local development; deployment preparation and broader physical/operational acceptance remain pending.**
+Current checkpoint: **Core Phase 6 implementation and the controlled vivo/NTAG215 session are complete: issuance, coin-reuse safeguards, NFC diagnostics, duplicate suppression and connection-loss recovery are verified with user-reported RF/UI results and independently checked server state. Full physical readiness remains partially verified; broader device/tag, two-guard and post-commit response-loss cases are unperformed. Phase 7 monitoring, history, analytics, corrections and CSV/Excel/PDF exports are complete; Phase 8 explainable anomaly review is complete for local development; Phase 9 AI-assisted summaries are complete for synthetic labs using Gemini Free Tier only; Phase 10 security/testing/optimization and Phase 11 deployment preparation/documentation are complete for local development. Main/simulator/hardware encrypted restore drills passed. Production deployment and broader physical/institutional acceptance remain pending.**
 
 Open [NFCheck sign-in](http://127.0.0.1:8000/login). Account security, people/gates/guards, access grants, credential lifecycles and assigned-guard verification are connected to isolated Oracle MySQL. Guards choose Entry or Exit, verify a reference, review identity and explicitly confirm observed passage. Retries recover the same operation, duplicate passages are suppressed and recent permitted activity refreshes. The core physical NFC workflow has been exercised in the isolated hardware workspace; remaining device/failure cases and operational validation are pending. Administrator monitoring, filtered history, analytics, append-only corrections and private CSV/Excel/PDF exports now use saved records. See [Phase 7 evidence](docs/phase-7-report.md). Administrator anomaly review now includes versioned rules, evidence and reasoned review history. Detection runs on demand. See [Phase 8 evidence](docs/phase-8-report.md). AI-assisted daily/weekly summaries now use validated aggregate facts, saved provenance and human review. Gemini Free Tier only is enabled for synthetic labs; main/real-data AI is excluded and no billing was enabled. See [Phase 9 evidence](docs/phase-9-report.md). The consolidated security review tightened CSP and development URL logging, fixed concurrent anomaly detection, and passed 189 PHP tests / 2,128 assertions, 25 NFC tests and eight real MySQL races. See [Phase 10 evidence and limits](docs/phase-10-report.md).
 
@@ -15,6 +15,10 @@ Issuance now follows **check coin → choose person → write checked coin → m
 The three requested local administrators are **alexi@nfcheck.test**, **pauleen@nfcheck.test**, and **zaidy@nfcheck.test**. Each has a different generated initial password in the ignored, Windows-access-restricted `.tools/secrets/initial-accounts.json`. A personal password is required on first sign-in. Passwords are never committed or printed in reports.
 
 Recovery messages arrive only in the [local mail inbox](http://127.0.0.1:8025). There is no external email relay.
+
+## Final checkpoint and guides
+
+Start with [final readiness](docs/final-readiness.md), the [administrator guide](docs/administrator-guide.md) and [security guard guide](docs/security-guard-guide.md). Deployment/HTTPS templates, environment/logging reference and encrypted local backup/restore procedures are prepared. The final check passed **196 PHP tests / 2,151 assertions, 25 NFC tests and eight concurrency scenarios**. No public deployment or additional live AI request occurred. See [Phase 11](docs/phase-11-report.md).
 
 ## Run locally
 
@@ -46,6 +50,13 @@ Normal workspace routes require authentication and server-side authorization. Op
 
 | Document | Contents |
 | --- | --- |
+| [Final readiness](docs/final-readiness.md) | Scope reconciliation, evidence and campus-use acceptance inputs |
+| [Phase 11 report](docs/phase-11-report.md) | Deployment preparation, encrypted recovery drills and operator guides |
+| [Deployment](docs/deployment.md) | Unapplied HTTPS/release/migration templates and target requirements |
+| [Backup and recovery](docs/backup-and-recovery.md) | Private encrypted backups, isolated restore checks and incident runbook |
+| [Environment and operations](docs/environment-and-operations.md) | Variables, logs, retention, monitoring and ownership |
+| [Administrator guide](docs/administrator-guide.md) | Accounts, people, coins, reporting and review |
+| [Guard guide](docs/security-guard-guide.md) | NFC identity/passage workflow and outage recovery |
 | [Phase 10 report](docs/phase-10-report.md) | Security findings/fixes, concurrency, performance, browser checks and remaining limits |
 | [Phase 9 report](docs/phase-9-report.md) | Free Tier aggregate summaries, generation jobs, privacy and live evidence |
 | [Phase 8 report](docs/phase-8-report.md) | Explainable rules, evidence, human review and synthetic evaluation |

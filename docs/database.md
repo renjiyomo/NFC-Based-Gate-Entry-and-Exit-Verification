@@ -1,6 +1,6 @@
-# NFCheck database and ERD proposal
+# NFCheck database and ERD
 
-Status: **Phase 7 monitoring, corrections and reporting implemented** in isolated Oracle MySQL 8.4.13. The larger ERD includes future modules. See [database setup](database-setup.md) and [the Phase 7 report](phase-7-report.md). Historical sections below describe their own checkpoints.
+Status: **18 migrations / 24 tables in all four isolated Oracle MySQL 8.4.13 schemas**, including monitoring/corrections, anomaly evidence/reviews and summary snapshots/jobs/reviews. Phases 10–11 add no persistent schema changes. All three operating schemas passed encrypted isolated restore drills; see [recovery](backup-and-recovery.md). See [database setup](database-setup.md). Historical sections below describe their own checkpoints; proposed future ERD elements are not automatically implemented.
 
 ## Implemented Phase 7 additions
 

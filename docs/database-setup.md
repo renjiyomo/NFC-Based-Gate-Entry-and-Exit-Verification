@@ -15,14 +15,15 @@ Pinned URLs/hashes are in `scripts/service-artifacts.json`. The MySQL ZIP came f
 | Account | Scope |
 | --- | --- |
 | Private root | New private instance; bootstrap only, never used by the web app |
-| nfcheck_migrator | Schema/data privileges only in nfcheck, nfcheck_testing and the optional nfcheck_simulator |
+| nfcheck_migrator | Schema/data privileges only in nfcheck, nfcheck_testing and the optional nfcheck_simulator/nfcheck_hardware |
 | nfcheck_app | Per-table DML; audit/events SELECT/INSERT only; attempts SELECT/INSERT plus named review-column UPDATE; migrations SELECT |
 | nfcheck_test | Equivalent restricted grants only in nfcheck_testing |
 | nfcheck_simulator | Equivalent restricted grants only in nfcheck_simulator |
+| nfcheck_hardware | Equivalent restricted grants only in nfcheck_hardware |
 
 Runtime accounts cannot create/alter/drop tables, modify/delete audit rows, grant privileges or read the other schema. A privileged database administrator still controls audit data; no tamper-proof external audit store is claimed.
 
-Each schema has the ten core tables plus credentials/assignments, `scan_attempts`, `access_events` and Laravel's migration ledger. The current ledger has **15 migrations**. Reporting/correction/anomaly tables remain deferred. See [database design](database.md).
+Each schema currently has **24 tables / 18 migrations**, including credential assignments, attempts/passages, append-only corrections/anomaly/summary records, bounded task/quota controls and the migration ledger. Runtime history grants remain SELECT/INSERT-only with named review/task/control UPDATE exceptions; 23 prohibited mutations are checked per runtime account. See [database design](database.md), [Phase 10](phase-10-report.md) and [Phase 11 recovery](backup-and-recovery.md).
 
 Phase 4 brings the ledger to 13 applied migrations in all three project schemas. Persons/gates/users support retained archives and edit versions; access/assignment schedule columns use UTC DATETIME(6). Credential records store unique binary digests, permanent assignments and an owner-qualified selected-assignment pointer. Archive operations deactivate records and revoke related permissions; restoration leaves them inactive. Existing main records are preserved. Transaction fixtures roll back in `nfcheck_testing`; Phase 4 browser QA uses only `nfcheck_simulator`.
 
@@ -68,4 +69,4 @@ Framework references: [authentication](https://laravel.com/framework/docs/13.x/a
 
 The three requested accounts are active administrators. Distinct initial passwords are in `.tools/secrets/initial-accounts.json`, with a required first-use change. Generated-file handoff is local-only; interactive CLI provisioning uses a hidden password prompt. This stores initial credentials only, not subsequent user passwords. Remove consumed initial entries privately when no longer needed.
 
-Main-schema people, profiles, gates, authorizations and assignments have no sample rows. Tests roll fixtures back in nfcheck_testing. Audits cover account creation/access, sign-in/out, session revocation, recovery and denied authorization. Allowlisted metadata excludes passwords, reset tokens, session IDs, raw email and raw IP. Session rows themselves retain ordinary IP/user-agent metadata while they exist. Institutional retention/backup policy remains a later operational decision.
+The retained main checkpoint has two people and one gate from earlier authorized local work, with no credential, attempt or passage records. All three requested administrators remain active. Tests roll fixtures back in nfcheck_testing; simulator/hardware retain separate explicitly synthetic ledgers. Audits cover account creation/access, sign-in/out, session revocation, recovery and denied authorization. Allowlisted metadata excludes passwords, reset tokens, session IDs, raw email and raw IP. Session rows themselves retain ordinary IP/user-agent metadata while they exist. Institutional retention/backup policy remains a later operational decision.
