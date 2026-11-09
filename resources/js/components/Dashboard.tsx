@@ -65,8 +65,7 @@ export default function Dashboard() {
                     <p>
                         {preview
                             ? 'This interface preview is ready to explore.'
-                            : 'Assigned guards can verify credentials and separately confirm observed passage.'}{' '}
-                        Monitoring statistics and reports are introduced in Phase 7.
+                            : 'Gate accounts record valid NFC scans automatically.'}
                     </p>
                 </div>
                 <Badge>{preview ? 'Preview mode' : 'Modules pending'}</Badge>

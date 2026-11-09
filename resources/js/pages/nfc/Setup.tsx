@@ -6,11 +6,11 @@ import { NdefAdapter, NfcError, nfcCapabilities } from '../../lib/nfc';
 import { useWorkspace } from '../../lib/workspace';
 
 export default function Setup() {
-    const { user, hardwareLab } = useWorkspace();
+    const { user } = useWorkspace();
     const [capabilities, setCapabilities] = useState(nfcCapabilities);
     const [permission, setPermission] = useState('Not checked');
     const [busy, setBusy] = useState(false);
-    const [result, setResult] = useState('No hardware check has run in this tab.');
+    const [result, setResult] = useState('Choose a check below.');
     const operation = useRef<AbortController | null>(null);
     const mounted = useRef(true);
     const running = useRef(false);
@@ -30,7 +30,7 @@ export default function Setup() {
                 subscription.addEventListener('change', reportPermission);
             })
             .catch(() => {
-                if (mounted.current) setPermission('State unavailable; use the access check');
+                if (mounted.current) setPermission('Not checked');
             });
         const visibility = () => {
             setCapabilities(nfcCapabilities());
@@ -65,8 +65,8 @@ export default function Setup() {
             if (mounted.current && !controller.signal.aborted)
                 setResult(
                     mode === 'access'
-                        ? 'Chrome started NFC access successfully. The reader has stopped. Tag reading and writing still require separate physical tests.'
-                        : 'One valid NFCheck-format text record was read. The reader has stopped. Registration and identity were not checked; no passage was recorded.',
+                        ? 'NFC access is available. The reader has stopped.'
+                        : 'Coin format recognised. The reader has stopped. Use the gate scanner to check the credential and record a passage. No passage was recorded here.',
                 );
         } catch (error) {
             if (mounted.current)
@@ -94,43 +94,53 @@ export default function Setup() {
         >
             <Panel
                 className="nfc-setup-panel"
-                title="This device and browser"
-                subtitle="API detection alone does not establish working NFC hardware."
+                title="Device connection"
+                subtitle="NFC scanning requires Chrome on an NFC-enabled Android phone."
             >
-                <dl className="record-facts">
+                <dl className="nfc-status-grid">
                     <div>
-                        <dt>Secure connection</dt>
+                        <dt>Browser support</dt>
                         <dd>
-                            <Badge tone={capabilities.secure ? 'success' : 'warning'}>
-                                {capabilities.secure ? 'Available' : 'Required'}
+                            <Badge tone={capabilities.api ? 'success' : 'warning'}>
+                                {capabilities.api ? 'Available' : 'Not supported'}
                             </Badge>
                         </dd>
                     </div>
                     <div>
-                        <dt>Direct browser tab</dt>
-                        <dd>{capabilities.topLevel ? 'Yes' : 'Open outside the embedded page'}</dd>
-                    </div>
-                    <div>
-                        <dt>Web NFC API</dt>
+                        <dt>Connection</dt>
                         <dd>
-                            {capabilities.api
-                                ? 'Detected · physical test required'
-                                : 'Unavailable in this browser'}
-                        </dd>
-                    </div>
-                    <div>
-                        <dt>Page visible</dt>
-                        <dd>
-                            {capabilities.visible
-                                ? 'Yes · keep phone unlocked'
-                                : 'Return to this tab'}
+                            <Badge
+                                tone={
+                                    capabilities.secure && capabilities.topLevel
+                                        ? 'success'
+                                        : 'warning'
+                                }
+                            >
+                                {capabilities.secure && capabilities.topLevel
+                                    ? 'Secure'
+                                    : 'Secure browser tab required'}
+                            </Badge>
                         </dd>
                     </div>
                     <div>
                         <dt>NFC permission</dt>
-                        <dd>{permission}</dd>
+                        <dd>
+                            {(
+                                {
+                                    granted: 'Allowed',
+                                    denied: 'Blocked',
+                                    prompt: 'Ask when scanning',
+                                } as Record<string, string>
+                            )[permission] ?? permission}
+                        </dd>
                     </div>
                 </dl>
+                {!capabilities.api && (
+                    <p className="nfc-device-copy">
+                        You can manage records on this device. To read or write a coin, open NFCheck
+                        on a compatible NFC phone.
+                    </p>
+                )}
                 <div className="form-actions">
                     <Button
                         variant="primary"
@@ -140,67 +150,31 @@ export default function Setup() {
                         Check NFC access
                     </Button>
                     <Button disabled={!ready || busy} onClick={() => void check('read')}>
-                        Read reference format
+                        Check coin format
                     </Button>
                     {busy && (
-                        <Button onClick={() => operation.current?.abort()}>Cancel NFC check</Button>
+                        <Button onClick={() => operation.current?.abort()}>Cancel check</Button>
                     )}
                 </div>
                 <p className="credential-feedback" role="status" aria-live="polite">
                     {result}
                 </p>
-                <p className="field-hint">
-                    These checks do not write tags, validate registration or create gate events.
-                    Each operation stops after 30 seconds, on cancellation, or when this tab is
-                    hidden. Retry with a new button tap.
-                </p>
-            </Panel>
-            <Panel
-                className="nfc-setup-panel"
-                title="Prepare your NFC phone"
-                subtitle="Use an updated Chrome browser on Android."
-            >
-                <ol className="nfc-instructions">
-                    <li>Open the phone’s Settings, search for NFC and turn it on.</li>
-                    <li>
-                        For USB testing, enable USB debugging and approve this laptop. Open{' '}
-                        <strong>http://localhost:8003/login</strong> in phone Chrome after
-                        forwarding is connected. File Transfer alone is insufficient.
-                    </li>
-                    <li>
-                        Keep the phone unlocked and this Chrome tab visible. Allow NFC when the
-                        browser asks. If blocked, review this site’s Chrome permissions.
-                    </li>
-                    <li>
-                        Use one NTAG215 tag at a time. Hold it against the back of the phone and
-                        slowly adjust its position if needed. Remove it between write and read-back.
-                    </li>
-                    <li>
-                        Keep test tags writable. NFCheck does not permanently lock them. Writing
-                        replaces the intended tag’s NDEF contents; do not tap an unrelated tag.
-                    </li>
-                </ol>
-                {!capabilities.secure && (
-                    <p className="credential-notice">
-                        Ordinary Wi-Fi HTTP is not a secure context for Web NFC. Use the prepared
-                        USB connection or a separately configured trusted HTTPS site.
+                <details className="compact-help">
+                    <summary>About these checks</summary>
+                    <p>
+                        Access checks confirm browser permission. A format check reads one coin
+                        without writing it or recording an Entry or Exit. Keep the phone unlocked
+                        and this tab visible. The reader stops after a result, 30 seconds,
+                        cancellation, or leaving this tab.
                     </p>
-                )}
-                <p className="field-hint">
-                    {hardwareLab
-                        ? 'This workspace uses synthetic identities and test passage records.'
-                        : 'Use the separate hardware test workspace for synthetic acceptance tests.'}{' '}
-                    A readable NFC reference can be copied. A valid scan records the selected Entry
-                    or Exit automatically; it does not prove who carried the coin or that a physical
-                    crossing occurred.
-                </p>
-                <Link
-                    href={user?.role === 'admin' ? '/admin/credentials' : '/guard/scanner'}
-                    className="button button-secondary"
-                >
-                    {user?.role === 'admin' ? 'Open credential registry' : 'Open gate scanner'}
-                </Link>
+                </details>
             </Panel>
+            <Link
+                href={user?.role === 'admin' ? '/admin/credentials' : '/guard/scanner'}
+                className="button button-secondary"
+            >
+                {user?.role === 'admin' ? 'Open NFC credentials' : 'Open gate scanner'}
+            </Link>
         </ManagementPage>
     );
 }

@@ -20,13 +20,13 @@ export default function HistoryTable({ rows }: { rows: HistoryRow[] }) {
             ]}
             count={rows.length}
             empty="No matching records"
-            emptyDescription="Choose another period or adjust filters. Denied and unconfirmed scans do not count as passage."
+            emptyDescription="Try another date or adjust the filters. Rejected and duplicate scans appear under All scan attempts."
         >
             {rows.map((r) => (
                 <tr key={`${r.view}-${r.id}`}>
                     <td>{manilaTime(r.time)}</td>
                     <td>
-                        {r.person?.name ?? 'Unidentified reference'}
+                        {r.person?.name ?? 'Unidentified coin'}
                         <span className="table-secondary">
                             {r.person?.number ?? 'No registered person'}
                         </span>
@@ -48,13 +48,16 @@ export default function HistoryTable({ rows }: { rows: HistoryRow[] }) {
                         >
                             {rowState(r)}
                         </Badge>
-                        <span className="table-secondary">
-                            {reasonLabel(r.review_reason ?? r.reason)}
-                        </span>
-                        {r.sequence_notice && (
+                        {(!r.passage_id || r.voided) && (
                             <span className="table-secondary">
-                                Warning: {sequenceLabel(r.sequence_notice)}
+                                {reasonLabel(r.review_reason ?? r.reason)}
                             </span>
+                        )}
+                        {r.sequence_notice && (
+                            <details className="table-notice">
+                                <summary>Sequence warning</summary>
+                                <p>{sequenceLabel(r.sequence_notice)}</p>
+                            </details>
                         )}
                     </td>
                     <td>

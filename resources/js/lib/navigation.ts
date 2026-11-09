@@ -45,7 +45,7 @@ export const navigation: NavigationItem[] = [
     { id: 'gates', label: 'Gates & accounts', group: 'Access', icon: DoorOpen },
     { id: 'scanner', label: 'Gate scanner', group: 'Monitoring', icon: ScanLine },
     { id: 'history', label: 'Entry & exit history', group: 'Monitoring', icon: Activity },
-    { id: 'anomalies', label: 'Anomaly review', group: 'Monitoring', icon: ShieldCheck },
+    { id: 'anomalies', label: 'Activity checks', group: 'Monitoring', icon: ShieldCheck },
     { id: 'reports', label: 'Reports', group: 'Insights', icon: FileText },
     { id: 'analytics', label: 'Analytics', group: 'Insights', icon: BarChart3 },
     { id: 'summaries', label: 'AI summaries', group: 'Insights', icon: FileText },

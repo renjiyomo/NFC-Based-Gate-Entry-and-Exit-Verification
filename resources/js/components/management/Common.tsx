@@ -29,7 +29,12 @@ export function ManagementPage({
             {back && (
                 <Link href={back} className="management-back">
                     <ArrowLeft size={16} aria-hidden="true" />
-                    Back to {page === 'guards' ? 'gate accounts' : page}
+                    Back to{' '}
+                    {page === 'guards'
+                        ? 'gate accounts'
+                        : page === 'anomalies'
+                          ? 'activity checks'
+                          : page}
                 </Link>
             )}
             <PageHeading
@@ -244,7 +249,9 @@ export function DirectoryFilters({
                     form.get(url, { preserveState: true, preserveScroll: true });
                 }}
             >
-                <div className="filter-fields">
+                <div
+                    className={`filter-fields ${!groupLabel && !years && !gates ? 'filter-fields-four' : ''}`}
+                >
                     <Field
                         name="q"
                         label="Search"

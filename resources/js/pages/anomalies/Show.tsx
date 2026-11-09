@@ -40,26 +40,22 @@ export default function Show({
         <ManagementPage
             page="anomalies"
             title={f.title}
-            description="Inspect the evidence and record a reasoned human decision. An indicator does not establish wrongdoing."
+            description="Check the supporting scans and record your decision. A pattern may be explained by missed scans or an exception."
             back="/admin/anomalies"
         >
             <Panel
                 className="anomaly-panel"
-                title="Detection explanation"
+                title="Why this was flagged"
                 subtitle={`${f.source} source · ${manilaTime(f.at)}`}
             >
                 <Badge>{f.severity} priority</Badge> <Badge>{readable(f.status)}</Badge>
                 <p>{f.explanation}</p>
                 <p className="report-meaning">
                     {f.context === 'still_supported'
-                        ? 'Current records still support the original rule and evidence. This does not confirm wrongdoing.'
-                        : 'Evidence has changed: corrections or later review state no longer support the same evidence set. Original detection is retained; reassess this flag before deciding.'}
+                        ? 'Current records still match this pattern.'
+                        : 'The supporting records have changed since this check. Review the original evidence and any corrections before deciding.'}
                 </p>
-                <p>
-                    Latest reviewer: {f.reviewer ?? 'Not reviewed'}. Rules describe recording
-                    patterns; missing scans, reader issues, shift work or authorized exceptions can
-                    explain them.
-                </p>
+                <p>Latest reviewer: {f.reviewer ?? 'Not reviewed'}.</p>
                 <details className="chart-data">
                     <summary>Rule version and configuration</summary>
                     <p className="anomaly-version">{f.version}</p>
@@ -76,14 +72,14 @@ export default function Show({
             <Panel
                 className="anomaly-panel"
                 title="Supporting records"
-                subtitle="Original evidence remains linked even if a passage is later voided. Open each record to inspect the original facts."
+                subtitle="Scans used for this check. Open a record for the full result."
             >
                 <HistoryTable rows={evidence} />
             </Panel>
             <Panel
                 className="anomaly-panel"
-                title="Append a review decision"
-                subtitle="All decisions retain administrator, time and reason. Resolve means review completed; it is not a disciplinary finding."
+                title="Record your review"
+                subtitle="Save a decision and reason. Resolving a record means the review is complete."
             >
                 <form
                     onSubmit={(e) => {

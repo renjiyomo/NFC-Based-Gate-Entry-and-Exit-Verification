@@ -1,3 +1,4 @@
+import PhotoPicker from '../../components/management/PhotoPicker';
 import { useForm } from '@inertiajs/react';
 import {
     Field,
@@ -6,7 +7,6 @@ import {
     FormPanel,
     ManagementPage,
     SaveActions,
-    Portrait,
 } from '../../components/management/Common';
 import type { PersonDirectory, PersonRecord } from '../../lib/management';
 
@@ -46,7 +46,11 @@ export default function PersonForm({
         <ManagementPage
             page={directory}
             title={`${record ? 'Edit' : 'Add'} ${student ? 'student' : 'employee'}`}
-            description="Register the person, then issue an NFC credential."
+            description={
+                record
+                    ? 'Update identity and academic or employment details.'
+                    : 'Add the person’s details before issuing an NFC coin.'
+            }
             back={record ? `${base}/${record.id}` : base}
         >
             <FormPanel title="Identity details">
@@ -57,6 +61,14 @@ export default function PersonForm({
                     }}
                 >
                     <FormErrors errors={form.errors} />
+                    <PhotoPicker
+                        existing={record?.photo_url ?? null}
+                        file={form.data.photo}
+                        removed={form.data.remove_photo}
+                        error={form.errors.photo}
+                        onChange={(file) => form.setData('photo', file)}
+                        onRemove={(removed) => form.setData('remove_photo', removed)}
+                    />
                     <div className="form-grid">
                         <Field
                             name="full_name"
@@ -174,36 +186,7 @@ export default function PersonForm({
                             <option value="inactive">Inactive</option>
                         </Select>
                     </div>
-                    <div className="photo-editor">
-                        <Portrait src={record?.photo_url ?? null} name={form.data.full_name} />
-                        <div>
-                            <Field
-                                name="photo"
-                                label="Identity photo (optional)"
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp"
-                                onChange={(e) => form.setData('photo', e.target.files?.[0] ?? null)}
-                                error={form.errors.photo}
-                                hint="JPEG, PNG or WebP, up to 2 MB. Stored privately."
-                            />
-                            {record?.photo_url && (
-                                <label className="checkbox-control">
-                                    <input
-                                        type="checkbox"
-                                        checked={form.data.remove_photo}
-                                        onChange={(e) =>
-                                            form.setData('remove_photo', e.target.checked)
-                                        }
-                                    />
-                                    Remove current photo
-                                </label>
-                            )}
-                        </div>
-                    </div>
-                    <p className="form-note">
-                        An active person with an activated, selected NFC credential can scan.
-                        Inactive records and revoked or expired credentials are rejected.
-                    </p>
+
                     <SaveActions
                         busy={form.processing}
                         cancel={base}

@@ -43,7 +43,7 @@ export default function Show({
         <ManagementPage
             page="summaries"
             title="Summary details"
-            description="Saved aggregate snapshot, generation outcome and administrator review."
+            description="Read the saved summary, check its figures and record your review."
             back="/admin/summaries"
             action={<Button onClick={() => router.reload()}>Refresh status</Button>}
         >
@@ -68,7 +68,7 @@ export default function Show({
             <Panel
                 className="anomaly-panel"
                 title={s.status === 'ready' ? 'AI-assisted draft' : 'Generation status'}
-                subtitle="Figures and wording are rendered from the saved backend facts; model output is limited to selecting fact IDs."
+                subtitle="Based on the saved figures for this period. Review before use."
             >
                 {s.provider === 'test_fixture' && (
                     <p className="report-meaning">
@@ -110,15 +110,18 @@ export default function Show({
                     </form>
                 )}
                 <p>
-                    Provider: {s.provider ?? 'Not processed'} · model: {s.model ?? 'Not processed'}.
-                    Completed: {s.completed_at ? manilaTime(s.completed_at) : 'Not completed'}.
+                    {s.completed_at ? `Completed ${manilaTime(s.completed_at)}` : 'Not completed'}
                 </p>
             </Panel>
-            <details className="report-filter-disclosure">
-                <summary>Inspect saved facts and provenance</summary>
-                <Panel className="anomaly-panel" title="Saved aggregate snapshot">
+            <details className="insight-details">
+                <summary>View saved numbers and generation details</summary>
+                <Panel className="anomaly-panel" title="Saved numbers">
                     <p>
-                        Contract {s.contract}. Gate aliases are scoped to this snapshot.{' '}
+                        Provider: {s.provider ?? 'Not processed'} · Model:{' '}
+                        {s.model ?? 'Not processed'}.
+                    </p>
+                    <p>
+                        Format {s.contract}. Gate labels are anonymous within this summary.{' '}
                         {s.snapshot.gate_coverage}
                     </p>
                     <p className="anomaly-version">Snapshot fingerprint: {s.hash}</p>
@@ -149,8 +152,8 @@ export default function Show({
             {s.status === 'ready' && (
                 <Panel
                     className="anomaly-panel"
-                    title="Administrator review"
-                    subtitle="Approval applies to this saved snapshot and selected observations. It does not establish wrongdoing or operational readiness."
+                    title="Review this summary"
+                    subtitle="Record whether this draft is suitable to use. Your decision and reason are saved."
                 >
                     <form
                         onSubmit={(e) => {

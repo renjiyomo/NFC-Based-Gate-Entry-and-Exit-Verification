@@ -1,4 +1,10 @@
-import type { InputHTMLAttributes, SelectHTMLAttributes, ReactNode } from 'react';
+import {
+    useState,
+    type InputHTMLAttributes,
+    type SelectHTMLAttributes,
+    type ReactNode,
+} from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
 export function Field({
     label,
@@ -12,22 +18,41 @@ export function Field({
     hint?: string;
 }) {
     const id = props.id ?? props.name;
+    const [visible, setVisible] = useState(false);
+    const password = props.type === 'password';
     return (
         <div className="form-field">
             <label htmlFor={id}>
                 {label}
                 {props.required && <span className="required-mark"> *</span>}
             </label>
-            <input
-                {...props}
-                id={id}
-                aria-invalid={!!error}
-                aria-describedby={
-                    [hint ? `${id}-hint` : null, error ? `${id}-error` : null]
-                        .filter(Boolean)
-                        .join(' ') || undefined
-                }
-            />
+            <div className={password ? 'password-input' : undefined}>
+                <input
+                    {...props}
+                    type={password && visible ? 'text' : props.type}
+                    id={id}
+                    aria-invalid={!!error}
+                    aria-describedby={
+                        [hint ? `${id}-hint` : null, error ? `${id}-error` : null]
+                            .filter(Boolean)
+                            .join(' ') || undefined
+                    }
+                />
+                {password && (
+                    <button
+                        type="button"
+                        aria-label={`${visible ? 'Hide' : 'Show'} ${label.toLowerCase()}`}
+                        aria-pressed={visible}
+                        onClick={() => setVisible(!visible)}
+                    >
+                        {visible ? (
+                            <EyeOff size={17} aria-hidden="true" />
+                        ) : (
+                            <Eye size={17} aria-hidden="true" />
+                        )}
+                    </button>
+                )}
+            </div>
             {hint && (
                 <p className="field-hint" id={`${id}-hint`}>
                     {hint}

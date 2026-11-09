@@ -3,6 +3,7 @@
 namespace App\Services\Monitoring;
 
 use App\Models\AccessEvent;
+use App\Models\Gate;
 use App\Models\NfcCredential;
 use App\Models\Person;
 use App\Models\ScanAttempt;
@@ -127,6 +128,6 @@ class ReportQueries
         $active = NfcCredential::query()->join('credential_assignments as ca', 'ca.credential_id', '=', 'nfc_credentials.id')->join('persons as p', 'p.active_credential_assignment_id', '=', 'ca.id')
             ->where('nfc_credentials.source', $source)->where('nfc_credentials.status', 'active')->whereNull('ca.ended_at')->where(fn ($q) => $q->whereNull('valid_until')->orWhere('valid_until', '>', now()))->count();
 
-        return ['students' => (int) $people->students, 'employees' => (int) $people->employees, 'active_credentials' => $active];
+        return ['students' => (int) $people->students, 'employees' => (int) $people->employees, 'active_credentials' => $active, 'active_gates' => Gate::where('status', 'active')->count()];
     }
 }

@@ -5,6 +5,7 @@ import { Badge, Button, Panel } from '../../components/ui';
 import { manilaTime, type Paginated } from '../../lib/management';
 import { rowState, type HistoryRow } from '../../lib/monitoring';
 import { sequenceLabel } from '../../lib/gateFeedback';
+import { reasonLabel, reviewStatusLabel } from '../../lib/operations';
 
 type Correction = { id: string; action: string; reason: string; actor: string; at: string };
 export default function Show({
@@ -23,11 +24,11 @@ export default function Show({
     return (
         <ManagementPage
             page="history"
-            title={r.view === 'passages' ? 'Passage details' : 'Verification attempt details'}
-            description="Review the original facts and traceable correction history."
+            title={r.view === 'passages' ? 'Entry & exit record' : 'Scan details'}
+            description="Review the scan result and any saved corrections."
             back="/admin/history"
         >
-            <Panel title={rowState(r)}>
+            <Panel title={rowState(r)} className="activity-record">
                 <Badge
                     tone={
                         r.voided || r.outcome === 'denied'
@@ -45,28 +46,35 @@ export default function Show({
                             'Person',
                             r.person
                                 ? `${r.person.name} · ${r.person.number}`
-                                : 'Unidentified reference',
+                                : 'Unidentified coin',
                         ],
                         ['Time · Manila', manilaTime(r.time)],
                         ['Gate', `${r.gate.code} · ${r.gate.name}`],
-                        ['Guard', r.guard],
-                        ['Direction', r.direction],
+                        ['Gate account', r.guard],
+                        ['Direction', r.direction === 'entry' ? 'Entry' : 'Exit'],
                         ['Credential label', r.credential ?? 'Not identified'],
-                        ['Verification', `${r.outcome} · ${r.reason}`],
-                        ['Review', `${r.review} · ${r.review_reason ?? 'No terminal reason'}`],
+                        ['Credential check', reasonLabel(r.reason)],
+                        [
+                            'Scan status',
+                            `${reviewStatusLabel(r.review)}${r.review_reason ? ' · ' + reasonLabel(r.review_reason) : ''}`,
+                        ],
                         [
                             'Passage',
                             r.passage_id
                                 ? r.voided
                                     ? 'Original retained; excluded from effective totals'
-                                    : 'Effective recorded passage'
+                                    : 'Included in Entry & Exit totals'
                                 : 'No passage recorded',
                         ],
                         [
                             'Recording method',
                             r.identity_method === 'nfc_scan'
-                                ? 'Automatic NFC scan; no manual identity confirmation'
-                                : (r.identity_method ?? 'No passage'),
+                                ? 'Automatic NFC scan'
+                                : r.identity_method === 'campus_document'
+                                  ? 'Campus document comparison (legacy)'
+                                  : r.identity_method === 'photo'
+                                    ? 'Photo comparison (legacy)'
+                                    : (r.identity_method?.replaceAll('_', ' ') ?? 'No passage'),
                         ],
                         [
                             'Sequence notice',
@@ -87,8 +95,8 @@ export default function Show({
             </Panel>
             {r.passage_id && (
                 <Panel
-                    title="Append a passage correction"
-                    subtitle="Original verification and passage facts are retained. Voids change effective reporting; notes do not."
+                    title="Correct this record"
+                    subtitle="Add a note or exclude an incorrect passage from totals. The original record stays in history."
                 >
                     <form
                         className="management-form"
@@ -133,7 +141,7 @@ export default function Show({
                             </p>
                         </div>
                         <Button type="submit" variant="primary" disabled={form.processing}>
-                            {form.processing ? 'Saving correction…' : 'Append correction'}
+                            {form.processing ? 'Saving correction…' : 'Save correction'}
                         </Button>
                     </form>
                 </Panel>

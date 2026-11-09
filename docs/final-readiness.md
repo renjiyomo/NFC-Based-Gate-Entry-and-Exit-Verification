@@ -1,6 +1,6 @@
 # Current readiness — gate-account revision
 
-The [interface redesign](interface-redesign.md) is now verified locally: portfolio-based light/dark themes, responsive shell/forms/tables and loading states. Latest whole check: 210 PHP tests/2,313 assertions, 33 frontend tests and 11 MySQL races. Existing data/coin and physical/deployment limits below still apply.
+The [interface refinement](interface-refinement.md) is verified locally: visible current campus totals, optional live updates, clearer monitoring/reports, rebuilt profiles/photo controls, blue BU Polangui-inspired actions, eye icons and improved gate/mobile layouts. Latest whole check: 211 PHP tests/2,337 assertions, 36 frontend tests and 11 MySQL races. The [earlier redesign](interface-redesign.md) records the portfolio theme foundation. Existing data/coin and physical/deployment limits below still apply.
 
 **The redesigned software flow is verified locally. Physical acceptance of automatic recording and production deployment remain pending.** The user could not connect the NFC phone for this revision. Earlier manual-flow physical tests do not prove the new interaction. See [current workflow](workflow-redesign.md) and [verification report](workflow-redesign-report.md).
 

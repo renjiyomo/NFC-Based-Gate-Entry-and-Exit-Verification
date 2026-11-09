@@ -79,7 +79,11 @@ export default function GateForm({ record }: { record: GateRecord | null }) {
                             value={form.data.password}
                             onChange={(e) => form.setData('password', e.target.value)}
                             error={form.errors.password}
-                            hint="At least 15 characters. Leave blank to keep an existing password."
+                            hint={
+                                record
+                                    ? 'At least 15 characters. Leave blank to keep the current password.'
+                                    : 'At least 15 characters.'
+                            }
                         />
                         <Field
                             name="password_confirmation"

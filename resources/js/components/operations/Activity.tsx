@@ -66,8 +66,8 @@ export default function Activity({
 }) {
     return (
         <Panel
-            title={station ? 'Recent station activity' : 'Verification and passage activity'}
-            subtitle="Refreshes every 8 seconds while visible. Only confirmed passage is a recorded entry or exit."
+            title={station ? 'Recent gate activity' : 'Scan history'}
+            subtitle="Updates every 8 seconds while this page is visible. Duplicate and rejected scans do not add a passage."
             action={<Button onClick={refresh}>Refresh activity</Button>}
         >
             {error && (
@@ -88,12 +88,12 @@ export default function Activity({
                             'Person / gate',
                             'Direction',
                             'Credential check',
-                            'Review / passage',
+                            'Result',
                             'Time (Manila)',
                         ]}
                         count={feed?.records.length ?? 0}
-                        empty="No permitted activity yet"
-                        emptyDescription="Credential checks and their separate review outcomes will appear here."
+                        empty="No recent scans"
+                        emptyDescription="New scan results will appear here."
                     >
                         {feed?.records.map((record) => (
                             <tr key={record.id}>
@@ -108,13 +108,13 @@ export default function Activity({
                                 <td className="capitalize">{record.direction}</td>
                                 <td>
                                     <Badge tone={record.outcome === 'allowed' ? 'blue' : 'warning'}>
-                                        {record.outcome === 'allowed'
-                                            ? 'Authorized at scan'
-                                            : 'Denied'}
+                                        {record.outcome === 'allowed' ? 'Accepted' : 'Rejected'}
                                     </Badge>
-                                    <span className="table-secondary">
-                                        {reasonLabel(record.reason)}
-                                    </span>
+                                    {record.outcome !== 'allowed' && (
+                                        <span className="table-secondary">
+                                            {reasonLabel(record.reason)}
+                                        </span>
+                                    )}
                                 </td>
                                 <td>
                                     <Badge
@@ -140,16 +140,17 @@ export default function Activity({
                                         </span>
                                     )}
                                     {record.sequence_notice && (
-                                        <span className="table-secondary">
-                                            Warning: {sequenceLabel(record.sequence_notice)}
-                                        </span>
+                                        <details className="table-notice">
+                                            <summary>Sequence warning</summary>
+                                            <p>{sequenceLabel(record.sequence_notice)}</p>
+                                        </details>
                                     )}
                                 </td>
                                 <td>
                                     {manilaTime(record.received_at)}
                                     {record.confirmed_at && (
                                         <span className="table-secondary">
-                                            Confirmed {manilaTime(record.confirmed_at)}
+                                            Recorded {manilaTime(record.confirmed_at)}
                                         </span>
                                     )}
                                 </td>

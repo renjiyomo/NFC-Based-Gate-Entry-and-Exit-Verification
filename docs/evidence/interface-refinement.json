@@ -1,0 +1,532 @@
+{
+  "date": "2026-11-09",
+  "scope": "Campus totals and interface refinement; Chromium desktop and viewport checks, no new physical NFC/speaker or Safari acceptance",
+  "php_tests": 211,
+  "php_assertions": 2337,
+  "frontend_tests": 36,
+  "concurrency": {
+    "passed": true,
+    "cases": [
+      "two guards / different request IDs: one passage, one suppressed duplicate",
+      "same guard / same request ID: one attempt and one passage",
+      "confirmation versus cancellation: one terminal result consistent with passage",
+      "confirmation versus revocation: no passage after committed revocation",
+      "different administrators / overlapping detection: one flag per detection key",
+      "different administrators / same anomaly revision: one review and one stale rejection",
+      "same summary task / two workers: one claim and one validated fixture result",
+      "different summary tasks / one remaining claim: one result and one daily-limit denial",
+      "gate account / concurrent different scan IDs: one automatic passage and one duplicate",
+      "gate account / concurrent same scan ID: one attempt and one automatic passage",
+      "automatic scan versus lost revocation: no passage after committed revocation; later scans denied"
+    ],
+    "concurrent_overlap_observed": true,
+    "test_row_counts_restored": true
+  },
+  "runtime_counts": {
+    "nfcheck": {
+      "migrations": 19,
+      "users": 6,
+      "persons": 2,
+      "gates": 2,
+      "nfc_credentials": 0,
+      "scan_attempts": 0,
+      "access_events": 0,
+      "passage_corrections": 0,
+      "anomaly_flags": 0,
+      "anomaly_evidence": 0,
+      "anomaly_reviews": 0,
+      "summary_requests": 0,
+      "summary_tasks": 0,
+      "summary_results": 0,
+      "summary_reviews": 0,
+      "summary_controls": 1,
+      "pending_reviews": 0,
+      "event_sources": [],
+      "immutable_sql_denials": 23
+    },
+    "nfcheck_testing": {
+      "migrations": 19,
+      "users": 0,
+      "persons": 0,
+      "gates": 0,
+      "nfc_credentials": 0,
+      "scan_attempts": 0,
+      "access_events": 0,
+      "passage_corrections": 0,
+      "anomaly_flags": 0,
+      "anomaly_evidence": 0,
+      "anomaly_reviews": 0,
+      "summary_requests": 0,
+      "summary_tasks": 0,
+      "summary_results": 0,
+      "summary_reviews": 0,
+      "summary_controls": 1,
+      "pending_reviews": 0,
+      "event_sources": [],
+      "immutable_sql_denials": 23
+    },
+    "nfcheck_simulator": {
+      "migrations": 19,
+      "users": 4,
+      "persons": 2,
+      "gates": 1,
+      "nfc_credentials": 7,
+      "scan_attempts": 11,
+      "access_events": 5,
+      "passage_corrections": 3,
+      "anomaly_flags": 3,
+      "anomaly_evidence": 6,
+      "anomaly_reviews": 2,
+      "summary_requests": 1,
+      "summary_tasks": 1,
+      "summary_results": 1,
+      "summary_reviews": 1,
+      "summary_controls": 1,
+      "pending_reviews": 0,
+      "event_sources": [
+        {
+          "source": "simulated",
+          "count": 5
+        }
+      ],
+      "immutable_sql_denials": 23
+    },
+    "nfcheck_hardware": {
+      "migrations": 19,
+      "users": 4,
+      "persons": 2,
+      "gates": 1,
+      "nfc_credentials": 9,
+      "scan_attempts": 26,
+      "access_events": 6,
+      "passage_corrections": 0,
+      "anomaly_flags": 0,
+      "anomaly_evidence": 0,
+      "anomaly_reviews": 0,
+      "summary_requests": 0,
+      "summary_tasks": 0,
+      "summary_results": 0,
+      "summary_reviews": 0,
+      "summary_controls": 1,
+      "pending_reviews": 0,
+      "event_sources": [
+        {
+          "source": "physical",
+          "count": 6
+        }
+      ],
+      "immutable_sql_denials": 23
+    },
+    "requested_admins_active": 3
+  },
+  "selected_hardware_coin_labels": {
+    "HW-TAG-08": "employee",
+    "HW-TAG-09": "student"
+  },
+  "migration_added": false,
+  "browser_created_passages": false,
+  "browser_revoked_coins": false,
+  "phone_test_pending": true,
+  "live_ai_calls": 0,
+  "public_deployment": false,
+  "contrast_pairs": [
+    {
+      "theme": "dark",
+      "foreground": "--text",
+      "background": "--bg",
+      "ratio": 15.99,
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "--text",
+      "background": "--surface",
+      "ratio": 15.05,
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "--text",
+      "background": "--soft",
+      "ratio": 14.23,
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "--muted",
+      "background": "--bg",
+      "ratio": 9.92,
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "--muted",
+      "background": "--surface",
+      "ratio": 9.34,
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "--muted",
+      "background": "--soft",
+      "ratio": 8.83,
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "--subtle",
+      "background": "--bg",
+      "ratio": 6.17,
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "--subtle",
+      "background": "--surface",
+      "ratio": 5.81,
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "--subtle",
+      "background": "--soft",
+      "ratio": 5.49,
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "--success",
+      "background": "--success-bg",
+      "ratio": 7.44,
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "--warning",
+      "background": "--warning-bg",
+      "ratio": 8.05,
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "--error",
+      "background": "--error-bg",
+      "ratio": 7.53,
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "--info",
+      "background": "--info-bg",
+      "ratio": 8.28,
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "--on-primary",
+      "background": "--action",
+      "ratio": 5.11,
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "--border",
+      "background": "--bg",
+      "ratio": 3.62,
+      "minimum": 3
+    },
+    {
+      "theme": "dark",
+      "foreground": "--border",
+      "background": "--surface",
+      "ratio": 3.41,
+      "minimum": 3
+    },
+    {
+      "theme": "dark",
+      "foreground": "--primary",
+      "background": "--bg",
+      "ratio": 9.22,
+      "minimum": 3
+    },
+    {
+      "theme": "light",
+      "foreground": "--text",
+      "background": "--bg",
+      "ratio": 15.96,
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "--text",
+      "background": "--surface",
+      "ratio": 17.12,
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "--text",
+      "background": "--soft",
+      "ratio": 15.12,
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "--muted",
+      "background": "--bg",
+      "ratio": 6.5,
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "--muted",
+      "background": "--surface",
+      "ratio": 6.97,
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "--muted",
+      "background": "--soft",
+      "ratio": 6.16,
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "--subtle",
+      "background": "--bg",
+      "ratio": 4.86,
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "--subtle",
+      "background": "--surface",
+      "ratio": 5.22,
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "--subtle",
+      "background": "--soft",
+      "ratio": 4.61,
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "--success",
+      "background": "--success-bg",
+      "ratio": 6.14,
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "--warning",
+      "background": "--warning-bg",
+      "ratio": 5.75,
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "--error",
+      "background": "--error-bg",
+      "ratio": 5.56,
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "--info",
+      "background": "--info-bg",
+      "ratio": 5.82,
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "--on-primary",
+      "background": "--action",
+      "ratio": 6.93,
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "--border",
+      "background": "--bg",
+      "ratio": 3.5,
+      "minimum": 3
+    },
+    {
+      "theme": "light",
+      "foreground": "--border",
+      "background": "--surface",
+      "ratio": 3.76,
+      "minimum": 3
+    },
+    {
+      "theme": "light",
+      "foreground": "--primary",
+      "background": "--bg",
+      "ratio": 6.19,
+      "minimum": 3
+    }
+  ],
+  "viewports": [
+    [
+      320,
+      740
+    ],
+    [
+      393,
+      852
+    ],
+    [
+      768,
+      1024
+    ]
+  ],
+  "default_desktop_checked": true,
+  "viewport_reset": true,
+  "sessions_signed_out": true,
+  "theme_duration_ms": 620,
+  "browser_checks": {
+    "mobile393": [
+      {
+        "body": 378,
+        "page": 378,
+        "path": "/admin/students/1",
+        "smallInputs": [],
+        "title": "Student record",
+        "viewport": 394
+      },
+      {
+        "body": 378,
+        "page": 378,
+        "path": "/admin/students/1/edit",
+        "smallInputs": [],
+        "title": "Edit student",
+        "viewport": 394
+      },
+      {
+        "body": 378,
+        "page": 378,
+        "path": "/admin/employees",
+        "smallInputs": [],
+        "title": "Employees",
+        "viewport": 394
+      },
+      {
+        "body": 378,
+        "page": 378,
+        "path": "/admin/reports",
+        "smallInputs": [],
+        "title": "Reports",
+        "viewport": 394
+      },
+      {
+        "body": 378,
+        "page": 378,
+        "path": "/admin/analytics",
+        "smallInputs": [],
+        "title": "Activity analytics",
+        "viewport": 394
+      },
+      {
+        "body": 378,
+        "page": 378,
+        "path": "/admin/anomalies",
+        "smallInputs": [],
+        "title": "Activity checks",
+        "viewport": 394
+      },
+      {
+        "body": 378,
+        "page": 378,
+        "path": "/admin/summaries",
+        "smallInputs": [],
+        "title": "Activity summaries",
+        "viewport": 394
+      }
+    ],
+    "mobile320": [
+      {
+        "body": 305,
+        "page": 305,
+        "path": "/admin/employees/2",
+        "title": "Employee record",
+        "viewport": 320
+      },
+      {
+        "body": 305,
+        "page": 305,
+        "path": "/admin/students/1/edit",
+        "title": "Edit student",
+        "viewport": 320
+      },
+      {
+        "body": 305,
+        "page": 305,
+        "path": "/admin/history",
+        "title": "Entry & exit history",
+        "viewport": 320
+      },
+      {
+        "body": 305,
+        "page": 305,
+        "path": "/admin/reports",
+        "title": "Reports",
+        "viewport": 320
+      },
+      {
+        "body": 305,
+        "page": 305,
+        "path": "/admin/analytics",
+        "title": "Activity analytics",
+        "viewport": 320
+      },
+      {
+        "body": 305,
+        "page": 305,
+        "path": "/admin/anomalies",
+        "title": "Activity checks",
+        "viewport": 320
+      },
+      {
+        "body": 305,
+        "page": 305,
+        "path": "/admin/summaries",
+        "title": "Activity summaries",
+        "viewport": 320
+      },
+      {
+        "body": 305,
+        "page": 305,
+        "path": "/admin/dashboard",
+        "title": "Overview",
+        "viewport": 320
+      }
+    ],
+    "desktopFourFieldRows": true,
+    "photoPreviewSelectedAndRemovedWithoutSave": true,
+    "passwordEyesRevealedAndConcealedWithoutSave": true,
+    "livePausedSurvivedRefresh": true,
+    "customManilaDatesApplied": true,
+    "registryCountsUnchangedByDates": true,
+    "historyTabsChecked": {
+      "attempts": 11,
+      "passages": 5
+    },
+    "savedSummaryAndActivityFlagReadOnly": true,
+    "gateLoginAndDirectionsChecked": true,
+    "noBrowserScanOrReviewWrites": true,
+    "physicalPhonePending": true,
+    "warningOrErrorConsoleEntries": 0
+  },
+  "additional_desktop_viewport": [
+    1440,
+    1000
+  ],
+  "logo_inspired_action_colours": {
+    "dark": "#1769DE",
+    "light": "#0757B4"
+  },
+  "final_frontend_tests": 36
+}

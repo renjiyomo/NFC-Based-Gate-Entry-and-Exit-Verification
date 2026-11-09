@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { useState, type ReactNode } from 'react';
 import { useWorkspace } from '../lib/workspace';
 import ThemeToggle from './ThemeToggle';
+import { Eye, EyeOff } from 'lucide-react';
 
 export function AuthPanel({
     title,
@@ -87,7 +88,11 @@ export function PasswordField({
                     aria-pressed={visible}
                     onClick={() => setVisible(!visible)}
                 >
-                    {visible ? 'Hide' : 'Show'}
+                    {visible ? (
+                        <EyeOff size={17} aria-hidden="true" />
+                    ) : (
+                        <Eye size={17} aria-hidden="true" />
+                    )}
                 </button>
             </div>
             {error && (

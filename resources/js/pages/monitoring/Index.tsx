@@ -1,13 +1,13 @@
 import { Link, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, ShieldAlert, Users, RefreshCw, Download } from 'lucide-react';
+import { Download, RefreshCw } from 'lucide-react';
 import {
     ManagementPage,
     Pagination,
     CurrentErrors,
-    Select,
+    DataTable,
 } from '../../components/management/Common';
-import { Badge, Button, Panel } from '../../components/ui';
+import { Button, Panel } from '../../components/ui';
 import Filters from '../../components/monitoring/Filters';
 import HistoryTable from '../../components/monitoring/HistoryTable';
 import { Bars, Trend } from '../../components/monitoring/Charts';
@@ -20,6 +20,7 @@ import {
     type Summary,
 } from '../../lib/monitoring';
 import { manilaTime, type Paginated } from '../../lib/management';
+import { reasonLabel } from '../../lib/operations';
 
 interface Props {
     section: 'dashboard' | 'history' | 'analytics' | 'reports';
@@ -29,7 +30,12 @@ interface Props {
     gates: { id: number; code: string; name: string }[];
     guards: { id: number; name: string }[];
     summary?: Summary;
-    directory?: { students: number; employees: number; active_credentials: number };
+    directory?: {
+        students: number;
+        employees: number;
+        active_credentials: number;
+        active_gates: number;
+    };
     recent?: HistoryRow[];
     records?: Paginated<HistoryRow>;
     exports?: {
@@ -44,15 +50,36 @@ interface Props {
         };
     }[];
 }
-const titles = {
-    dashboard: 'Gate monitoring overview',
-    history: 'Entry & exit history',
-    analytics: 'Campus access analytics',
-    reports: 'Activity reports',
+const headings = {
+    dashboard: ['Overview', 'Campus records and recent gate activity.'],
+    history: ['Entry & exit history', 'Find recorded passages or review individual scan results.'],
+    analytics: [
+        'Activity analytics',
+        'Compare Entry and Exit activity across dates, gates and people.',
+    ],
+    reports: ['Reports', 'Choose a date range and download the records you need.'],
 };
+const datasets = [
+    {
+        value: 'summary',
+        label: 'Activity summary',
+        note: 'Totals and breakdowns by date, gate and person type.',
+    },
+    {
+        value: 'passages',
+        label: 'Entry & exit records',
+        note: 'Individual recorded passages and their correction status.',
+    },
+    {
+        value: 'attempts',
+        label: 'All scan attempts',
+        note: 'Accepted, rejected and duplicate scans, including scans without a passage.',
+    },
+];
 export default function Index(props: Props) {
-    const { section, filters, period, source, summary: s, directory, records, recent } = props;
-    const [dataset, setDataset] = useState(section === 'history' ? filters.view : 'summary');
+    const { section, filters, period, summary: s, directory, records, recent } = props;
+    const [dataset, setDataset] = useState('summary');
+    const [live, setLive] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const active = useRef(false);
     function refresh() {
@@ -68,173 +95,157 @@ export default function Index(props: Props) {
         });
     }
     useEffect(() => {
-        if (section !== 'dashboard') return;
+        if (section !== 'dashboard' || !live) return;
         const timer = setInterval(() => {
             if (document.visibilityState === 'visible') refresh();
         }, 30000);
         return () => clearInterval(timer);
-    }, [section]);
+    }, [section, live]);
     return (
         <ManagementPage
             page={section}
-            title={titles[section]}
-            description="Recorded passages, verification attempts and estimates from saved records."
+            title={headings[section][0]}
+            description={headings[section][1]}
             action={
                 <Button onClick={refresh} disabled={refreshing}>
-                    <RefreshCw size={16} />
-                    {refreshing ? 'Refreshing…' : 'Refresh data'}
+                    <RefreshCw size={16} aria-hidden="true" />
+                    {refreshing ? 'Updating…' : 'Refresh'}
                 </Button>
             }
         >
             <CurrentErrors />
-            <div className="report-period">
-                <div>
-                    <strong>
-                        {period.from} — {period.to}
-                    </strong>
-                    <span>
-                        Asia/Manila · {source} source · snapshot {manilaTime(period.as_of)}
-                    </span>
+            {section === 'history' && (
+                <nav className="history-tabs" aria-label="History record type">
+                    {[
+                        ['passages', 'Recorded Entry & Exit'],
+                        ['attempts', 'All scan attempts'],
+                    ].map(([view, label]) => (
+                        <Link
+                            key={view}
+                            href={reportUrl('/admin/history', filters, { view, page: '1' })}
+                            aria-current={filters.view === view ? 'page' : undefined}
+                        >
+                            {label}
+                        </Link>
+                    ))}
+                </nav>
+            )}
+            {section === 'dashboard' && directory && (
+                <section className="registry-section" aria-labelledby="registry-title">
+                    <div className="section-caption">
+                        <h2 id="registry-title">Campus records</h2>
+                        <span>Current totals · not affected by date filters</span>
+                    </div>
+                    <div className="registry-grid">
+                        {[
+                            ['Students', directory.students, '/admin/students'],
+                            ['Employees', directory.employees, '/admin/employees'],
+                            [
+                                'Active NFC coins',
+                                directory.active_credentials,
+                                '/admin/credentials',
+                            ],
+                            ['Active gates', directory.active_gates, '/admin/gates'],
+                        ].map(([label, value, href]) => (
+                            <Link key={label} href={String(href)} className="registry-card">
+                                <span>{label}</span>
+                                <strong>{number(Number(value))}</strong>
+                                <span className="registry-link">View records →</span>
+                            </Link>
+                        ))}
+                    </div>
+                </section>
+            )}
+            <section className="activity-section" aria-label="Activity period and filters">
+                <div className="section-caption">
+                    <h2>{section === 'reports' ? 'Report period' : 'Activity period'}</h2>
+                    {section === 'dashboard' && (
+                        <label className="live-control">
+                            <input
+                                type="checkbox"
+                                checked={live}
+                                onChange={(e) => setLive(e.target.checked)}
+                            />
+                            Live updates <span>{live ? 'Every 30 sec' : 'Paused'}</span>
+                        </label>
+                    )}
                 </div>
-                <Badge>
-                    {section === 'dashboard' ? 'Refreshes every 30 seconds' : 'Database snapshot'}
-                </Badge>
-            </div>
-            {section === 'dashboard' ? (
-                <details className="report-filter-disclosure">
-                    <summary>Change period and filters</summary>
-                    <Filters
-                        section={section}
-                        filters={filters}
-                        gates={props.gates}
-                        guards={props.guards}
-                    />
-                </details>
-            ) : (
                 <Filters
                     section={section}
                     filters={filters}
                     gates={props.gates}
                     guards={props.guards}
                 />
-            )}
-            {s && (
+                <div className="period-caption">
+                    <span>
+                        {period.from === period.to ? period.from : `${period.from} — ${period.to}`}{' '}
+                        · Asia/Manila
+                    </span>
+                    <span>Updated {manilaTime(period.as_of)}</span>
+                </div>
+            </section>
+            {s && section !== 'reports' && (
                 <>
-                    <section className="metric-grid" aria-label="Filtered gate statistics">
+                    <section className="metric-grid" aria-label="Activity totals">
                         {[
-                            {
-                                label: 'Recorded entries',
-                                value: s.entries,
-                                icon: ArrowDownLeft,
-                                color: 'blue',
-                                note: 'Effective Entry passages in this period',
-                            },
-                            {
-                                label: 'Recorded exits',
-                                value: s.exits,
-                                icon: ArrowUpRight,
-                                color: 'teal',
-                                note: 'Effective Exit passages in this period',
-                            },
-                            {
-                                label: 'Denied verifications',
-                                value: s.denied,
-                                icon: ShieldAlert,
-                                color: 'orange',
-                                note: 'Rejected attempts, not passages',
-                            },
-                            {
-                                label: 'Last recorded inside',
-                                value: s.presence.inside,
-                                icon: Users,
-                                color: 'lavender',
-                                note: 'Campus-wide estimate as of period cutoff',
-                            },
-                        ].map(({ label, value, note }) => (
-                            <div className="metric-card" key={label}>
-                                <div className="metric-label">
-                                    <span>{label}</span>
-                                </div>
-                                <div className="metric-value">{number(value)}</div>
+                            ['Entries', s.entries, 'Recorded in this period'],
+                            ['Exits', s.exits, 'Recorded in this period'],
+                            ['Rejected scans', s.denied, 'No passage recorded'],
+                            section === 'dashboard'
+                                ? [
+                                      'Estimated inside',
+                                      s.presence.inside,
+                                      'Based on the latest recorded direction',
+                                  ]
+                                : [
+                                      'People with passages',
+                                      s.unique_people,
+                                      'Each person counted once',
+                                  ],
+                        ].map(([label, value, note]) => (
+                            <div className="metric-card" key={String(label)}>
+                                <div className="metric-label">{label}</div>
+                                <strong className="metric-value">{number(Number(value))}</strong>
                                 <p className="metric-note">{note}</p>
                             </div>
                         ))}
                     </section>
-                    <details className="report-method">
-                        <summary>Record counts and estimate details</summary>
-                        <div className="report-facts">
-                            {directory && (
-                                <>
-                                    <span>
-                                        <strong>{number(directory.students)}</strong> registered
-                                        students
-                                    </span>
-                                    <span>
-                                        <strong>{number(directory.employees)}</strong> registered
-                                        employees
-                                    </span>
-                                    <span>
-                                        <strong>{number(directory.active_credentials)}</strong>{' '}
-                                        selected active credentials
-                                    </span>
-                                </>
-                            )}
-                            <span>
-                                <strong>{number(s.attempts)}</strong> attempts
-                            </span>
-                            <span>
-                                <strong>{number(s.duplicates)}</strong> duplicates suppressed
-                            </span>
-                            <span>
-                                <strong>{number(s.voided)}</strong> voided originals excluded
-                            </span>
-                        </div>
-                        <p className="report-meaning">
-                            Presence follows the last effective passage across all gates through{' '}
-                            {manilaTime(s.presence.as_of)}; it ignores the gate/guard and
-                            period-start filters. {number(s.presence.outside)} last recorded
-                            outside; {number(s.presence.unknown)} retained people have no effective
-                            passage. Missing scans and incomplete coverage limit this estimate. Gate
-                            activity is not classroom attendance.
+                    <details className="compact-help">
+                        <summary>What do these numbers mean?</summary>
+                        <p>
+                            Entries and Exits count saved passages in the selected period. Rejected
+                            and duplicate scans do not add a passage. {number(s.attempts)} scans
+                            were checked; {number(s.duplicates)} duplicates were suppressed. Voided
+                            passages are excluded.
                         </p>
+                        {section === 'dashboard' && (
+                            <p>
+                                Estimated inside uses each person’s last effective passage across
+                                all gates up to {manilaTime(s.presence.as_of)}, regardless of the
+                                gate/account filter or start date. Missing scans can make this
+                                estimate incomplete. It is not a live headcount or classroom
+                                attendance.
+                            </p>
+                        )}
+                        {section === 'dashboard' && (
+                            <p>
+                                Live updates check for new records without reloading the whole page.
+                                They never create a scan or passage.
+                            </p>
+                        )}
+                        {directory && (
+                            <p>
+                                Student and employee totals include current active and inactive
+                                records; archived people are excluded. Active NFC coins are
+                                selected, unexpired credentials in this workspace. These registry
+                                totals do not change with the activity period.
+                            </p>
+                        )}
                     </details>
-                </>
-            )}
-            {section === 'history' && records && (
-                <Panel
-                    title={
-                        filters.view === 'passages'
-                            ? 'Passage history'
-                            : 'Verification attempt history'
-                    }
-                    subtitle="Original records remain intact. Voids and reinstatements are traceable administrative corrections."
-                    action={
-                        <div className="report-export-actions">
-                            {['csv', 'xlsx', 'pdf'].map((format) => (
-                                <a
-                                    className="text-link"
-                                    key={format}
-                                    href={reportUrl('/admin/reports/export', filters, {
-                                        format,
-                                        dataset: filters.view,
-                                    })}
-                                >
-                                    Export {format === 'xlsx' ? 'Excel' : format.toUpperCase()}
-                                </a>
-                            ))}
-                        </div>
-                    }
-                >
-                    <HistoryTable rows={records.data} />
-                    <Pagination records={records} />
-                </Panel>
-            )}
-            {s && (
-                <>
                     <div className="report-two-columns">
                         <Panel
-                            title="Entry & exit trends"
-                            subtitle="Effective recorded passages by Manila date"
+                            title="Entries & exits over time"
+                            subtitle="Recorded passages by date"
                         >
                             <Trend rows={s.trend} />
                         </Panel>
@@ -242,14 +253,14 @@ export default function Index(props: Props) {
                             title="Activity by gate"
                             subtitle={
                                 s.gates.length > 10
-                                    ? 'Top 10 gates by effective passages'
-                                    : 'Effective recorded passages across stations'
+                                    ? 'Ten busiest gates in this period'
+                                    : 'Recorded passages in this period'
                             }
                         >
                             <Bars
-                                label="Gate comparison"
+                                label="Gate activity"
                                 rows={[...s.gates]
-                                    .sort((a, b) => b.entries + b.exits - (a.entries + a.exits))
+                                    .sort((a, b) => b.entries + b.exits - a.entries - a.exits)
                                     .slice(0, 10)
                                     .map((g) => ({
                                         label: `${g.label} · ${g.entries} Entry / ${g.exits} Exit`,
@@ -258,76 +269,110 @@ export default function Index(props: Props) {
                             />
                             {s.gates.length > 10 && (
                                 <details className="chart-data">
-                                    <summary>View every gate</summary>
-                                    <ul>
-                                        {s.gates.map((g) => (
-                                            <li key={g.label}>
-                                                {g.label}: {g.entries} Entries / {g.exits} Exits
-                                            </li>
-                                        ))}
-                                    </ul>
+                                    <summary>All gates</summary>
+                                    {s.gates.map((g) => (
+                                        <p key={g.label}>
+                                            {g.label}: {g.entries} Entry / {g.exits} Exit
+                                        </p>
+                                    ))}
                                 </details>
                             )}
                         </Panel>
                     </div>
-                    {section !== 'dashboard' && (
+                    {section === 'analytics' && (
                         <div className="report-two-columns">
                             <Panel
-                                title="Student and employee activity"
-                                subtitle="Recorded passages, not unique people"
+                                title="Student & employee activity"
+                                subtitle="Passages, including repeat visits"
                             >
                                 <Bars
-                                    label="Person type comparison"
+                                    label="Activity by person type"
                                     rows={s.kinds.map((k) => ({
                                         label: `${k.label} · ${k.entries} Entry / ${k.exits} Exit`,
                                         value: k.entries + k.exits,
                                     }))}
                                 />
-                                <p className="report-meaning">
-                                    {number(s.unique_people)} distinct people with effective passage
-                                    in this period.
-                                </p>
                             </Panel>
                             <Panel
-                                title="Denied verification reasons"
-                                subtitle="Unidentified references remain separate from person records"
+                                title="Reasons scans were rejected"
+                                subtitle="Rejected scans do not create Entry or Exit records"
                             >
-                                <Bars rows={s.denied_reasons} label="Denied reasons" />
+                                <Bars
+                                    rows={s.denied_reasons.map((r) => ({
+                                        ...r,
+                                        label: reasonLabel(r.label),
+                                    }))}
+                                    label="Rejection reasons"
+                                />
                             </Panel>
                             <Panel
-                                title="Activity by time of day"
-                                subtitle="Recorded passages grouped by Manila hour"
+                                title="Busiest hours"
+                                subtitle="Up to eight busiest hours · Asia/Manila"
                             >
-                                <Bars rows={s.hourly} label="Hourly distribution" />
+                                <Bars
+                                    rows={s.hourly
+                                        .filter((r) => r.value > 0)
+                                        .sort((a, b) => b.value - a.value)
+                                        .slice(0, 8)}
+                                    label="Passages by hour"
+                                />
+                                <details className="chart-data">
+                                    <summary>All hours</summary>
+                                    <dl className="hourly-data">
+                                        {s.hourly.map((r) => (
+                                            <div key={r.label}>
+                                                <dt>{r.label}</dt>
+                                                <dd>{number(r.value)}</dd>
+                                            </div>
+                                        ))}
+                                    </dl>
+                                </details>
                             </Panel>
-                            <Panel title="How totals are calculated">
-                                <p className="report-meaning">
-                                    Counts include effective recorded passage records only.
-                                    Cancelled, expired and rejected reviews do not count.
-                                    Administrative voids exclude an original passage; reinstatement
-                                    includes it again. Duplicate scans remain in attempt history
-                                    without creating another passage.
-                                </p>
-                                <p className="report-meaning">
-                                    Directory counts are current profile counts. Historical names
-                                    are current directory descriptions. Report corrections reflect
-                                    the state when this snapshot was generated.
-                                </p>
+                            <Panel title="Reading the charts">
+                                <div className="panel-copy">
+                                    <p>
+                                        Use the same date range and filters to compare activity. A
+                                        person may have several passages during one day.
+                                    </p>
+                                    <p>
+                                        Charts include effective records only. Missing scans and
+                                        incomplete gate coverage affect the results.
+                                    </p>
+                                    <Link
+                                        className="text-link"
+                                        href={reportUrl('/admin/reports', filters)}
+                                    >
+                                        Download these results →
+                                    </Link>
+                                </div>
                             </Panel>
                         </div>
                     )}
                 </>
             )}
+            {section === 'history' && records && (
+                <Panel
+                    title={filters.view === 'passages' ? 'Recorded passages' : 'Scan attempts'}
+                    action={
+                        <Link className="text-link" href={reportUrl('/admin/reports', filters)}>
+                            Download report →
+                        </Link>
+                    }
+                >
+                    <HistoryTable rows={records.data} />
+                    <Pagination records={records} />
+                </Panel>
+            )}
             {section === 'dashboard' && recent && (
                 <Panel
-                    title="Recent verification activity"
-                    subtitle="Latest eight attempts matching this period and filters"
+                    title="Recent scans"
+                    subtitle="Latest eight scans in the selected period"
                     action={
                         <Link
                             className="text-link"
                             href={reportUrl('/admin/history', filters, { view: 'attempts' })}
                         >
-                            View complete history
+                            View history →
                         </Link>
                     }
                 >
@@ -336,84 +381,81 @@ export default function Index(props: Props) {
             )}
             {section === 'reports' && (
                 <>
-                    <Panel
-                        title="Download a report"
-                        subtitle="The applied filters above control every format. Downloads are private and audited."
-                    >
-                        <div className="report-downloads">
-                            <Select
-                                name="dataset"
-                                label="Export records"
-                                value={dataset}
-                                onChange={(e) => setDataset(e.target.value)}
-                            >
-                                <option value="summary">Activity summary and breakdowns</option>
-                                <option value="passages">Recorded passage records</option>
-                                <option value="attempts">Verification attempt records</option>
-                            </Select>
-                            <div className="form-actions">
-                                {['csv', 'xlsx', 'pdf'].map((format) => (
-                                    <a
-                                        key={format}
-                                        className="button button-primary"
-                                        href={reportUrl('/admin/reports/export', filters, {
-                                            dataset,
-                                            format,
-                                        })}
+                    <Panel title="Choose a report">
+                        <div className="report-builder">
+                            <fieldset className="report-datasets">
+                                <legend className="sr-only">Report contents</legend>
+                                {datasets.map((d) => (
+                                    <label
+                                        className={`dataset-choice ${dataset === d.value ? 'is-selected' : ''}`}
+                                        key={d.value}
                                     >
-                                        <Download size={16} />
-                                        Download{' '}
-                                        {format === 'xlsx' ? 'Excel' : format.toUpperCase()}
-                                    </a>
+                                        <input
+                                            type="radio"
+                                            name="dataset"
+                                            value={d.value}
+                                            checked={dataset === d.value}
+                                            onChange={() => setDataset(d.value)}
+                                        />
+                                        <span>
+                                            <strong>{d.label}</strong>
+                                            <span>{d.note}</span>
+                                        </span>
+                                    </label>
                                 ))}
+                            </fieldset>
+                            <div className="report-download-bar">
+                                <div>
+                                    <h3>Download</h3>
+                                    <p>Uses the applied period and filters above.</p>
+                                </div>
+                                <div className="form-actions">
+                                    {['csv', 'xlsx', 'pdf'].map((format) => (
+                                        <a
+                                            key={format}
+                                            className={`button button-${format === 'xlsx' ? 'primary' : 'secondary'}`}
+                                            href={reportUrl('/admin/reports/export', filters, {
+                                                dataset,
+                                                format,
+                                            })}
+                                        >
+                                            <Download size={16} aria-hidden="true" />
+                                            {format === 'xlsx' ? 'Excel' : format.toUpperCase()}
+                                        </a>
+                                    ))}
+                                </div>
                             </div>
                             <p className="field-hint">
-                                Exports: up to 10,000 rows in CSV/Excel or 500 in PDF. Larger
-                                selections require narrower filters; rows are never silently
-                                omitted. Files are generated on demand.
+                                Up to 10,000 rows in CSV or Excel; 500 rows in PDF. Narrow the
+                                period for larger reports.
                             </p>
                         </div>
                     </Panel>
-                    <Panel
-                        title="Recent prepared exports"
-                        subtitle="Audit history records preparation, not proof that a file was opened."
-                    >
-                        <div className="report-scroll">
-                            <table className="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Prepared · Manila</th>
-                                        <th>Administrator</th>
-                                        <th>Dataset / format</th>
-                                        <th>Period</th>
-                                        <th>Rows</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {props.exports?.length ? (
-                                        props.exports.map((r, i) => (
-                                            <tr key={i}>
-                                                <td>{manilaTime(r.at)}</td>
-                                                <td>{r.actor}</td>
-                                                <td>
-                                                    {r.details.dataset} ·{' '}
-                                                    {r.details.format.toUpperCase()}
-                                                </td>
-                                                <td>
-                                                    {r.details.period_start} —{' '}
-                                                    {r.details.period_end}
-                                                </td>
-                                                <td>{number(r.details.row_count)}</td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan={5}>No exports prepared yet.</td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                    <Panel title="Recent downloads">
+                        <DataTable
+                            caption="Report download history"
+                            columns={['Downloaded', 'Requested by', 'Report', 'Format', 'Rows']}
+                            count={props.exports?.length ?? 0}
+                            empty="No reports downloaded yet"
+                            emptyDescription="Your recent downloads will appear here."
+                        >
+                            {props.exports?.map((row, i) => (
+                                <tr key={`${row.at}-${i}`}>
+                                    <td>{manilaTime(row.at)}</td>
+                                    <td>{row.actor}</td>
+                                    <td>
+                                        {datasets.find((d) => d.value === row.details.dataset)
+                                            ?.label ?? row.details.dataset}
+                                    </td>
+                                    <td>
+                                        {row.details.format === 'xlsx'
+                                            ? 'Excel'
+                                            : row.details.format.toUpperCase()}
+                                    </td>
+                                    <td>{number(row.details.row_count)}</td>
+                                </tr>
+                            ))}
+                        </DataTable>
                     </Panel>
                 </>
             )}

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AccessEvent;
+use App\Models\Gate;
 use App\Models\ScanAttempt;
 use App\Services\GateOperations\GateOperations;
 use App\Services\Monitoring\PassageCorrections;
@@ -14,6 +15,26 @@ use Tests\MonitoringTestCase;
 
 class MonitoringAccuracyTest extends MonitoringTestCase
 {
+    public function test_dashboard_registry_totals_are_current_and_independent_of_activity_dates(): void
+    {
+        $this->subject();
+        $this->subject('employees');
+        $this->subject('students', 'simulated');
+        $this->makePerson('students', ['status' => 'inactive']);
+        $archived = $this->makePerson('employees');
+        $archived->delete();
+        Gate::create(['code' => 'UI-INACTIVE', 'name' => 'Synthetic inactive gate', 'status' => 'inactive']);
+        $gate = Gate::create(['code' => 'UI-ARCHIVED', 'name' => 'Synthetic archived gate', 'status' => 'active']);
+        $gate->delete();
+        $this->finishTime();
+        $expected = ['students' => 3, 'employees' => 1, 'active_credentials' => 2, 'active_gates' => 1];
+        $this->assertSame($expected, app(ReportQueries::class)->directoryCounts('physical'));
+        $this->assertSame(1, app(ReportQueries::class)->directoryCounts('simulated')['active_credentials']);
+        foreach (['2026-10-01', '2026-11-09'] as $date) {
+            $this->get('/admin/dashboard?date='.$date)->assertOk()->assertInertia(fn ($p) => $p->where('directory', $expected)->where('summary.passages', 0));
+        }
+    }
+
     public function test_snapshot_keeps_microseconds_and_presence_uses_earlier_effective_directions(): void
     {
         $p = $this->subject();

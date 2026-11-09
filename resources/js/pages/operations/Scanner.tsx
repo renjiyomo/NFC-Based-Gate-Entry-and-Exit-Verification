@@ -1,4 +1,5 @@
 import { router } from '@inertiajs/react';
+import { ScanLine, Volume2, VolumeX, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button, Panel, Badge } from '../../components/ui';
 import { ManagementPage, FormErrors, Portrait } from '../../components/management/Common';
@@ -163,16 +164,6 @@ export default function Scanner({
             if (mounted.current) setBusy(false);
         }
     }
-    function next() {
-        payload.current = null;
-        frozen.current = null;
-        setResult(null);
-        setErrors({});
-        setStatus('');
-        setMissing(false);
-        setUncertain(false);
-        locate(null);
-    }
     useEffect(() => {
         mounted.current = true;
         const hide = () => {
@@ -198,206 +189,291 @@ export default function Scanner({
         <ManagementPage
             page="scanner"
             title="Gate scanner"
-            description="Choose Entry or Exit. Each valid NFC scan records automatically."
+            description="Select a direction, then scan one NFC coin. Valid scans record automatically."
         >
             <FormErrors errors={errors} />
             <Panel
-                title={
-                    station ? `${station.code} · ${station.name}` : 'Gate account not configured'
-                }
+                className="gate-scanner"
+                title={station ? station.name : 'Gate not configured'}
                 subtitle={
-                    station
-                        ? `Gate session · ${duplicateSeconds}-second duplicate protection`
-                        : 'Ask an administrator to link this account to an active gate.'
+                    station ? station.code : 'Ask an administrator to configure this gate account.'
+                }
+                action={
+                    <Button
+                        className="sound-control"
+                        aria-label={sound ? 'Turn scan sound off' : 'Turn scan sound on'}
+                        aria-pressed={sound}
+                        onClick={() => {
+                            if (!sound) void prepareSound();
+                            setSound(!sound);
+                        }}
+                    >
+                        {sound ? (
+                            <Volume2 size={17} aria-hidden="true" />
+                        ) : (
+                            <VolumeX size={17} aria-hidden="true" />
+                        )}
+                        <span>Sound {sound ? 'on' : 'off'}</span>
+                    </Button>
                 }
             >
-                <div className="automatic-scanner-body">
-                    <div
-                        className="automatic-direction"
-                        role="group"
-                        aria-label="Passage direction"
-                    >
-                        {(['entry', 'exit'] as const).map((d) => (
-                            <Button
-                                key={d}
-                                variant={direction === d ? 'primary' : 'secondary'}
-                                disabled={busy || uncertain}
-                                aria-pressed={direction === d}
-                                onClick={() => setDirection(d)}
-                            >
-                                {d === 'entry' ? 'Entry' : 'Exit'}
-                            </Button>
-                        ))}
-                    </div>
-                    <h2>
-                        {direction
-                            ? `Ready for ${direction === 'entry' ? 'Entry' : 'Exit'}`
-                            : 'Select Entry or Exit'}
-                    </h2>
-                    <p className="panel-message">Direction stays selected for the next scan.</p>
-                    <div className="scanner-options">
-                        <Button
-                            aria-pressed={sound}
-                            onClick={() => {
-                                if (!sound) void prepareSound();
-                                setSound(!sound);
-                            }}
-                        >
-                            Sound {sound ? 'on' : 'off'}
-                        </Button>
-                    </div>
-                    {soundNote && <p className="form-note">{soundNote}</p>}
-                    <Button
-                        variant="primary"
-                        disabled={
-                            !station ||
-                            !direction ||
-                            busy ||
-                            uncertain ||
-                            (!simulator && !nfcAvailable())
-                        }
-                        onClick={() => void scan()}
-                    >
-                        {reading ? 'Reading coin…' : 'Scan NFC coin'}
-                    </Button>
-                    {reading && (
-                        <Button onClick={() => active.current?.abort()}>Cancel NFC read</Button>
-                    )}
-                    {!simulator && !nfcAvailable() && (
-                        <p className="form-note">
-                            Web NFC is unavailable in this browser. Use the compatible Android NFC
-                            phone.
-                        </p>
-                    )}
-                    <p role="status" aria-live="polite">
-                        {status}
-                    </p>
-                    {result && feedback && (
+                <div className="scan-workspace">
+                    <div className="scan-controls">
+                        <span className="control-label">Passage direction</span>
                         <div
-                            className={`scan-result scan-result-${feedback.tone}`}
-                            role={
-                                feedback.tone === 'warning' || feedback.tone === 'denied'
-                                    ? 'alert'
-                                    : 'status'
-                            }
+                            className="scan-directions"
+                            role="group"
+                            aria-label="Passage direction"
                         >
-                            <Badge
-                                tone={
+                            {(['entry', 'exit'] as const).map((d) => (
+                                <Button
+                                    key={d}
+                                    variant={direction === d ? 'primary' : 'secondary'}
+                                    disabled={busy || uncertain}
+                                    aria-pressed={direction === d}
+                                    onClick={() => setDirection(d)}
+                                >
+                                    {d === 'entry' ? (
+                                        <ArrowDownLeft size={19} aria-hidden="true" />
+                                    ) : (
+                                        <ArrowUpRight size={19} aria-hidden="true" />
+                                    )}
+                                    {d === 'entry' ? 'Entry' : 'Exit'}
+                                </Button>
+                            ))}
+                        </div>
+                        <div className="scan-prompt">
+                            <ScanLine size={32} strokeWidth={1.4} aria-hidden="true" />
+                            <h2>
+                                {reading
+                                    ? 'Hold the coin near the phone'
+                                    : direction
+                                      ? 'Ready for ' + (direction === 'entry' ? 'Entry' : 'Exit')
+                                      : 'Choose Entry or Exit'}
+                            </h2>
+                            <p>
+                                {reading
+                                    ? 'Keep one coin against the back of the phone.'
+                                    : 'The selected direction stays ready for the next person.'}
+                            </p>
+                        </div>
+                        <Button
+                            variant="primary"
+                            className="scan-main-action"
+                            disabled={
+                                !station ||
+                                !direction ||
+                                busy ||
+                                uncertain ||
+                                (!simulator && !nfcAvailable())
+                            }
+                            onClick={() => void scan()}
+                        >
+                            <ScanLine size={18} aria-hidden="true" />
+                            {reading
+                                ? 'Reading coin…'
+                                : busy
+                                  ? 'Checking…'
+                                  : result
+                                    ? 'Scan next coin'
+                                    : 'Scan NFC coin'}
+                        </Button>
+                        {reading && (
+                            <Button onClick={() => active.current?.abort()}>Cancel NFC read</Button>
+                        )}
+                        {!simulator && !nfcAvailable() && (
+                            <p className="scanner-device-note">
+                                Scanning is available in Chrome on a compatible Android NFC phone.
+                            </p>
+                        )}
+                        {soundNote && <p className="scanner-device-note">{soundNote}</p>}
+                        <details className="compact-help">
+                            <summary>Scan guidance</summary>
+                            <p>
+                                Present one coin at a time. Repeated scans within {duplicateSeconds}{' '}
+                                seconds are suppressed. A warning may indicate a missing earlier
+                                scan; it does not block an otherwise valid passage.
+                            </p>
+                        </details>
+                    </div>
+                    <div className="scan-feedback-area">
+                        {status && (
+                            <p className="scan-live-status" role="status" aria-live="polite">
+                                {status}
+                            </p>
+                        )}
+                        {result && feedback ? (
+                            <div
+                                className={'scan-result scan-result-' + feedback.tone}
+                                role={
                                     feedback.tone === 'warning' || feedback.tone === 'denied'
-                                        ? 'warning'
-                                        : result.passage
-                                          ? 'success'
-                                          : result.duplicate_of
-                                            ? 'neutral'
-                                            : 'warning'
+                                        ? 'alert'
+                                        : 'status'
                                 }
                             >
-                                {feedback.title}
-                            </Badge>
-                            <p className="scan-result-message">{feedback.message}</p>
-                            {result.sequence_context && (
-                                <p>
-                                    Previous effective record:{' '}
-                                    {result.sequence_context.direction === 'entry'
-                                        ? 'Entry'
-                                        : 'Exit'}{' '}
-                                    · {manilaTime(result.sequence_context.confirmed_at)} ·{' '}
-                                    {result.sequence_context.gate}
-                                </p>
-                            )}
-                            {result.identity && (
-                                <>
-                                    <Portrait
-                                        src={result.identity.photo_url}
-                                        name={result.identity.name}
-                                    />
-                                    <h2>{result.identity.name}</h2>
-                                    <p>
-                                        {result.identity.number} · {result.identity.kind}
+                                <div className="scan-result-heading">
+                                    <h2>{feedback.title}</h2>
+                                    <Badge
+                                        tone={
+                                            feedback.tone === 'success'
+                                                ? 'success'
+                                                : feedback.tone === 'duplicate'
+                                                  ? 'blue'
+                                                  : 'warning'
+                                        }
+                                    >
+                                        {result.direction === 'entry' ? 'Entry' : 'Exit'}
+                                    </Badge>
+                                </div>
+                                {result.identity && (
+                                    <div className="scan-person">
+                                        <Portrait
+                                            src={result.identity.photo_url}
+                                            name={result.identity.name}
+                                        />
+                                        <div>
+                                            <h3>{result.identity.name}</h3>
+                                            <p>{result.identity.number}</p>
+                                            <span>
+                                                {result.identity.kind === 'student'
+                                                    ? 'Student'
+                                                    : 'Employee'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+                                <p className="scan-result-message">{feedback.message}</p>
+                                {result.sequence_context && (
+                                    <p className="scan-context">
+                                        Previous record:{' '}
+                                        {result.sequence_context.direction === 'entry'
+                                            ? 'Entry'
+                                            : 'Exit'}{' '}
+                                        · {manilaTime(result.sequence_context.confirmed_at)} ·{' '}
+                                        {result.sequence_context.gate}
                                     </p>
-                                </>
-                            )}
-                            {result.duplicate_of && (
+                                )}
+                                {result.duplicate_of && (
+                                    <p className="scan-context">
+                                        Original{' '}
+                                        {result.duplicate_of.direction === 'entry'
+                                            ? 'Entry'
+                                            : 'Exit'}{' '}
+                                        · {manilaTime(result.duplicate_of.confirmed_at)}
+                                    </p>
+                                )}
+                                {result.passage ? (
+                                    <p className="scan-receipt-time">
+                                        Recorded {manilaTime(result.passage.confirmed_at)}
+                                    </p>
+                                ) : (
+                                    !result.duplicate_of && (
+                                        <p className="scan-context">
+                                            {reasonLabel(result.verification.reason)}
+                                        </p>
+                                    )
+                                )}
+                            </div>
+                        ) : (
+                            !uncertain && (
+                                <div className="scan-empty-result">
+                                    <span className="scan-empty-mark" />
+                                    <h3>Scan result</h3>
+                                    <p>The person and Entry or Exit result will appear here.</p>
+                                </div>
+                            )
+                        )}
+                        {uncertain && (
+                            <div className="scan-recovery">
+                                <h2>Check the previous request</h2>
                                 <p>
-                                    Original{' '}
-                                    {result.duplicate_of.direction === 'entry' ? 'Entry' : 'Exit'}:{' '}
-                                    {manilaTime(result.duplicate_of.confirmed_at)}
+                                    The connection was interrupted. Recover this request before
+                                    scanning another coin to avoid an extra record.
                                 </p>
-                            )}
-                            {result.passage ? (
-                                <p>
-                                    {result.direction === 'entry' ? 'Entry' : 'Exit'} ·{' '}
-                                    {manilaTime(result.passage.confirmed_at)}
-                                </p>
-                            ) : (
-                                !result.duplicate_of && (
-                                    <p>{reasonLabel(result.verification.reason)}</p>
-                                )
-                            )}
-                        </div>
-                    )}
-                    {uncertain && (
-                        <div>
-                            <p className="form-note">
-                                The server may have saved this scan. Recover the same request before
-                                continuing.
-                            </p>
-                            <Button disabled={busy} onClick={() => void recover()}>
-                                Recover request status
-                            </Button>
-                            {missing && payload.current && (
-                                <Button disabled={busy} onClick={() => void retry()}>
-                                    Retry the same request
-                                </Button>
-                            )}
-                            {missing && !payload.current && (
-                                <Button
-                                    disabled={busy || !frozen.current}
-                                    onClick={() => void scan(true)}
-                                >
-                                    Read coin for same request
-                                </Button>
-                            )}
-                        </div>
-                    )}
-                    {result && !uncertain && (
-                        <Button disabled={busy} onClick={next}>
-                            Clear result
-                        </Button>
-                    )}
+                                <div className="form-actions">
+                                    <Button
+                                        variant="primary"
+                                        disabled={busy}
+                                        onClick={() => void recover()}
+                                    >
+                                        Recover request status
+                                    </Button>
+                                    {missing && payload.current && (
+                                        <Button disabled={busy} onClick={() => void retry()}>
+                                            Retry the same request
+                                        </Button>
+                                    )}
+                                    {missing && !payload.current && (
+                                        <Button
+                                            disabled={busy || !frozen.current}
+                                            onClick={() => void scan(true)}
+                                        >
+                                            Read coin for same request
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </Panel>
-            <Panel title="Recent gate activity" subtitle="Latest permitted scans at this gate">
+            <Panel
+                title="Recent scans at this gate"
+                subtitle="Latest scans from the last 30 minutes"
+                action={
+                    <Button onClick={() => void activity.refresh()} disabled={busy}>
+                        Refresh
+                    </Button>
+                }
+            >
                 {!activity.feed && !activity.error && (
                     <div role="status" aria-label="Loading gate activity">
                         <SkeletonRows rows={3} />
                     </div>
                 )}
-                <Button onClick={() => void activity.refresh()}>Refresh activity</Button>
                 {activity.error && (
                     <p role="alert" className="form-errors">
                         {activity.error}
                     </p>
                 )}
                 {activity.feed?.records.length === 0 && (
-                    <p className="panel-message">No recent scans at this gate.</p>
+                    <p className="panel-message">No scans in the last 30 minutes.</p>
                 )}
-                {activity.feed?.records.slice(0, 10).map((r) => (
-                    <p key={r.id}>
-                        <strong>{r.person ?? 'Unidentified coin'}</strong> · {r.direction} ·{' '}
-                        {r.duplicate
-                            ? 'Duplicate suppressed'
-                            : r.confirmed_at
-                              ? 'Recorded'
-                              : 'Rejected'}{' '}
-                        · {manilaTime(r.received_at)}
-                        {r.sequence_notice && (
-                            <span className="table-secondary">
-                                Warning: {sequenceLabel(r.sequence_notice)}
-                            </span>
-                        )}
-                    </p>
-                ))}
+                <ul className="scanner-recent-list">
+                    {activity.feed?.records.slice(0, 10).map((r) => (
+                        <li key={r.id}>
+                            <div>
+                                <strong>{r.person ?? 'Unidentified coin'}</strong>
+                                <span>
+                                    {r.direction === 'entry' ? 'Entry' : 'Exit'} ·{' '}
+                                    {manilaTime(r.received_at)}
+                                </span>
+                                {r.sequence_notice && (
+                                    <span className="recent-warning">
+                                        {sequenceLabel(r.sequence_notice)}
+                                    </span>
+                                )}
+                            </div>
+                            <Badge
+                                tone={
+                                    r.duplicate
+                                        ? 'blue'
+                                        : r.sequence_notice
+                                          ? 'warning'
+                                          : r.confirmed_at
+                                            ? 'success'
+                                            : 'warning'
+                                }
+                            >
+                                {r.duplicate
+                                    ? 'Duplicate'
+                                    : r.confirmed_at
+                                      ? 'Recorded'
+                                      : 'Rejected'}
+                            </Badge>
+                        </li>
+                    ))}
+                </ul>
             </Panel>
         </ManagementPage>
     );

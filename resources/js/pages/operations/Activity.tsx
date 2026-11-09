@@ -12,34 +12,32 @@ export default function Activity({ admin, stations }: { admin: boolean; stations
     return (
         <ManagementPage
             page="history"
-            title={admin ? 'Gate activity' : 'Recent assigned-gate activity'}
-            description="Valid NFC scans record automatically. Rejected and duplicate scans remain separate."
+            title={admin ? 'Gate activity' : 'Recent gate activity'}
+            description="Scans from the last 30 minutes, including rejected and duplicate attempts."
         >
             {simulator && (
                 <p className="credential-notice">
                     Isolated simulator · All displayed activity is simulated.
                 </p>
             )}
-            <div className="activity-filter">
-                <Select
-                    name="activity_gate"
-                    label={admin ? 'Gate filter' : 'Currently assigned gate'}
-                    value={gate}
-                    onChange={(e) => setGate(e.target.value)}
-                >
-                    <option value="">{admin ? 'All gates' : 'All currently assigned gates'}</option>
-                    {stations.map((station) => (
-                        <option key={station.id} value={station.id}>
-                            {station.code} · {station.name}
-                        </option>
-                    ))}
-                </Select>
-            </div>
+            {(admin || stations.length > 1) && (
+                <div className="activity-filter">
+                    <Select
+                        name="activity_gate"
+                        label={admin ? 'Gate filter' : 'Currently assigned gate'}
+                        value={gate}
+                        onChange={(e) => setGate(e.target.value)}
+                    >
+                        <option value="">{admin ? 'All gates' : 'This gate'}</option>
+                        {stations.map((station) => (
+                            <option key={station.id} value={station.id}>
+                                {station.code} · {station.name}
+                            </option>
+                        ))}
+                    </Select>
+                </div>
+            )}
             <ActivityTable feed={feed} error={error} refresh={() => void refresh()} />
-            <p className="availability-note">
-                This recent activity view supports gate operations. Date-range reporting, exports
-                and monitoring analytics are introduced in Phase 7.
-            </p>
         </ManagementPage>
     );
 }

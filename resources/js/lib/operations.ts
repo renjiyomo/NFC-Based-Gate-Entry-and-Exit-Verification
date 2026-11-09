@@ -173,6 +173,7 @@ export function reviewStatusLabel(status: string): string {
                 pending: 'Review pending',
                 not_applicable: 'No review',
                 confirmed: 'Passage recorded',
+                duplicate: 'Duplicate suppressed',
                 identity_mismatch: 'Identity mismatch',
                 cancelled: 'Review closed',
                 expired: 'Review expired',

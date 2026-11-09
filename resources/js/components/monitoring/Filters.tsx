@@ -39,23 +39,25 @@ export default function Filters({
             }}
         >
             <FormErrors errors={form.errors} />
-            <div className="report-filter-grid">
+            <div
+                className={`period-fields ${form.data.period === 'custom' ? 'period-fields-custom' : ''}`}
+            >
                 <Select
                     name="period"
-                    label="Reporting period"
+                    label="Period"
                     value={form.data.period}
                     onChange={(e) => form.setData('period', e.target.value)}
                 >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly · Monday–Sunday</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="custom">Custom range</option>
+                    <option value="daily">One day</option>
+                    <option value="weekly">One week · Mon–Sun</option>
+                    <option value="monthly">One month</option>
+                    <option value="custom">Custom dates</option>
                 </Select>
                 {form.data.period === 'custom' ? (
                     <>
                         <Field
                             name="from"
-                            label="From · Manila"
+                            label="Start date"
                             type="date"
                             value={form.data.from}
                             onChange={(e) => form.setData('from', e.target.value)}
@@ -63,7 +65,7 @@ export default function Filters({
                         />
                         <Field
                             name="to"
-                            label="Through · Manila"
+                            label="End date"
                             type="date"
                             value={form.data.to}
                             onChange={(e) => form.setData('to', e.target.value)}
@@ -75,152 +77,169 @@ export default function Filters({
                         name="date"
                         label={
                             form.data.period === 'daily'
-                                ? 'Date · Manila'
-                                : 'Date within period · Manila'
+                                ? 'Date'
+                                : form.data.period === 'weekly'
+                                  ? 'Week containing'
+                                  : 'Month containing'
                         }
                         type="date"
                         value={form.data.date}
                         onChange={(e) => form.setData('date', e.target.value)}
                     />
                 )}
-                <Select
-                    name="gate_id"
-                    label="Gate"
-                    value={form.data.gate_id}
-                    onChange={(e) => form.setData('gate_id', e.target.value)}
-                >
-                    <option value="">All gates</option>
-                    {gates.map((g) => (
-                        <option key={g.id} value={g.id}>
-                            {g.code} · {g.name}
-                        </option>
-                    ))}
-                </Select>
-                <Select
-                    name="kind"
-                    label="Person type"
-                    value={form.data.kind}
-                    onChange={(e) => form.setData('kind', e.target.value)}
-                >
-                    <option value="">Students and employees</option>
-                    <option value="student">Students</option>
-                    <option value="employee">Employees</option>
-                </Select>
-                <Select
-                    name="guard_id"
-                    label="Gate account"
-                    value={form.data.guard_id}
-                    onChange={(e) => form.setData('guard_id', e.target.value)}
-                >
-                    <option value="">All gate accounts</option>
-                    {guards.map((g) => (
-                        <option key={g.id} value={g.id}>
-                            {g.name}
-                        </option>
-                    ))}
-                </Select>
-                <Select
-                    name="direction"
-                    label="Direction"
-                    value={form.data.direction}
-                    onChange={(e) => form.setData('direction', e.target.value)}
-                >
-                    <option value="">Entry and Exit</option>
-                    <option value="entry">Entry</option>
-                    <option value="exit">Exit</option>
-                </Select>
-                <Field
-                    name="q"
-                    label="Person or campus number"
-                    type="search"
-                    maxLength={100}
-                    value={form.data.q}
-                    onChange={(e) => form.setData('q', e.target.value)}
-                    placeholder="Search retained identity records"
-                />
-                {section === 'history' && (
-                    <>
-                        <Select
-                            name="view"
-                            label="Record type"
-                            value={form.data.view}
-                            onChange={(e) =>
-                                form.setData('view', e.target.value as ReportFilters['view'])
-                            }
-                        >
-                            <option value="passages">Confirmed passages</option>
-                            <option value="attempts">Verification attempts</option>
-                        </Select>
-                        {form.data.view === 'attempts' ? (
-                            <>
-                                <Select
-                                    name="outcome"
-                                    label="Verification"
-                                    value={form.data.outcome}
-                                    onChange={(e) => form.setData('outcome', e.target.value)}
-                                >
-                                    <option value="">All outcomes</option>
-                                    <option value="allowed">Allowed for review</option>
-                                    <option value="denied">Denied</option>
-                                </Select>
-                                <Select
-                                    name="review"
-                                    label="Review state"
-                                    value={form.data.review}
-                                    onChange={(e) => form.setData('review', e.target.value)}
-                                >
-                                    <option value="">All review states</option>
-                                    {[
-                                        'pending',
-                                        'confirmed',
-                                        'cancelled',
-                                        'expired',
-                                        'identity_mismatch',
-                                        'duplicate',
-                                        'not_applicable',
-                                    ].map((s) => (
-                                        <option key={s} value={s}>
-                                            {s.replaceAll('_', ' ')}
-                                        </option>
-                                    ))}
-                                </Select>
-                            </>
-                        ) : (
-                            <Select
-                                name="validity"
-                                label="Passage state"
-                                value={form.data.validity}
-                                onChange={(e) => form.setData('validity', e.target.value)}
-                            >
-                                <option value="effective">Effective passages</option>
-                                <option value="all">All originals and corrections</option>
-                                <option value="voided">Voided originals</option>
-                            </Select>
-                        )}
-                        <Select
-                            name="per_page"
-                            label="Rows per page"
-                            value={form.data.per_page}
-                            onChange={(e) => form.setData('per_page', Number(e.target.value))}
-                        >
-                            {[25, 50, 100].map((n) => (
-                                <option key={n}>{n}</option>
-                            ))}
-                        </Select>
-                    </>
-                )}
-            </div>
-            <div className="form-actions">
                 <Button type="submit" variant="primary" disabled={form.processing}>
-                    {form.processing ? 'Loading records…' : 'Apply filters'}
+                    {form.processing ? 'Loading…' : 'Apply period & filters'}
                 </Button>
-                <a className="button button-quiet" href={`/admin/${section}`}>
-                    Reset filters
-                </a>
-                <span className="field-hint">
-                    Manila dates · up to 366 days · search describes current directory names
-                </span>
             </div>
+            <details className="advanced-filters">
+                <summary>
+                    More filters
+                    {[
+                        filters.gate_id,
+                        filters.kind,
+                        filters.guard_id,
+                        filters.direction,
+                        filters.q,
+                    ].filter(Boolean).length
+                        ? ' · Applied'
+                        : ''}
+                </summary>
+                <div className="report-filter-grid">
+                    <Select
+                        name="gate_id"
+                        label="Gate"
+                        value={form.data.gate_id}
+                        onChange={(e) => form.setData('gate_id', e.target.value)}
+                    >
+                        <option value="">All gates</option>
+                        {gates.map((g) => (
+                            <option key={g.id} value={g.id}>
+                                {g.code} · {g.name}
+                            </option>
+                        ))}
+                    </Select>
+                    <Select
+                        name="kind"
+                        label="Person type"
+                        value={form.data.kind}
+                        onChange={(e) => form.setData('kind', e.target.value)}
+                    >
+                        <option value="">Students and employees</option>
+                        <option value="student">Students</option>
+                        <option value="employee">Employees</option>
+                    </Select>
+                    <Select
+                        name="guard_id"
+                        label="Gate account"
+                        value={form.data.guard_id}
+                        onChange={(e) => form.setData('guard_id', e.target.value)}
+                    >
+                        <option value="">All gate accounts</option>
+                        {guards.map((g) => (
+                            <option key={g.id} value={g.id}>
+                                {g.name}
+                            </option>
+                        ))}
+                    </Select>
+                    <Select
+                        name="direction"
+                        label="Direction"
+                        value={form.data.direction}
+                        onChange={(e) => form.setData('direction', e.target.value)}
+                    >
+                        <option value="">Entry and Exit</option>
+                        <option value="entry">Entry</option>
+                        <option value="exit">Exit</option>
+                    </Select>
+                    <Field
+                        name="q"
+                        label="Person or campus number"
+                        type="search"
+                        maxLength={100}
+                        value={form.data.q}
+                        onChange={(e) => form.setData('q', e.target.value)}
+                        placeholder="Name or campus number"
+                    />
+                    {section === 'history' && (
+                        <>
+                            {form.data.view === 'attempts' ? (
+                                <>
+                                    <Select
+                                        name="outcome"
+                                        label="Credential check"
+                                        value={form.data.outcome}
+                                        onChange={(e) => form.setData('outcome', e.target.value)}
+                                    >
+                                        <option value="">All outcomes</option>
+                                        <option value="allowed">Accepted</option>
+                                        <option value="denied">Rejected</option>
+                                    </Select>
+                                    <Select
+                                        name="review"
+                                        label="Scan status"
+                                        value={form.data.review}
+                                        onChange={(e) => form.setData('review', e.target.value)}
+                                    >
+                                        <option value="">All statuses</option>
+                                        {[
+                                            'pending',
+                                            'confirmed',
+                                            'cancelled',
+                                            'expired',
+                                            'identity_mismatch',
+                                            'duplicate',
+                                            'not_applicable',
+                                        ].map((s) => (
+                                            <option key={s} value={s}>
+                                                {
+                                                    {
+                                                        pending: 'Awaiting review',
+                                                        confirmed: 'Passage recorded',
+                                                        cancelled: 'Cancelled',
+                                                        expired: 'Expired',
+                                                        identity_mismatch: 'Identity mismatch',
+                                                        duplicate: 'Duplicate suppressed',
+                                                        not_applicable: 'No review',
+                                                    }[s]
+                                                }
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </>
+                            ) : (
+                                <Select
+                                    name="validity"
+                                    label="Passage state"
+                                    value={form.data.validity}
+                                    onChange={(e) => form.setData('validity', e.target.value)}
+                                >
+                                    <option value="effective">Current records</option>
+                                    <option value="all">All originals and corrections</option>
+                                    <option value="voided">Voided originals</option>
+                                </Select>
+                            )}
+                            <Select
+                                name="per_page"
+                                label="Rows per page"
+                                value={form.data.per_page}
+                                onChange={(e) => form.setData('per_page', Number(e.target.value))}
+                            >
+                                {[25, 50, 100].map((n) => (
+                                    <option key={n}>{n}</option>
+                                ))}
+                            </Select>
+                        </>
+                    )}
+                </div>
+                <div className="form-actions">
+                    <Button type="submit" variant="primary" disabled={form.processing}>
+                        {form.processing ? 'Loading records…' : 'Apply filters'}
+                    </Button>
+                    <a className="button button-quiet" href={`/admin/${section}`}>
+                        Reset filters
+                    </a>
+                </div>
+            </details>
         </form>
     );
 }
