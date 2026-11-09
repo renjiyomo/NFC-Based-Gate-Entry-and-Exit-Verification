@@ -1,8 +1,8 @@
-# Testing and research evaluation plan
+# Testing and research evaluation
 
-Status: **planned verification**. Phase 0 performed environment diagnostics, primary-source research, reference-screen inspection and document review only. No application unit/feature/browser tests, load tests or physical NFC tests have run because the application has not been initialized.
+Status: **Phase 10 local verification completed November 9, 2026:** 189 PHP tests / 2,128 assertions, 25 NFC adapter tests, eight observed-overlap MySQL race scenarios, audits/style/typecheck/build and targeted desktop/mobile/keyboard checks passed. Query measurements use 10,001 attempts/passages in a rolled-back test transaction. See [Phase 10 evidence](phase-10-report.md). Core physical NFC has user-reported RF/UI and independent server evidence under [Phase 6](phase-6-report.md); broader physical, peak-load, institutional usability and deployment/restore acceptance remain outstanding. No participant results or production capacity claims are implied.
 
-## Planned automated and manual coverage
+## Coverage and remaining acceptance cases
 
 | Area / phase | Meaningful acceptance cases |
 | --- | --- |
@@ -19,9 +19,9 @@ Status: **planned verification**. Phase 0 performed environment diagnostics, pri
 | AI / 9 | Approved aggregate payload only, missing/invalid aggregate, invented or changed counts rejected, period/gate consistency, provider timeout/error/rate-limit, history/provenance, human review and no dependency of gate flow on AI availability. |
 | Cross-cutting / 10–11 | Injection/XSS/CSRF, private media traversal/format handling, log/secret leakage, secure cookies/HTTPS, production simulator rejection, actual DB engine query plans/concurrency, representative load, backup restore and manual outage exercise. |
 
-Use Laravel's supported test tooling for unit/feature tests. Decide PHPUnit/Pest configuration during foundation/auth setup rather than installing duplicate suites. Use a suitable React/browser tool when flows exist; mock browser NFC only for software logic, not RF claims. The exact frontend tool versions and export/AI packages are later dependency decisions.
+The implemented suite uses PHPUnit/Laravel on the exact isolated MySQL engine, Node tests for the NFC adapter, and targeted in-app browser DOM/keyboard/visual checks. Mock browser NFC verifies software logic only. SecurityReviewTest disables Laravel's automatic test CSRF exemption to exercise the real rejection path. scripts/dev.ps1 check runs audits, style, TypeScript/build, adapter tests, PHP tests and the eight-process-race harness. There is no full automated browser/axe or screen-reader suite; the Phase 10 report identifies manual coverage.
 
-Use a dedicated synthetic MySQL testing schema. Tests that truncate or migrate must verify the expected test connection and cannot touch existing XAMPP databases. SQLite-only results are insufficient for MySQL constraints, lock semantics, unique active pointers and concurrency acceptance.
+Tests verify testing environment, 127.0.0.1:3307/nfcheck_testing/nfcheck_test, MySQL 8.4.13 and the project data directory before operations. Feature/performance fixtures roll back. The multi-process harness requires empty testing history, captures owned fixture IDs, uses only scoped maintenance cleanup, and restores the quota singleton and baseline counts. It does not truncate/reset schemas or modify lab/main history. SQLite is not substituted for MySQL acceptance.
 
 ## Definitions for accurate analytics
 

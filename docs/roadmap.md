@@ -1,6 +1,6 @@
 # Phase-by-phase implementation strategy
 
-Status: **Phases 0–5 completed for their approved scopes. Core Phase 6 implementation and the controlled vivo/NTAG215 session are complete; full physical readiness remains partial with unperformed cases listed in the report.** Every phase ends with a report and an explicit stop. Successful tests do not authorize the next phase. See [Phase 6 status](phase-6-report.md). Phase 7 is complete for local development: see [the report](phase-7-report.md). Phase 8 is complete for local development: see [the report](phase-8-report.md). Phase 9 is complete for synthetic lab aggregates / Gemini Free Tier only: see [the report](phase-9-report.md). Phase 10 has not started.
+Status: **Phases 0–5 completed for their approved scopes. Core Phase 6 implementation and the controlled vivo/NTAG215 session are complete; full physical readiness remains partial with unperformed cases listed in the report.** Every phase ends with a report and an explicit stop. Successful tests do not authorize the next phase. See [Phase 6 status](phase-6-report.md). Phase 7 is complete for local development: see [the report](phase-7-report.md). Phase 8 is complete for local development: see [the report](phase-8-report.md). Phase 9 is complete for synthetic lab aggregates / Gemini Free Tier only: see [the report](phase-9-report.md). Phase 10 is complete for local security/testing/optimization: see [the report](phase-10-report.md). Phase 11 deployment preparation has not started; it requires the next user instruction.
 
 ## Phase acceptance gates
 

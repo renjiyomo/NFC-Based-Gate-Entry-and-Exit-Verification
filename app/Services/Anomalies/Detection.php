@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\ManagementGuard;
 use App\Services\Monitoring\ReportFilters;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -33,7 +34,21 @@ class Detection
             foreach ($q->orderBy('received_at')->orderBy('id')->get() as $a) {
                 $checked++;
                 foreach ($rules->evaluate($a, $policy) as $code => $candidate) {
-                    $flag = AnomalyFlag::firstOrCreate(['source' => $source, 'rule_code' => $code, 'rule_version' => $version, 'anchor_attempt_id' => $a->id], ['public_id' => (string) Str::uuid(), 'policy' => $policy, 'severity' => $candidate['severity'], 'explanation' => $candidate['explanation'], 'occurred_at' => $a->received_at, 'created_at' => now()]);
+                    $identity = ['source' => $source, 'rule_code' => $code, 'rule_version' => $version, 'anchor_attempt_id' => $a->id];
+                    $flag = AnomalyFlag::where($identity)->first();
+                    if (! $flag) {
+                        try {
+                            $flag = AnomalyFlag::create([...$identity, 'public_id' => (string) Str::uuid(), 'policy' => $policy, 'severity' => $candidate['severity'], 'explanation' => $candidate['explanation'], 'occurred_at' => $a->received_at, 'created_at' => now()]);
+                        } catch (UniqueConstraintViolationException $error) {
+                            // Under MySQL REPEATABLE READ the earlier snapshot can
+                            // miss another administrator's committed winner. A
+                            // shared locking read sees it without UPDATE grants.
+                            $flag = AnomalyFlag::where($identity)->sharedLock()->first();
+                            if (! $flag) {
+                                throw $error;
+                            }
+                        }
+                    }
                     if ($flag->wasRecentlyCreated) {
                         $flag->evidence()->attach($candidate['ids']);
                         $created++;

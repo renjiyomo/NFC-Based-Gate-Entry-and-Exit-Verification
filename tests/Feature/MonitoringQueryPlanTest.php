@@ -80,5 +80,37 @@ class MonitoringQueryPlanTest extends MonitoringTestCase
             $result['queries'][$name] = ['keys' => $keys, 'access' => $access, 'matching_rows' => (int) $count, 'elapsed_ms' => round((microtime(true) - $started) * 1000, 3)];
         }
         file_put_contents(base_path('.tools/artifacts/phase-7-query-plans.json'), json_encode($result, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+        // Warm, sequential local measurements are evidence, not a campus capacity
+        // guarantee. Count queries as well as elapsed time to catch page-size N+1.
+        $performance = ['engine' => $result['engine'], 'fixture_passages' => AccessEvent::count(), 'fixture_attempts' => ScanAttempt::count(), 'samples' => 20, 'transaction_rollback' => true, 'workloads' => []];
+        $workloads = [
+            'summary_with_presence' => fn () => $q->summary($f, 'physical'),
+            'presence' => fn () => $q->presence($f, 'physical'),
+            'history_25' => fn () => $q->history($f, 'physical')->paginate(25),
+            'history_100' => fn () => $q->history($f, 'physical')->paginate(100),
+        ];
+        foreach ($workloads as $name => $operation) {
+            $operation();
+            $times = [];
+            $queryCounts = [];
+            for ($sample = 0; $sample < 20; $sample++) {
+                DB::flushQueryLog();
+                DB::enableQueryLog();
+                $started = hrtime(true);
+                $data = $operation();
+                $times[] = (hrtime(true) - $started) / 1000000;
+                $queryCounts[] = count(DB::getQueryLog());
+                DB::disableQueryLog();
+                if ($name === 'summary_with_presence') {
+                    $this->assertSame(1440, $data['passages']);
+                    $this->assertSame(1, $data['presence']['inside']);
+                }
+            }
+            sort($times);
+            $performance['workloads'][$name] = ['p50_ms' => round(($times[9] + $times[10]) / 2, 3), 'p95_ms' => round($times[18], 3), 'max_ms' => round(max($times), 3), 'queries_min' => min($queryCounts), 'queries_max' => max($queryCounts)];
+        }
+        $this->assertSame($performance['workloads']['history_25']['queries_max'], $performance['workloads']['history_100']['queries_max']);
+        $this->assertLessThanOrEqual(9, $performance['workloads']['history_100']['queries_max']);
+        file_put_contents(base_path('.tools/artifacts/phase-10-performance.json'), json_encode($performance, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
     }
 }
