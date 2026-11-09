@@ -41,9 +41,7 @@ export default function GateShow({ record }: { record: GateRecord }) {
                     </div>
                 </dl>
                 <p className="panel-message">
-                    Guards use this gate login across shifts. University guard schedules are managed
-                    outside NFCheck. Valid NFC scans record the selected Entry or Exit
-                    automatically.
+                    This shared account operates the gate across guard shifts.
                 </p>
                 <Link className="button button-primary" href={`/admin/gates/${record.id}/edit`}>
                     Edit gate or reset password

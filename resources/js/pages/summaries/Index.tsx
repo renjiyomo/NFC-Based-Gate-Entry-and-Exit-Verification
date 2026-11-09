@@ -45,7 +45,7 @@ export default function Index({
         <ManagementPage
             page="summaries"
             title="Activity summaries"
-            description="AI selects observations from validated aggregate facts. NFCheck renders the factual wording and retains human review."
+            description="Review activity summaries before using or sharing them."
         >
             <div className="report-period">
                 <div>

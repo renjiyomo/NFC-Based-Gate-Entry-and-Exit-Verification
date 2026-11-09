@@ -1,13 +1,23 @@
 import { router } from '@inertiajs/react';
 import { CircleAlert, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { Button, LoadingState } from './ui';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Button } from './ui';
+import { NavigationState } from '../lib/navigationState';
 
-export default function NavigationFeedback() {
+export default function NavigationFeedback({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(false);
     const [announcement, setAnnouncement] = useState('');
     const [error, setError] = useState<string | null>(null);
     const retryUrl = useRef<string | null>(null);
+    const [showSkeleton, setShowSkeleton] = useState(false);
+    useEffect(() => {
+        if (!loading) {
+            setShowSkeleton(false);
+            return;
+        }
+        const timer = window.setTimeout(() => setShowSkeleton(true), 180);
+        return () => window.clearTimeout(timer);
+    }, [loading]);
 
     useEffect(() => {
         const activeVisits = new Set<string>();
@@ -23,7 +33,7 @@ export default function NavigationFeedback() {
         };
         const unsubscribe = [
             router.on('start', ({ detail: { visit } }) => {
-                if (visit.async) return;
+                if (visit.async || visit.method !== 'get') return;
                 activeVisits.add(visit.id);
                 retryUrl.current = visit.method === 'get' ? visit.url.href : null;
                 setError(null);
@@ -75,15 +85,11 @@ export default function NavigationFeedback() {
     }, []);
 
     return (
-        <>
+        <NavigationState.Provider value={{ loading: showSkeleton }}>
+            {children}
             <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
                 {announcement}
             </div>
-            {loading && (
-                <div className="fixed right-4 bottom-4 z-50 max-w-[calc(100vw-2rem)]">
-                    <LoadingState compact message="Opening workspace view…" />
-                </div>
-            )}
             {error && (
                 <div
                     className="fixed right-4 bottom-4 z-50 w-96 max-w-[calc(100vw-2rem)] rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 shadow-lg"
@@ -113,6 +119,6 @@ export default function NavigationFeedback() {
                     </div>
                 </div>
             )}
-        </>
+        </NavigationState.Provider>
     );
 }

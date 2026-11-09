@@ -71,9 +71,8 @@ export default function PersonShow({
                 </Panel>
                 <Panel title="NFC access">
                     <p className="panel-message">
-                        An active person with a selected active NFC credential can scan. No separate
-                        campus-access grant is required. Deactivate the person or revoke the
-                        credential to stop access.
+                        Activate a coin to enable Entry and Exit records. Deactivate the person or
+                        revoke the coin when access should stop.
                     </p>
                     {!record.archived_at && record.status === 'active' && (
                         <Link

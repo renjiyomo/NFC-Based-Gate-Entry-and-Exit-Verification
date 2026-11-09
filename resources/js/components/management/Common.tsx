@@ -1,6 +1,6 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, ChevronLeft, ChevronRight, Inbox, Plus, UserRound } from 'lucide-react';
-import { useRef, type ReactNode } from 'react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Plus, UserRound } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Field, Select } from './FormFields';
 import ChoicePicker from './ChoicePicker';
 import AppLayout from '../../layouts/AppLayout';
@@ -139,7 +139,6 @@ export function DataTable({
                         <tr>
                             <td colSpan={columns.length}>
                                 <div className="management-empty">
-                                    <Inbox size={30} aria-hidden="true" />
                                     <h3>{empty}</h3>
                                     <p>{emptyDescription}</p>
                                 </div>
@@ -213,119 +212,144 @@ export function DirectoryFilters({
     gates?: boolean;
 }) {
     const form = useForm({ ...filters });
+    const [expanded, setExpanded] = useState(
+        () => typeof window === 'undefined' || window.matchMedia('(min-width: 641px)').matches,
+    );
+    useEffect(() => {
+        const media = window.matchMedia('(min-width: 641px)');
+        const resize = () => setExpanded(media.matches);
+        media.addEventListener('change', resize);
+        return () => media.removeEventListener('change', resize);
+    }, []);
+    const count = [
+        filters.q,
+        filters.group,
+        filters.year_level,
+        filters.status,
+        filters.records !== 'current' ? filters.records : '',
+    ].filter(Boolean).length;
     return (
-        <form
-            className="directory-filters"
-            onSubmit={(event) => {
-                event.preventDefault();
-                form.get(url, { preserveState: true, preserveScroll: true });
-            }}
+        <details
+            className="directory-filter-panel"
+            open={expanded}
+            onToggle={(e) => setExpanded(e.currentTarget.open)}
         >
-            <div className="filter-fields">
-                <Field
-                    name="q"
-                    label="Search"
-                    type="search"
-                    maxLength={100}
-                    placeholder="Name or reference"
-                    value={form.data.q}
-                    onChange={(e) => form.setData('q', e.target.value)}
-                />
-                {groupLabel && groupOptions ? (
-                    <Select
-                        name="group"
-                        label={groupLabel}
-                        value={form.data.group}
-                        onChange={(e) => form.setData('group', e.target.value)}
-                    >
-                        <option value="">All {groupLabel.toLowerCase()}s</option>
-                        {groupOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                        <option value="__legacy__">Other / older record values</option>
-                    </Select>
-                ) : (
-                    groupLabel && (
-                        <Field
+            <summary>
+                Filter records {count > 0 && <span className="badge">{count} active</span>}
+            </summary>
+            <form
+                className="directory-filters"
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    form.get(url, { preserveState: true, preserveScroll: true });
+                }}
+            >
+                <div className="filter-fields">
+                    <Field
+                        name="q"
+                        label="Search"
+                        type="search"
+                        maxLength={100}
+                        placeholder="Name or reference"
+                        value={form.data.q}
+                        onChange={(e) => form.setData('q', e.target.value)}
+                    />
+                    {groupLabel && groupOptions ? (
+                        <Select
                             name="group"
                             label={groupLabel}
-                            maxLength={120}
                             value={form.data.group}
                             onChange={(e) => form.setData('group', e.target.value)}
-                        />
-                    )
-                )}
-                {years && (
+                        >
+                            <option value="">All {groupLabel.toLowerCase()}s</option>
+                            {groupOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                            <option value="__legacy__">Other / older record values</option>
+                        </Select>
+                    ) : (
+                        groupLabel && (
+                            <Field
+                                name="group"
+                                label={groupLabel}
+                                maxLength={120}
+                                value={form.data.group}
+                                onChange={(e) => form.setData('group', e.target.value)}
+                            />
+                        )
+                    )}
+                    {years && (
+                        <Select
+                            name="year_level"
+                            label="Year level"
+                            value={form.data.year_level}
+                            onChange={(e) => form.setData('year_level', e.target.value)}
+                        >
+                            <option value="">All year levels</option>
+                            {years.map((year) => (
+                                <option key={year} value={year}>
+                                    Year {year}
+                                </option>
+                            ))}
+                            <option value="__legacy__">Other / unspecified year</option>
+                        </Select>
+                    )}
                     <Select
-                        name="year_level"
-                        label="Year level"
-                        value={form.data.year_level}
-                        onChange={(e) => form.setData('year_level', e.target.value)}
+                        name="status"
+                        label="Record status"
+                        value={form.data.status}
+                        onChange={(e) => form.setData('status', e.target.value)}
                     >
-                        <option value="">All year levels</option>
-                        {years.map((year) => (
-                            <option key={year} value={year}>
-                                Year {year}
+                        <option value="">All statuses</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </Select>
+                    <Select
+                        name="records"
+                        label="Records"
+                        value={form.data.records}
+                        onChange={(e) => form.setData('records', e.target.value)}
+                    >
+                        <option value="current">Current records</option>
+                        <option value="archived">Archived records</option>
+                        <option value="all">All records</option>
+                    </Select>
+
+                    {gates && (
+                        <ChoicePicker
+                            kind="gates"
+                            name="gate_id"
+                            label="Current gate assignment"
+                            active={false}
+                            value={form.data.gate_id}
+                            onChange={(value) => form.setData('gate_id', value)}
+                        />
+                    )}
+                    <Select
+                        name="per_page"
+                        label="Rows per page"
+                        value={form.data.per_page}
+                        onChange={(e) => form.setData('per_page', e.target.value)}
+                    >
+                        {[15, 30, 50].map((size) => (
+                            <option key={size} value={size}>
+                                {size}
                             </option>
                         ))}
-                        <option value="__legacy__">Other / unspecified year</option>
                     </Select>
-                )}
-                <Select
-                    name="status"
-                    label="Record status"
-                    value={form.data.status}
-                    onChange={(e) => form.setData('status', e.target.value)}
-                >
-                    <option value="">All statuses</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                </Select>
-                <Select
-                    name="records"
-                    label="Records"
-                    value={form.data.records}
-                    onChange={(e) => form.setData('records', e.target.value)}
-                >
-                    <option value="current">Current records</option>
-                    <option value="archived">Archived records</option>
-                    <option value="all">All records</option>
-                </Select>
-
-                {gates && (
-                    <ChoicePicker
-                        kind="gates"
-                        name="gate_id"
-                        label="Current gate assignment"
-                        active={false}
-                        value={form.data.gate_id}
-                        onChange={(value) => form.setData('gate_id', value)}
-                    />
-                )}
-                <Select
-                    name="per_page"
-                    label="Rows per page"
-                    value={form.data.per_page}
-                    onChange={(e) => form.setData('per_page', e.target.value)}
-                >
-                    {[15, 30, 50].map((size) => (
-                        <option key={size} value={size}>
-                            {size}
-                        </option>
-                    ))}
-                </Select>
-            </div>
-            <div className="filter-actions">
-                <Button type="submit" variant="primary" disabled={form.processing}>
-                    {form.processing ? 'Applying…' : 'Apply filters'}
-                </Button>
-                <Link href={url} className="button button-quiet">
-                    Clear filters
-                </Link>
-            </div>
-        </form>
+                </div>
+                <div className="filter-actions">
+                    <Button type="submit" variant="primary" disabled={form.processing}>
+                        {form.processing ? 'Applying…' : 'Apply filters'}
+                    </Button>
+                    <Link href={url} className="button button-quiet">
+                        Clear filters
+                    </Link>
+                </div>
+            </form>
+        </details>
     );
 }
 export function AddLink({ href, children }: { href: string; children: ReactNode }) {

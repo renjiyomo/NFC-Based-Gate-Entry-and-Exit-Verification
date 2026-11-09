@@ -4,6 +4,7 @@ import { Badge } from '../ui';
 import { manilaTime } from '../../lib/management';
 import { rowState, type HistoryRow } from '../../lib/monitoring';
 import { sequenceLabel } from '../../lib/gateFeedback';
+import { reasonLabel } from '../../lib/operations';
 
 export default function HistoryTable({ rows }: { rows: HistoryRow[] }) {
     return (
@@ -47,7 +48,9 @@ export default function HistoryTable({ rows }: { rows: HistoryRow[] }) {
                         >
                             {rowState(r)}
                         </Badge>
-                        <span className="table-secondary">{r.review_reason ?? r.reason}</span>
+                        <span className="table-secondary">
+                            {reasonLabel(r.review_reason ?? r.reason)}
+                        </span>
                         {r.sequence_notice && (
                             <span className="table-secondary">
                                 Warning: {sequenceLabel(r.sequence_notice)}

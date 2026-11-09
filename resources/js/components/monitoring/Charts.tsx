@@ -27,7 +27,13 @@ export function Trend({ rows }: { rows: Summary['trend'] }) {
                     </title>
                     {[0, Math.ceil(max / 2), max].map((t) => (
                         <g key={t}>
-                            <line x1="42" x2="694" y1={y(t)} y2={y(t)} stroke="#29384c" />
+                            <line
+                                x1="42"
+                                x2="694"
+                                y1={y(t)}
+                                y2={y(t)}
+                                stroke="var(--border-soft)"
+                            />
                             <text x="30" y={y(t) + 4} textAnchor="end">
                                 {number(t)}
                             </text>

@@ -150,54 +150,54 @@ export default function Index(props: Props) {
                                 color: 'lavender',
                                 note: 'Campus-wide estimate as of period cutoff',
                             },
-                        ].map(({ label, value, icon: Icon, color, note }) => (
+                        ].map(({ label, value, note }) => (
                             <div className="metric-card" key={label}>
                                 <div className="metric-label">
                                     <span>{label}</span>
-                                    <span className={`metric-icon icon-${color}`}>
-                                        <Icon size={18} />
-                                    </span>
                                 </div>
                                 <div className="metric-value">{number(value)}</div>
                                 <p className="metric-note">{note}</p>
                             </div>
                         ))}
                     </section>
-                    <div className="report-facts">
-                        {directory && (
-                            <>
-                                <span>
-                                    <strong>{number(directory.students)}</strong> registered
-                                    students
-                                </span>
-                                <span>
-                                    <strong>{number(directory.employees)}</strong> registered
-                                    employees
-                                </span>
-                                <span>
-                                    <strong>{number(directory.active_credentials)}</strong> selected
-                                    active credentials
-                                </span>
-                            </>
-                        )}
-                        <span>
-                            <strong>{number(s.attempts)}</strong> attempts
-                        </span>
-                        <span>
-                            <strong>{number(s.duplicates)}</strong> duplicates suppressed
-                        </span>
-                        <span>
-                            <strong>{number(s.voided)}</strong> voided originals excluded
-                        </span>
-                    </div>
-                    <p className="report-meaning">
-                        Presence follows the last effective passage across all gates through{' '}
-                        {manilaTime(s.presence.as_of)}; it ignores the gate/guard and period-start
-                        filters. {number(s.presence.outside)} last recorded outside;{' '}
-                        {number(s.presence.unknown)} retained people have no effective passage.
-                        Missing scans and incomplete coverage limit this estimate. Gate activity is
-                        not classroom attendance.
-                    </p>
+                    <details className="report-method">
+                        <summary>Record counts and estimate details</summary>
+                        <div className="report-facts">
+                            {directory && (
+                                <>
+                                    <span>
+                                        <strong>{number(directory.students)}</strong> registered
+                                        students
+                                    </span>
+                                    <span>
+                                        <strong>{number(directory.employees)}</strong> registered
+                                        employees
+                                    </span>
+                                    <span>
+                                        <strong>{number(directory.active_credentials)}</strong>{' '}
+                                        selected active credentials
+                                    </span>
+                                </>
+                            )}
+                            <span>
+                                <strong>{number(s.attempts)}</strong> attempts
+                            </span>
+                            <span>
+                                <strong>{number(s.duplicates)}</strong> duplicates suppressed
+                            </span>
+                            <span>
+                                <strong>{number(s.voided)}</strong> voided originals excluded
+                            </span>
+                        </div>
+                        <p className="report-meaning">
+                            Presence follows the last effective passage across all gates through{' '}
+                            {manilaTime(s.presence.as_of)}; it ignores the gate/guard and
+                            period-start filters. {number(s.presence.outside)} last recorded
+                            outside; {number(s.presence.unknown)} retained people have no effective
+                            passage. Missing scans and incomplete coverage limit this estimate. Gate
+                            activity is not classroom attendance.
+                        </p>
+                    </details>
                 </>
             )}
             {section === 'history' && records && (

@@ -33,16 +33,13 @@ export default function PeopleIndex({
     return (
         <ManagementPage
             page={directory}
-            title={student ? 'Student directory' : 'Employee directory'}
-            description="Manage student and employee identities and their NFC credentials."
+            title={student ? 'Students' : 'Employees'}
+            description=""
             action={
                 <AddLink href={`${base}/create`}>Add {student ? 'student' : 'employee'}</AddLink>
             }
         >
-            <Panel
-                title={student ? 'Students' : 'Employees'}
-                subtitle="Identity records and NFC status"
-            >
+            <Panel>
                 <DirectoryFilters
                     filters={filters}
                     url={base}
@@ -89,7 +86,7 @@ export default function PeopleIndex({
                                     <strong>{person.full_name}</strong>
                                 </div>
                             </td>
-                            <td>{person.campus_number}</td>
+                            <td className="identifier-cell">{person.campus_number}</td>
                             <td>
                                 {student ? (
                                     <>
@@ -131,9 +128,6 @@ export default function PeopleIndex({
                 </DataTable>
                 <Pagination records={records} />
             </Panel>
-            <p className="availability-note">
-                An active person and selected active NFC credential are required for scanning.
-            </p>
         </ManagementPage>
     );
 }

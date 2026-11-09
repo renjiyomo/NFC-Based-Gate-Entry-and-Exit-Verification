@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Badge, Button, Panel } from '../ui';
 import { DataTable } from '../management/Common';
+import { SkeletonRows } from '../PageSkeleton';
 import {
     operationRequest,
     reasonLabel,
@@ -75,9 +76,10 @@ export default function Activity({
                 </p>
             )}
             {!feed && !error ? (
-                <p className="panel-message" role="status">
-                    Loading permitted activity…
-                </p>
+                <div role="status" aria-label="Loading gate activity">
+                    <SkeletonRows />
+                    <span className="sr-only">Loading gate activity…</span>
+                </div>
             ) : (
                 <>
                     <DataTable

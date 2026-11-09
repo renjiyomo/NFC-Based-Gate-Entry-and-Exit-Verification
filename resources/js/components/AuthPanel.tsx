@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
-import { LockKeyhole } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useWorkspace } from '../lib/workspace';
+import ThemeToggle from './ThemeToggle';
 
 export function AuthPanel({
     title,
@@ -27,12 +27,10 @@ export function AuthPanel({
                         <small>Campus gate workspace</small>
                     </span>
                 </Link>
+                <ThemeToggle />
             </header>
             <main id="main-content" tabIndex={-1} className="auth-main">
                 <section className="login-form-panel" aria-labelledby="auth-title">
-                    <span className="login-lock">
-                        <LockKeyhole size={25} aria-hidden="true" />
-                    </span>
                     <h1 id="auth-title">{title}</h1>
                     <p className="login-form-description">{description}</p>
                     {flash?.status && (

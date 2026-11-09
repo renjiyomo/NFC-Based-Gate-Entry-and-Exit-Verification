@@ -41,13 +41,14 @@ void createInertiaApp({
         createRoot(el).render(
             <StrictMode>
                 <AppErrorBoundary>
-                    <NavigationFeedback />
-                    <App {...props} />
+                    <NavigationFeedback>
+                        <App {...props} />
+                    </NavigationFeedback>
                 </AppErrorBoundary>
             </StrictMode>,
         );
     },
-    progress: { color: '#a8c7fa', showSpinner: false },
+    progress: { color: 'var(--primary)', showSpinner: false },
 }).catch(() => {
     const mount = document.getElementById('app');
     if (mount && !mount.hasChildNodes())

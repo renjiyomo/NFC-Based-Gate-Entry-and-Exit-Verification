@@ -1,5 +1,7 @@
 # Current readiness — gate-account revision
 
+The [interface redesign](interface-redesign.md) is now verified locally: portfolio-based light/dark themes, responsive shell/forms/tables and loading states. Latest whole check: 210 PHP tests/2,313 assertions, 33 frontend tests and 11 MySQL races. Existing data/coin and physical/deployment limits below still apply.
+
 **The redesigned software flow is verified locally. Physical acceptance of automatic recording and production deployment remain pending.** The user could not connect the NFC phone for this revision. Earlier manual-flow physical tests do not prove the new interaction. See [current workflow](workflow-redesign.md) and [verification report](workflow-redesign-report.md).
 
 ## Current flow
@@ -10,7 +12,7 @@ Catalogue dropdowns contain the supplied 17 BU Polangui programs and six departm
 
 ## Verified evidence
 
-- Latest edge-case review: 210 PHP tests / 2,313 assertions, 28 frontend tests (25 NFC software and three feedback tests) and 11 actual overlapping MySQL concurrency scenarios passed. Build/typecheck/style and dependency audits passed. See [directory filters, sequence warnings and lost coins](scan-edge-cases.md).
+- Current whole check: 210 PHP tests / 2,313 assertions, 33 frontend tests (25 NFC, three feedback and five theme tests) and 11 actual overlapping MySQL concurrency scenarios passed. Build/typecheck/style and dependency audits passed. See [interface verification](interface-redesign.md) and [directory filters, sequence warnings and lost coins](scan-edge-cases.md).
 - Direct real gate-account sign-in, automatic gate selection, combined gate/account form, catalogue form and mobile scanner were inspected in the browser. There is no manual identity checkbox/Confirm button or shift/date input. These browser checks created no passages and do not replace RF tests.
 - Four isolated schemas retain 19 migrations/26 tables and reference catalogues; test business fixtures/quota values were restored. Existing immutable records and selected physical coins remain intact. Runtime immutable/catalogue mutation probes were denied. No private credential value or NFC plaintext pattern appeared in the checked repository/log scope.
 - Post-revision encrypted restore drills matched all 26 tables in main, simulator and hardware, preserved each source, and removed their owned disposable schemas and temporary plaintext. See [recovery receipts](evidence/workflow-redesign-recovery.json). All three currently have zero private photos; production-sized/off-device/host-loss/photo acceptance is still pending.

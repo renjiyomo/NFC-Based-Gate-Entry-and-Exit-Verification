@@ -156,8 +156,8 @@ export default function Index({
                 <Pagination records={records} />
             </Panel>
             <p className="availability-note">
-                Only the selected active credential can be eligible. Person record status and campus
-                access are separate checks. Closed references remain in history.
+                An active person and their selected active coin can record Entry or Exit. Closed
+                credentials stay in history.
             </p>
         </ManagementPage>
     );

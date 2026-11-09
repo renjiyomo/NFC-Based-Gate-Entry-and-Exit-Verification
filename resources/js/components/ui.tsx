@@ -3,7 +3,6 @@ import {
     ChevronLeft,
     ChevronRight,
     CircleAlert,
-    Inbox,
     LoaderCircle,
     Search,
     type LucideIcon,
@@ -89,7 +88,6 @@ export function Panel({
 }
 
 export function PageHeading({
-    eyebrow,
     title,
     description,
     action,
@@ -102,9 +100,8 @@ export function PageHeading({
     return (
         <div className="page-heading">
             <div>
-                {eyebrow && <p className="eyebrow">{eyebrow}</p>}
                 <h1>{title}</h1>
-                <p className="page-description">{description}</p>
+                {description && <p className="page-description">{description}</p>}
             </div>
             {action && <div className="heading-action">{action}</div>}
         </div>
@@ -112,7 +109,7 @@ export function PageHeading({
 }
 
 export function EmptyState({
-    icon: Icon = Inbox,
+    icon: Icon,
     title,
     description,
     compact = false,
@@ -124,9 +121,11 @@ export function EmptyState({
 }) {
     return (
         <div className={`empty-state ${compact ? 'empty-compact' : ''}`}>
-            <span className="empty-icon">
-                <Icon size={25} strokeWidth={1.5} aria-hidden="true" />
-            </span>
+            {Icon && (
+                <span className="empty-icon">
+                    <Icon size={22} strokeWidth={1.5} aria-hidden="true" />
+                </span>
+            )}
             <h3>{title}</h3>
             <p>{description}</p>
         </div>

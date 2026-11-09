@@ -17,6 +17,7 @@ import {
 import { manilaTime } from '../../lib/management';
 import { useActivity } from '../../components/operations/Activity';
 import { gateFeedback, playFeedback, sequenceLabel } from '../../lib/gateFeedback';
+import { SkeletonRows } from '../../components/PageSkeleton';
 
 export default function Scanner({
     station,
@@ -233,19 +234,18 @@ export default function Scanner({
                             ? `Ready for ${direction === 'entry' ? 'Entry' : 'Exit'}`
                             : 'Select Entry or Exit'}
                     </h2>
-                    <p className="panel-message">
-                        The selected direction stays in place for the next scan. It never alternates
-                        automatically.
-                    </p>
-                    <Button
-                        aria-pressed={sound}
-                        onClick={() => {
-                            if (!sound) void prepareSound();
-                            setSound(!sound);
-                        }}
-                    >
-                        Sound {sound ? 'on' : 'off'}
-                    </Button>
+                    <p className="panel-message">Direction stays selected for the next scan.</p>
+                    <div className="scanner-options">
+                        <Button
+                            aria-pressed={sound}
+                            onClick={() => {
+                                if (!sound) void prepareSound();
+                                setSound(!sound);
+                            }}
+                        >
+                            Sound {sound ? 'on' : 'off'}
+                        </Button>
+                    </div>
                     {soundNote && <p className="form-note">{soundNote}</p>}
                     <Button
                         variant="primary"
@@ -368,6 +368,11 @@ export default function Scanner({
                 </div>
             </Panel>
             <Panel title="Recent gate activity" subtitle="Latest permitted scans at this gate">
+                {!activity.feed && !activity.error && (
+                    <div role="status" aria-label="Loading gate activity">
+                        <SkeletonRows rows={3} />
+                    </div>
+                )}
                 <Button onClick={() => void activity.refresh()}>Refresh activity</Button>
                 {activity.error && (
                     <p role="alert" className="form-errors">

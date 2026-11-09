@@ -1,20 +1,9 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import {
-    ArrowRight,
-    BadgeCheck,
-    Check,
-    Eye,
-    EyeOff,
-    Info,
-    KeyRound,
-    LockKeyhole,
-    ScanLine,
-    ShieldCheck,
-} from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
-import { Badge } from '../components/ui';
 import { useWorkspace } from '../lib/workspace';
 import { virtualTagLabel } from '../lib/nfc';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function Login({ preview = false }: { preview?: boolean }) {
     const [showPassword, setShowPassword] = useState(false);
@@ -28,21 +17,21 @@ export default function Login({ preview = false }: { preview?: boolean }) {
             </a>
             <header className="login-header">
                 <Link href="/login" className="brand">
-                    <img src="/images/nfcheck-logo.png" width="44" height="44" alt="" />
+                    <img src="/images/nfcheck-logo.png" width="36" height="36" alt="" />
                     <span>
                         <strong>NFCheck</strong>
                         <small>Tap. Check. Verify.</small>
                     </span>
                 </Link>
-                <Badge tone="blue">{preview ? 'Interface preview' : 'Account access'}</Badge>
+                <ThemeToggle />
             </header>
             <main id="main-content" tabIndex={-1} className="login-content">
                 <section className="login-introduction" aria-labelledby="login-introduction-title">
                     <div className="login-institution">
                         <img
                             src="/images/bup-seal.png"
-                            width="64"
-                            height="64"
+                            width="42"
+                            height="42"
                             alt="Bicol University Polangui seal"
                         />
                         <div>
@@ -50,77 +39,49 @@ export default function Login({ preview = false }: { preview?: boolean }) {
                             <strong>Polangui campus</strong>
                         </div>
                     </div>
-                    <p className="eyebrow">Campus gate workspace</p>
                     <h1 id="login-introduction-title">
-                        Tap your credential.
-                        <br />
-                        Record Entry or Exit.
+                        Campus entry
+                        <br /> and exit.
                     </h1>
                     <p className="login-description">
-                        A dedicated workspace for validating campus credentials and recording NFC
-                        entry and exit scans.
+                        A clear record of the people passing through your gates.
                     </p>
-                    <div className="login-workflow">
-                        {[
-                            {
-                                icon: ScanLine,
-                                title: 'Read a campus credential',
-                                description: 'Check a registered NFC reference.',
-                            },
-                            {
-                                icon: BadgeCheck,
-                                title: 'Validate the credential',
-                                description: 'Check the active person and NFC record.',
-                            },
-                            {
-                                icon: Check,
-                                title: 'Record the selected direction',
-                                description: 'Valid scans are recorded automatically.',
-                            },
-                        ].map(({ icon: Icon, title, description }) => (
-                            <div key={title}>
-                                <span>
-                                    <Icon size={19} strokeWidth={1.6} aria-hidden="true" />
-                                </span>
-                                <div>
-                                    <strong>{title}</strong>
-                                    <p>{description}</p>
-                                </div>
-                            </div>
-                        ))}
+                    <div className="login-register" aria-label="How NFCheck works">
+                        <div>
+                            <span>01</span>
+                            <p>Registered identities</p>
+                        </div>
+                        <div>
+                            <span>02</span>
+                            <p>NFC credentials</p>
+                        </div>
+                        <div>
+                            <span>03</span>
+                            <p>Entry &amp; exit records</p>
+                        </div>
                     </div>
-                    <p className="login-institution-note">
-                        <ShieldCheck size={16} aria-hidden="true" /> Campus entry and exit
-                        monitoring
-                    </p>
                 </section>
                 <section className="login-form-panel" id="sign-in" aria-labelledby="sign-in-title">
-                    <span className="login-lock">
-                        <LockKeyhole size={25} strokeWidth={1.5} aria-hidden="true" />
-                    </span>
-                    <h2 id="sign-in-title">Welcome back</h2>
-                    <p className="login-form-description">Sign in to your NFCheck workspace.</p>
-                    {hardwareLab && (
-                        <p className="login-preview-notice">
-                            Hardware test workspace · Use the separate hardware test account.
-                            Synthetic identities and test passages only.
+                    <p className="login-form-overline">Your workspace</p>
+                    <h2 id="sign-in-title">Sign in</h2>
+                    <p className="login-form-description">
+                        Use your administrator or gate account.
+                    </p>
+                    {(hardwareLab || simulator) && (
+                        <p className="login-lab-label">
+                            {hardwareLab ? 'Hardware lab' : 'Simulator'} · Separate test accounts
                         </p>
                     )}
                     {simulator && virtualTagLabel() && (
-                        <p className="login-preview-notice">
-                            Virtual lab tag {virtualTagLabel()} is held only in this tab’s memory
-                            for up to two minutes. Sign in with the separate lab guard account.
-                            Reloading discards the tag.
+                        <p className="auth-status">
+                            Virtual tag {virtualTagLabel()} is held in this tab for two minutes.
+                            Sign in with the lab gate account.
                         </p>
                     )}
                     {preview && (
-                        <div className="login-preview-notice">
-                            <Info size={16} aria-hidden="true" />
-                            <p>
-                                Sign-in is not connected. Use sample text only; do not enter real
-                                credentials.
-                            </p>
-                        </div>
+                        <p className="login-preview-notice">
+                            Interface preview. Use sample text only; sign-in is disabled.
+                        </p>
                     )}
                     {flash?.status && (
                         <p className="auth-status" role="status">
@@ -141,11 +102,11 @@ export default function Login({ preview = false }: { preview?: boolean }) {
                                 type="text"
                                 name="username"
                                 autoComplete={preview ? 'off' : 'username'}
-                                placeholder={
-                                    preview ? 'Enter a sample username' : 'e.g. alexi or gate1'
-                                }
+                                autoCapitalize="none"
+                                spellCheck={false}
+                                placeholder="Your username"
                                 value={form.data.username}
-                                onChange={(event) => form.setData('username', event.target.value)}
+                                onChange={(e) => form.setData('username', e.target.value)}
                                 required
                                 maxLength={255}
                                 aria-invalid={!!form.errors.username}
@@ -167,13 +128,9 @@ export default function Login({ preview = false }: { preview?: boolean }) {
                                     type={showPassword ? 'text' : 'password'}
                                     name="password"
                                     autoComplete={preview ? 'off' : 'current-password'}
-                                    placeholder={
-                                        preview ? 'Enter a sample password' : 'Enter your password'
-                                    }
+                                    placeholder="Your password"
                                     value={form.data.password}
-                                    onChange={(event) =>
-                                        form.setData('password', event.target.value)
-                                    }
+                                    onChange={(e) => form.setData('password', e.target.value)}
                                     required
                                     maxLength={128}
                                     aria-invalid={!!form.errors.password}
@@ -185,12 +142,12 @@ export default function Login({ preview = false }: { preview?: boolean }) {
                                     type="button"
                                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                                     aria-pressed={showPassword}
-                                    onClick={() => setShowPassword((previous) => !previous)}
+                                    onClick={() => setShowPassword(!showPassword)}
                                 >
                                     {showPassword ? (
-                                        <EyeOff size={18} aria-hidden="true" />
+                                        <EyeOff size={17} aria-hidden="true" />
                                     ) : (
-                                        <Eye size={18} aria-hidden="true" />
+                                        <Eye size={17} aria-hidden="true" />
                                     )}
                                 </button>
                             </div>
@@ -200,41 +157,24 @@ export default function Login({ preview = false }: { preview?: boolean }) {
                                 </p>
                             )}
                         </div>
-                        {preview ? (
-                            <button type="button" disabled className="recovery-link">
-                                Forgot password?
-                            </button>
-                        ) : (
-                            <span className="field-hint">
-                                Ask an administrator if you need a password reset.
-                            </span>
-                        )}
                         <button
                             className="button button-primary login-submit"
                             type="submit"
                             disabled={preview || form.processing}
                         >
-                            <KeyRound size={17} aria-hidden="true" />
                             {form.processing ? 'Signing in…' : 'Sign in'}
                         </button>
-                        {preview && (
-                            <p className="login-no-submit">
-                                No credentials are sent from this preview.
-                            </p>
-                        )}
+                        <p className="login-help">Need help signing in? Ask your administrator.</p>
                     </form>
                     {preview && (
-                        <div className="login-preview-link">
-                            <span>Explore the interface</span>
-                            <Link href="/preview/dashboard">
-                                Open workspace preview <ArrowRight size={16} aria-hidden="true" />
-                            </Link>
-                        </div>
+                        <Link className="row-link" href="/preview/dashboard">
+                            Open workspace preview
+                        </Link>
                     )}
                 </section>
             </main>
             <footer className="login-footer">
-                <span>NFCheck · Campus gate verification & monitoring</span>
+                <span>NFCheck</span>
                 <span>Bicol University Polangui</span>
             </footer>
         </div>

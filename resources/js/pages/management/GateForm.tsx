@@ -103,8 +103,7 @@ export default function GateForm({ record }: { record: GateRecord | null }) {
                         </Select>
                     </div>
                     <p className="form-note">
-                        The gate and its account are saved together. No email activation, guard-name
-                        duplication or shift dates are required.
+                        Guards share this gate's login. You can reset its password here when needed.
                     </p>
                     <SaveActions
                         busy={form.processing}

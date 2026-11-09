@@ -1,5 +1,7 @@
 # NFCheck
 
+The [current interface](docs/interface-redesign.md) uses the portfolio's charcoal/paper/amber palette, local Instrument Sans fonts, circular light/dark switching, cleaner account/navigation controls, responsive directories/forms and request-driven skeletons. Latest checks: 210 PHP tests / 2,313 assertions, 33 frontend tests and 11 concurrency scenarios.
+
 **NFC-Based Campus Gate Entry and Exit Verification and Monitoring System with Data Analytics, Anomaly Detection, and AI-Generated Summaries for Bicol University Polangui**
 
 Current workflow: **One username/password account per gate, automatic NFC Entry/Exit recording, database-backed BU Polangui academic dropdowns, and no separate campus-access grants or guard shift forms.** Two roles: Administrator and Gate account. See [the current workflow](docs/workflow-redesign.md). Earlier phase reports remain historical evidence.
@@ -20,7 +22,7 @@ Recovery messages arrive only in the [local mail inbox](http://127.0.0.1:8025). 
 
 ## Final checkpoint and guides
 
-Start with [final readiness](docs/final-readiness.md), the [administrator guide](docs/administrator-guide.md) and [security guard guide](docs/security-guard-guide.md). Deployment/HTTPS templates, environment/logging reference and encrypted local backup/restore procedures are prepared. The latest flow review passed **210 PHP tests / 2,313 assertions, 28 frontend tests and 11 concurrency scenarios**. No public deployment or additional live AI request occurred. See [Phase 11](docs/phase-11-report.md) for the earlier deployment-preparation checkpoint.
+Start with [final readiness](docs/final-readiness.md), the [administrator guide](docs/administrator-guide.md) and [security guard guide](docs/security-guard-guide.md). Deployment/HTTPS templates, environment/logging reference and encrypted local backup/restore procedures are prepared. The latest whole check passed **210 PHP tests / 2,313 assertions, 33 frontend tests and 11 concurrency scenarios**. No public deployment or additional live AI request occurred. See [Phase 11](docs/phase-11-report.md) for the earlier deployment-preparation checkpoint.
 
 ## Run locally
 

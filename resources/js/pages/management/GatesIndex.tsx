@@ -20,11 +20,11 @@ export default function GatesIndex({
     return (
         <ManagementPage
             page="gates"
-            title="Gate stations"
-            description="Create a gate together with its username and password."
-            action={<AddLink href="/admin/gates/create">Add gate station</AddLink>}
+            title="Gates & accounts"
+            description="One shared login for each campus gate."
+            action={<AddLink href="/admin/gates/create">Add gate</AddLink>}
         >
-            <Panel title="Campus gates" subtitle="Station identities and record status">
+            <Panel>
                 <DirectoryFilters filters={filters} url="/admin/gates" />
                 <DataTable
                     caption="Campus gates"
