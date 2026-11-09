@@ -1,0 +1,429 @@
+{
+    "date": "2026-11-09",
+    "scope": "Login presentation and consistent university wording; no authentication-policy or schema change",
+    "php_tests": 211,
+    "php_assertions": 2337,
+    "frontend_tests": 36,
+    "build_and_typecheck_passed": true,
+    "browser_checks": {
+        "mainLoginCampusWordAbsent": true,
+        "primaryHeading": "Sign in",
+        "universityName": "Bicol University Polangui",
+        "checkedViewports": [
+            [
+                320,
+                740
+            ],
+            [
+                393,
+                852
+            ],
+            [
+                768,
+                1024
+            ]
+        ],
+        "defaultDesktop": [
+            1280,
+            720
+        ],
+        "checkedHorizontalOverflow": false,
+        "phoneFieldFont": "16px",
+        "phoneFieldMinHeight": 48,
+        "requiredUsernameFocusPassed": true,
+        "passwordEyeTogglePassed": true,
+        "adminLoginPassed": true,
+        "gateAccountLoginPassed": true,
+        "hardwareSessionSignedOut": true,
+        "workspaceWordingChecks": [
+            {
+                "containsCampus": false,
+                "institution": "Bicol University Polangui",
+                "path": "\/admin\/students",
+                "title": "Students"
+            },
+            {
+                "containsCampus": false,
+                "institution": "Bicol University Polangui",
+                "path": "\/admin\/credentials",
+                "title": "NFC credentials"
+            },
+            {
+                "containsCampus": false,
+                "institution": "Bicol University Polangui",
+                "path": "\/admin\/gates",
+                "title": "Gates & accounts"
+            },
+            {
+                "containsCampus": false,
+                "institution": "Bicol University Polangui",
+                "path": "\/admin\/reports",
+                "title": "Reports"
+            },
+            {
+                "containsCampus": false,
+                "institution": "Bicol University Polangui",
+                "path": "\/admin\/analytics",
+                "title": "Activity analytics"
+            },
+            {
+                "containsCampus": false,
+                "institution": "Bicol University Polangui",
+                "path": "\/nfc\/setup",
+                "title": "NFC setup"
+            }
+        ],
+        "browserWarningOrErrorCount": 0
+    },
+    "runtime_counts": {
+        "nfcheck": {
+            "migrations": 19,
+            "users": 6,
+            "persons": 2,
+            "gates": 2,
+            "nfc_credentials": 0,
+            "scan_attempts": 0,
+            "access_events": 0,
+            "passage_corrections": 0,
+            "anomaly_flags": 0,
+            "anomaly_evidence": 0,
+            "anomaly_reviews": 0,
+            "summary_requests": 0,
+            "summary_tasks": 0,
+            "summary_results": 0,
+            "summary_reviews": 0,
+            "summary_controls": 1,
+            "pending_reviews": 0,
+            "event_sources": [],
+            "immutable_sql_denials": 23
+        },
+        "nfcheck_testing": {
+            "migrations": 19,
+            "users": 0,
+            "persons": 0,
+            "gates": 0,
+            "nfc_credentials": 0,
+            "scan_attempts": 0,
+            "access_events": 0,
+            "passage_corrections": 0,
+            "anomaly_flags": 0,
+            "anomaly_evidence": 0,
+            "anomaly_reviews": 0,
+            "summary_requests": 0,
+            "summary_tasks": 0,
+            "summary_results": 0,
+            "summary_reviews": 0,
+            "summary_controls": 1,
+            "pending_reviews": 0,
+            "event_sources": [],
+            "immutable_sql_denials": 23
+        },
+        "nfcheck_simulator": {
+            "migrations": 19,
+            "users": 4,
+            "persons": 2,
+            "gates": 1,
+            "nfc_credentials": 7,
+            "scan_attempts": 11,
+            "access_events": 5,
+            "passage_corrections": 3,
+            "anomaly_flags": 3,
+            "anomaly_evidence": 6,
+            "anomaly_reviews": 2,
+            "summary_requests": 1,
+            "summary_tasks": 1,
+            "summary_results": 1,
+            "summary_reviews": 1,
+            "summary_controls": 1,
+            "pending_reviews": 0,
+            "event_sources": [
+                {
+                    "source": "simulated",
+                    "count": 5
+                }
+            ],
+            "immutable_sql_denials": 23
+        },
+        "nfcheck_hardware": {
+            "migrations": 19,
+            "users": 4,
+            "persons": 2,
+            "gates": 1,
+            "nfc_credentials": 9,
+            "scan_attempts": 26,
+            "access_events": 6,
+            "passage_corrections": 0,
+            "anomaly_flags": 0,
+            "anomaly_evidence": 0,
+            "anomaly_reviews": 0,
+            "summary_requests": 0,
+            "summary_tasks": 0,
+            "summary_results": 0,
+            "summary_reviews": 0,
+            "summary_controls": 1,
+            "pending_reviews": 0,
+            "event_sources": [
+                {
+                    "source": "physical",
+                    "count": 6
+                }
+            ],
+            "immutable_sql_denials": 23
+        },
+        "requested_admins_active": 3
+    },
+    "selected_hardware_coin_labels": {
+        "HW-TAG-08": "employee",
+        "HW-TAG-09": "student"
+    },
+    "passwords_changed": false,
+    "browser_created_passages": false,
+    "live_ai_calls": 0,
+    "deployment": false,
+    "viewport_reset": true,
+    "main_theme_restored": "dark",
+    "test_sessions_signed_out": true,
+    "historical_saved_text_retained": true,
+    "internal_database_identifiers_retained": true,
+    "old_login_selectors_removed": 46,
+    "contrast_pairs": [
+        {
+            "theme": "dark",
+            "foreground": "--text",
+            "background": "--bg",
+            "ratio": 15.99,
+            "minimum": 4.5
+        },
+        {
+            "theme": "dark",
+            "foreground": "--text",
+            "background": "--surface",
+            "ratio": 15.05,
+            "minimum": 4.5
+        },
+        {
+            "theme": "dark",
+            "foreground": "--text",
+            "background": "--soft",
+            "ratio": 14.23,
+            "minimum": 4.5
+        },
+        {
+            "theme": "dark",
+            "foreground": "--muted",
+            "background": "--bg",
+            "ratio": 9.92,
+            "minimum": 4.5
+        },
+        {
+            "theme": "dark",
+            "foreground": "--muted",
+            "background": "--surface",
+            "ratio": 9.34,
+            "minimum": 4.5
+        },
+        {
+            "theme": "dark",
+            "foreground": "--muted",
+            "background": "--soft",
+            "ratio": 8.83,
+            "minimum": 4.5
+        },
+        {
+            "theme": "dark",
+            "foreground": "--subtle",
+            "background": "--bg",
+            "ratio": 6.17,
+            "minimum": 4.5
+        },
+        {
+            "theme": "dark",
+            "foreground": "--subtle",
+            "background": "--surface",
+            "ratio": 5.81,
+            "minimum": 4.5
+        },
+        {
+            "theme": "dark",
+            "foreground": "--subtle",
+            "background": "--soft",
+            "ratio": 5.49,
+            "minimum": 4.5
+        },
+        {
+            "theme": "dark",
+            "foreground": "--success",
+            "background": "--success-bg",
+            "ratio": 7.44,
+            "minimum": 4.5
+        },
+        {
+            "theme": "dark",
+            "foreground": "--warning",
+            "background": "--warning-bg",
+            "ratio": 8.05,
+            "minimum": 4.5
+        },
+        {
+            "theme": "dark",
+            "foreground": "--error",
+            "background": "--error-bg",
+            "ratio": 7.53,
+            "minimum": 4.5
+        },
+        {
+            "theme": "dark",
+            "foreground": "--info",
+            "background": "--info-bg",
+            "ratio": 8.28,
+            "minimum": 4.5
+        },
+        {
+            "theme": "dark",
+            "foreground": "--on-primary",
+            "background": "--action",
+            "ratio": 5.11,
+            "minimum": 4.5
+        },
+        {
+            "theme": "dark",
+            "foreground": "--border",
+            "background": "--bg",
+            "ratio": 3.62,
+            "minimum": 3
+        },
+        {
+            "theme": "dark",
+            "foreground": "--border",
+            "background": "--surface",
+            "ratio": 3.41,
+            "minimum": 3
+        },
+        {
+            "theme": "dark",
+            "foreground": "--primary",
+            "background": "--bg",
+            "ratio": 9.22,
+            "minimum": 3
+        },
+        {
+            "theme": "light",
+            "foreground": "--text",
+            "background": "--bg",
+            "ratio": 15.96,
+            "minimum": 4.5
+        },
+        {
+            "theme": "light",
+            "foreground": "--text",
+            "background": "--surface",
+            "ratio": 17.12,
+            "minimum": 4.5
+        },
+        {
+            "theme": "light",
+            "foreground": "--text",
+            "background": "--soft",
+            "ratio": 15.12,
+            "minimum": 4.5
+        },
+        {
+            "theme": "light",
+            "foreground": "--muted",
+            "background": "--bg",
+            "ratio": 6.5,
+            "minimum": 4.5
+        },
+        {
+            "theme": "light",
+            "foreground": "--muted",
+            "background": "--surface",
+            "ratio": 6.97,
+            "minimum": 4.5
+        },
+        {
+            "theme": "light",
+            "foreground": "--muted",
+            "background": "--soft",
+            "ratio": 6.16,
+            "minimum": 4.5
+        },
+        {
+            "theme": "light",
+            "foreground": "--subtle",
+            "background": "--bg",
+            "ratio": 4.86,
+            "minimum": 4.5
+        },
+        {
+            "theme": "light",
+            "foreground": "--subtle",
+            "background": "--surface",
+            "ratio": 5.22,
+            "minimum": 4.5
+        },
+        {
+            "theme": "light",
+            "foreground": "--subtle",
+            "background": "--soft",
+            "ratio": 4.61,
+            "minimum": 4.5
+        },
+        {
+            "theme": "light",
+            "foreground": "--success",
+            "background": "--success-bg",
+            "ratio": 6.14,
+            "minimum": 4.5
+        },
+        {
+            "theme": "light",
+            "foreground": "--warning",
+            "background": "--warning-bg",
+            "ratio": 5.75,
+            "minimum": 4.5
+        },
+        {
+            "theme": "light",
+            "foreground": "--error",
+            "background": "--error-bg",
+            "ratio": 5.56,
+            "minimum": 4.5
+        },
+        {
+            "theme": "light",
+            "foreground": "--info",
+            "background": "--info-bg",
+            "ratio": 5.82,
+            "minimum": 4.5
+        },
+        {
+            "theme": "light",
+            "foreground": "--on-primary",
+            "background": "--action",
+            "ratio": 6.93,
+            "minimum": 4.5
+        },
+        {
+            "theme": "light",
+            "foreground": "--border",
+            "background": "--bg",
+            "ratio": 3.5,
+            "minimum": 3
+        },
+        {
+            "theme": "light",
+            "foreground": "--border",
+            "background": "--surface",
+            "ratio": 3.76,
+            "minimum": 3
+        },
+        {
+            "theme": "light",
+            "foreground": "--primary",
+            "background": "--bg",
+            "ratio": 6.19,
+            "minimum": 3
+        }
+    ]
+}

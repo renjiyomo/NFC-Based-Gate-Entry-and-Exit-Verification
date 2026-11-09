@@ -20,10 +20,10 @@ const metrics = [
     {
         label: 'Entries today',
         icon: ArrowDownLeft,
-        note: 'Confirmed campus entries',
+        note: 'Confirmed university entries',
         color: 'blue',
     },
-    { label: 'Exits today', icon: ArrowUpRight, note: 'Confirmed campus exits', color: 'teal' },
+    { label: 'Exits today', icon: ArrowUpRight, note: 'Confirmed university exits', color: 'teal' },
     {
         label: 'Denied verifications',
         icon: ShieldAlert,
@@ -31,7 +31,7 @@ const metrics = [
         color: 'orange',
     },
     {
-        label: 'Estimated on campus',
+        label: 'Estimated inside',
         icon: Users,
         note: 'Based on recorded passages',
         color: 'lavender',
@@ -43,9 +43,9 @@ export default function Dashboard() {
     return (
         <>
             <PageHeading
-                eyebrow="Campus overview"
+                eyebrow="University overview"
                 title="Gate monitoring overview"
-                description="A clear view of campus access and recorded gate activity."
+                description="A clear view of university access and recorded gate activity."
                 action={
                     <ActionLink href={pageUrl(preview ? 'scanner' : 'gates')}>
                         <ScanLine size={17} aria-hidden="true" />{' '}
@@ -90,7 +90,7 @@ export default function Dashboard() {
             <div className="dashboard-middle">
                 <Panel
                     title="Gate activity"
-                    subtitle="Recorded entries and exits across campus gates"
+                    subtitle="Recorded entries and exits across university gates"
                     action={<Badge>Today</Badge>}
                 >
                     <div className="chart-empty">

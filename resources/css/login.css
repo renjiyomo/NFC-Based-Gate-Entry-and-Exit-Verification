@@ -1,0 +1,232 @@
+/* Sign-in has its own layout; account recovery keeps the shared auth controls. */
+.login-page.sign-in-page {
+    border: 0;
+    padding-bottom: 40px;
+    gap: 24px;
+}
+.sign-in-page .login-header {
+    flex-shrink: 0;
+    width: min(1280px, 100%);
+    min-height: 88px;
+    margin-inline: auto;
+    padding: 24px 40px;
+    border: 0;
+}
+.sign-in-page .brand {
+    gap: 10px;
+}
+.sign-in-page .brand img {
+    width: 32px;
+    height: 32px;
+}
+.sign-in-page .brand strong {
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.6px;
+}
+.sign-in-page .sign-in-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: min(1120px, calc(100% - 80px));
+    min-height: 560px;
+    margin: auto;
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    background: var(--surface);
+    overflow: hidden;
+}
+.sign-in-page .sign-in-identity {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 72px;
+    padding: 48px 48px 64px;
+    border-right: 1px solid var(--border-soft);
+    background: color-mix(in srgb, var(--action) 3%, var(--surface));
+}
+.sign-in-page .sign-in-university {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.sign-in-page .sign-in-university img {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+}
+.sign-in-page .sign-in-university p {
+    max-width: 19ch;
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 550;
+}
+.sign-in-page .sign-in-message .sign-in-headline {
+    color: var(--text);
+    font-size: clamp(38px, 4vw, 50px);
+    font-weight: 500;
+    letter-spacing: -1.8px;
+    line-height: 1.14;
+}
+.sign-in-page .sign-in-message .sign-in-description {
+    max-width: 29ch;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.8;
+    margin-top: 24px;
+}
+.sign-in-page .sign-in-form {
+    align-self: center;
+    width: 100%;
+    padding: 48px clamp(32px, 4.4vw, 64px);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+.sign-in-page .sign-in-form h1 {
+    font-size: 30px;
+    line-height: 1.2;
+    font-weight: 550;
+    letter-spacing: -0.9px;
+}
+.sign-in-page .login-form-description {
+    font-size: 13px;
+    line-height: 1.7;
+    margin-top: 10px;
+}
+.sign-in-page .sign-in-form form {
+    margin-top: 32px;
+}
+.sign-in-page .sign-in-form .form-field label {
+    font-size: 13px;
+    margin-bottom: 9px;
+    font-weight: 500;
+}
+.sign-in-page .sign-in-form .form-field input {
+    min-height: 48px;
+    padding: 12px 14px;
+    font-size: 14px;
+    border-radius: 7px;
+    background: var(--bg);
+}
+.sign-in-page .sign-in-form .form-field + .form-field {
+    margin-top: 22px;
+}
+.sign-in-page .password-input > button {
+    width: 44px;
+    height: 44px;
+    top: 2px;
+    right: 2px;
+    display: grid;
+    place-items: center;
+}
+.sign-in-page .login-submit {
+    min-height: 48px;
+    border-radius: 7px;
+    font-size: 14px;
+    margin-top: 28px;
+}
+.sign-in-page .login-help {
+    font-size: 12px;
+    line-height: 1.7;
+    margin-top: 24px;
+    text-align: left;
+    max-width: 32ch;
+}
+.sign-in-page .login-lab-label {
+    width: fit-content;
+    padding: 5px 8px;
+    border: 1px solid var(--border-soft);
+    border-radius: 4px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+    margin-top: 18px;
+    background: var(--soft);
+}
+.sign-in-page .login-preview-notice {
+    font-size: 12px;
+    line-height: 1.7;
+}
+.sign-in-page .row-link {
+    margin-top: 16px;
+}
+.sign-in-page .sign-in-form:focus {
+    outline: none;
+}
+@media (max-width: 960px) {
+    .sign-in-page .sign-in-layout {
+        width: calc(100% - 48px);
+    }
+    .sign-in-page .sign-in-identity {
+        padding: 40px 32px 52px;
+    }
+    .sign-in-page .sign-in-form {
+        padding-inline: 32px;
+    }
+}
+@media (max-width: 760px) {
+    .login-page.sign-in-page {
+        gap: 16px;
+        padding-bottom: 28px;
+    }
+    .sign-in-page .login-header {
+        min-height: 76px;
+        padding: 18px 24px;
+    }
+    .sign-in-page .sign-in-layout {
+        grid-template-columns: minmax(0, 1fr);
+        min-height: 0;
+        width: min(440px, calc(100% - 40px));
+        margin-block: 8px auto;
+        border-radius: 12px;
+    }
+    .sign-in-page .sign-in-identity {
+        padding: 22px 28px;
+        border-right: 0;
+        border-bottom: 1px solid var(--border-soft);
+        gap: 0;
+    }
+    .sign-in-page .sign-in-university {
+        gap: 12px;
+    }
+    .sign-in-page .sign-in-university img {
+        width: 40px;
+        height: 40px;
+    }
+    .sign-in-page .sign-in-university p {
+        max-width: none;
+        font-size: 13px;
+    }
+    .sign-in-page .sign-in-message {
+        display: none;
+    }
+    .sign-in-page .sign-in-form {
+        padding: 28px;
+    }
+    .sign-in-page .sign-in-form h1 {
+        font-size: 27px;
+    }
+    .sign-in-page .sign-in-form .form-field input {
+        font-size: 16px;
+    }
+    .sign-in-page .sign-in-form form {
+        margin-top: 26px;
+    }
+    .sign-in-page .login-help {
+        font-size: 11px;
+        margin-top: 20px;
+    }
+}
+@media (max-width: 360px) {
+    .sign-in-page .sign-in-layout {
+        width: calc(100% - 32px);
+    }
+    .sign-in-page .sign-in-form {
+        padding: 24px 20px;
+    }
+    .sign-in-page .sign-in-identity {
+        padding: 18px 20px;
+    }
+}

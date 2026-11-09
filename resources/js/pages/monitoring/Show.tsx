@@ -71,7 +71,7 @@ export default function Show({
                             r.identity_method === 'nfc_scan'
                                 ? 'Automatic NFC scan'
                                 : r.identity_method === 'campus_document'
-                                  ? 'Campus document comparison (legacy)'
+                                  ? 'University document comparison (legacy)'
                                   : r.identity_method === 'photo'
                                     ? 'Photo comparison (legacy)'
                                     : (r.identity_method?.replaceAll('_', ' ') ?? 'No passage'),

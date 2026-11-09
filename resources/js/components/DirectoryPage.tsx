@@ -38,10 +38,10 @@ interface DirectoryDefinition {
 const definitions: Record<DirectoryId, DirectoryDefinition> = {
     students: {
         title: 'Student directory',
-        description: 'Manage student identities, campus access, and assigned NFC credentials.',
+        description: 'Manage student identities, university access, and assigned NFC credentials.',
         action: 'Add student',
         panel: 'Students',
-        subtitle: 'Registered campus identities and access status',
+        subtitle: 'Registered university identities and access status',
         search: 'Search name or student number',
         filter: 'All programs',
         columns: ['Student', 'Student number', 'Program / year', 'Access status', 'NFC credential'],
@@ -52,7 +52,7 @@ const definitions: Record<DirectoryId, DirectoryDefinition> = {
     },
     employees: {
         title: 'Employee directory',
-        description: 'Manage employee identities, departments, and campus access.',
+        description: 'Manage employee identities, departments, and university access.',
         action: 'Add employee',
         panel: 'Employees',
         subtitle: 'Employee identities and authorization details',
@@ -66,7 +66,8 @@ const definitions: Record<DirectoryId, DirectoryDefinition> = {
     },
     credentials: {
         title: 'NFC credentials',
-        description: 'Keep campus credentials assigned, traceable, and ready for identity review.',
+        description:
+            'Keep university credentials assigned, traceable, and ready for identity review.',
         action: 'Issue credential',
         panel: 'Credential registry',
         subtitle: 'Issuance, ownership, and credential lifecycle',
@@ -94,16 +95,16 @@ const definitions: Record<DirectoryId, DirectoryDefinition> = {
     },
     gates: {
         title: 'Gate stations',
-        description: 'Manage campus entry points and their security personnel assignments.',
+        description: 'Manage university entry points and their security personnel assignments.',
         action: 'Add gate station',
-        panel: 'Campus gates',
+        panel: 'University gates',
         subtitle: 'Station configuration and assignment overview',
         search: 'Search gate name or code',
         filter: 'All assignment states',
         columns: ['Gate station', 'Gate code', 'Security assignments', 'Status'],
         emptyTitle: 'Gate stations are not connected',
         emptyDescription:
-            'Configured campus gates and authorized assignments will appear here when gate management is available.',
+            'Configured university gates and authorized assignments will appear here when gate management is available.',
         icon: DoorOpen,
     },
 };

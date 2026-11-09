@@ -51,7 +51,7 @@ interface Props {
     }[];
 }
 const headings = {
-    dashboard: ['Overview', 'Campus records and recent gate activity.'],
+    dashboard: ['Overview', 'University records and recent gate activity.'],
     history: ['Entry & exit history', 'Find recorded passages or review individual scan results.'],
     analytics: [
         'Activity analytics',
@@ -133,7 +133,7 @@ export default function Index(props: Props) {
             {section === 'dashboard' && directory && (
                 <section className="registry-section" aria-labelledby="registry-title">
                     <div className="section-caption">
-                        <h2 id="registry-title">Campus records</h2>
+                        <h2 id="registry-title">University records</h2>
                         <span>Current totals · not affected by date filters</span>
                     </div>
                     <div className="registry-grid">

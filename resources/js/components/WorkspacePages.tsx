@@ -40,7 +40,7 @@ export function HistoryPage() {
             <PageHeading
                 eyebrow="Monitoring"
                 title="Entry & exit history"
-                description="Review credential verification separately from confirmed campus passage."
+                description="Review credential verification separately from confirmed university passage."
                 action={
                     <Button disabled>
                         <Download size={17} aria-hidden="true" /> Export records
@@ -66,8 +66,8 @@ export function HistoryPage() {
                 </div>
                 <div className="table-toolbar">
                     <SearchField
-                        label="Search person or campus number"
-                        placeholder="Search person or campus number"
+                        label="Search person or university number"
+                        placeholder="Search person or university number"
                         disabled
                     />
                     <div className="filter-controls">
@@ -96,7 +96,7 @@ export function HistoryPage() {
                     }
                     caption={
                         view === 'passages'
-                            ? 'Confirmed campus passages'
+                            ? 'Confirmed university passages'
                             : 'Credential verification attempts'
                     }
                     icon={Activity}
@@ -128,7 +128,7 @@ export function ReportsPage() {
             <PageHeading
                 eyebrow="Insights"
                 title="Activity reports"
-                description="Build a clear, traceable account of recorded campus gate activity."
+                description="Build a clear, traceable account of recorded university gate activity."
                 action={
                     <Button disabled variant="primary">
                         <FileText size={17} aria-hidden="true" /> Generate report
@@ -217,7 +217,7 @@ export function AnalyticsPage() {
         <>
             <PageHeading
                 eyebrow="Insights"
-                title="Campus access analytics"
+                title="University access analytics"
                 description="Understand activity patterns using confirmed records and explained measures."
                 action={<Badge>Data not connected</Badge>}
             />
@@ -260,7 +260,7 @@ export function AnalyticsPage() {
             </div>
             <Panel
                 title="Know what the measures mean"
-                subtitle="Context matters when reviewing campus access"
+                subtitle="Context matters when reviewing university access"
             >
                 <div className="measure-grid">
                     <div>
@@ -287,7 +287,7 @@ export function AnalyticsPage() {
                 <div>
                     <strong>Gate activity has a specific purpose</strong>
                     <p>
-                        These records support campus access monitoring. They do not establish
+                        These records support university access monitoring. They do not establish
                         classroom attendance or an exact physical headcount.
                     </p>
                 </div>
@@ -330,7 +330,7 @@ export function SettingsPage() {
                                 <Clock3 size={18} aria-hidden="true" />
                                 <span>
                                     Display timezone
-                                    <small>Used for the campus workspace presentation</small>
+                                    <small>Used for the university workspace presentation</small>
                                 </span>
                             </dt>
                             <dd>Asia/Manila</dd>

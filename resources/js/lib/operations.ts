@@ -151,7 +151,7 @@ export function reasonLabel(reason: string): string {
         expired: 'Credential has expired',
         person_inactive: 'Person is inactive or archived',
         not_selected: 'Credential is no longer selected',
-        access_not_authorized: 'No current campus access grant',
+        access_not_authorized: 'No current university access grant',
         simulated_not_permitted: 'Simulated references cannot be used for physical operations',
         source_mismatch: 'Credential source does not match this workspace',
         review_expired: 'The identity review expired; scan again',

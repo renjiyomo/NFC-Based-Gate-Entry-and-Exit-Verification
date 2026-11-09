@@ -58,7 +58,7 @@ class ConfiguredProvider implements Provider
             'fact_ids' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => array_keys($snapshot['facts'])], 'minItems' => 5, 'maxItems' => 12],
             'limitation_ids' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => array_keys(Aggregates::LIMITATIONS)], 'minItems' => 3, 'maxItems' => 3],
         ], 'required' => ['fact_ids', 'limitation_ids'], 'additionalProperties' => false];
-        $prompt = 'Select and order 5 to 12 distinct fact IDs for a concise campus gate activity summary. Always include entries, exits, attempts, denied and flags. Prefer other informative counts and gate observations. Return every limitation ID. Never return prose, new figures, identities, incident claims or extra fields. All inputs are synthetic aggregate facts.';
+        $prompt = 'Select and order 5 to 12 distinct fact IDs for a concise gate activity summary. Always include entries, exits, attempts, denied and flags. Prefer other informative counts and gate observations. Return every limitation ID. Never return prose, new figures, identities, incident claims or extra fields. All inputs are synthetic aggregate facts.';
         $body = ['systemInstruction' => ['parts' => [['text' => $prompt]]], 'contents' => [['role' => 'user', 'parts' => [['text' => json_encode($snapshot, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)]]]], 'generationConfig' => ['responseMimeType' => 'application/json', 'responseJsonSchema' => $schema, 'maxOutputTokens' => 600, 'thinkingConfig' => ['thinkingLevel' => 'minimal']]];
         if (strlen(json_encode($body, JSON_THROW_ON_ERROR)) > 20000) {
             throw new \UnexpectedValueException('request_too_large');

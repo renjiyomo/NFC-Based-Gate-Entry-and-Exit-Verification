@@ -79,7 +79,7 @@ class GateOperations
                 $this->fail('identity_checked', 'Review the person and explicitly confirm the identity check.');
             }
             if ($data['identity_method'] === 'photo' && (! $check->person->photo_path || ! Storage::disk('local')->exists($check->person->photo_path))) {
-                $this->fail('identity_method', 'The identity photograph is unavailable. Review a trusted campus identity document or cancel.');
+                $this->fail('identity_method', 'The identity photograph is unavailable. Review a trusted university identity document or cancel.');
             }
             // The stable person lock serializes different guards and request IDs too.
             $duplicate = AccessEvent::effective()->where('person_id', $attempt->person_id)->where('gate_id', $station->id)->where('direction', $attempt->direction)->where('source', $source)->where('confirmed_at', '>', now()->subSeconds($attempt->duplicate_window_seconds)->format('Y-m-d H:i:s.u'))->where('confirmed_at', '<=', now()->format('Y-m-d H:i:s.u'))->latest('confirmed_at')->latest('id')->sharedLock()->first();

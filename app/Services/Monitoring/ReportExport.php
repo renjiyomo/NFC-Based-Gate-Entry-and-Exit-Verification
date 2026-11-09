@@ -24,7 +24,7 @@ class ReportExport
         return match (config('database.connections.mysql.database')) {
             'nfcheck_hardware' => 'HARDWARE LAB - SYNTHETIC TEST RECORDS',
             'nfcheck_simulator', 'nfcheck_testing' => 'ISOLATED TEST WORKSPACE - '.$source,
-            default => 'NFCheck campus gate records - '.$source,
+            default => 'NFCheck Bicol University Polangui gate records - '.$source,
         };
     }
 
@@ -46,7 +46,7 @@ class ReportExport
         }
         if ($format === 'pdf') {
             if ($dataset !== 'summary') {
-                $table = ['headers' => ['Time (Manila)', 'Person / campus number', 'Gate / guard', 'Direction', 'Verification / reason', 'Review / reason', 'Passage state', 'Credential / sequence'],
+                $table = ['headers' => ['Time (Manila)', 'Person / university number', 'Gate / guard', 'Direction', 'Verification / reason', 'Review / reason', 'Passage state', 'Credential / sequence'],
                     'rows' => array_map(fn ($r) => [$r[0], $r[1]."\n".$r[2]."\n".$r[3], $r[4]."\n".$r[5], $r[6], $r[7]."\n".$r[8], $r[9]."\n".$r[10], $r[11], $r[12]."\n".$r[13]], $table['rows'])];
             }
             $options = new PdfOptions(['isRemoteEnabled' => false, 'isPhpEnabled' => false, 'isJavascriptEnabled' => false, 'defaultFont' => 'DejaVu Sans', 'chroot' => [resource_path('views/reports'), base_path('vendor/dompdf/dompdf/lib/fonts')]]);

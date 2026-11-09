@@ -9,7 +9,7 @@ class CheckDeployment extends Command
 {
     protected $signature = 'nfcheck:check-deployment {--json}';
 
-    protected $description = 'Read-only configuration preflight; does not certify TLS, backups or campus readiness';
+    protected $description = 'Read-only configuration preflight; does not certify TLS, backups or university readiness';
 
     public function handle(DeploymentChecks $review): int
     {

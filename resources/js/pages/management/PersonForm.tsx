@@ -101,7 +101,7 @@ export default function PersonForm({
                                     }}
                                     error={form.errors.program}
                                 >
-                                    <option value="">Select a BU Polangui program</option>
+                                    <option value="">Select a program</option>
                                     {catalog.programs.map((p) => (
                                         <option key={p.code} value={p.code}>
                                             {p.code} · {p.name}

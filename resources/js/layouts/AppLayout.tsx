@@ -16,7 +16,7 @@ function Brand() {
             <img src="/images/nfcheck-logo.png" alt="" width="36" height="36" />
             <span>
                 <strong>NFCheck</strong>
-                <small>Campus access</small>
+                <small>Gate access</small>
             </span>
         </Link>
     );
@@ -96,8 +96,7 @@ export default function AppLayout({ page, children }: { page: PageId; children: 
                 <div className="institution">
                     <img src="/images/bup-seal.png" width="28" height="28" alt="" />
                     <div>
-                        <strong>Bicol University</strong>
-                        <span>Polangui campus</span>
+                        <strong>Bicol University Polangui</strong>
                     </div>
                 </div>
             </aside>
@@ -228,7 +227,7 @@ export default function AppLayout({ page, children }: { page: PageId; children: 
                     </Button>
                 </div>
                 <Navigation page={page} close={() => drawer.current?.close()} />
-                <div className="drawer-footer">Bicol University · Polangui</div>
+                <div className="drawer-footer">Bicol University Polangui</div>
             </dialog>
         </div>
     );

@@ -73,7 +73,7 @@ export default function PersonPicker({
                     setQuery(e.target.value);
                     setPage(1);
                 }}
-                placeholder="Search name or campus number"
+                placeholder="Search name or university number"
             />
             <div aria-live="polite">
                 {loading ? (

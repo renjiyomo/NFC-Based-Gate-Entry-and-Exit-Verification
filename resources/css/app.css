@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './login.css';
 
 @theme {
     --font-sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -1428,78 +1429,8 @@ html:has(dialog[open]) {
     justify-content: space-between;
     gap: 20px;
 }
-.login-content {
-    margin: auto;
-    display: grid;
-}
-.login-institution {
-    display: flex;
-    align-items: center;
-}
-.login-institution img {
-    object-fit: contain;
-}
-.login-institution span {
-    display: block;
-    margin-bottom: 4px;
-}
-.login-introduction .eyebrow {
-    color: var(--institution-accent);
-    margin-bottom: 12px;
-    font-size: 11px;
-}
-.login-workflow {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    margin-top: 33px;
-}
-.login-workflow > div {
-    display: flex;
-    align-items: center;
-    gap: 13px;
-}
-.login-workflow > div > span {
-    width: 35px;
-    height: 35px;
-    display: grid;
-    place-items: center;
-    border: 1px solid var(--border);
-    background: var(--border-soft);
-    color: var(--primary);
-    border-radius: var(--radius);
-}
-.login-workflow strong {
-    color: var(--text);
-    font-size: 13px;
-    font-weight: 550;
-}
-.login-workflow p {
-    color: var(--subtle);
-    font-size: 11px;
-    margin-top: 3px;
-}
-.login-institution-note {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--subtle);
-    font-size: 11px;
-    margin-top: 32px;
-}
 .login-form-panel {
     border-top: 2px solid var(--institution-accent);
-}
-.login-lock {
-    width: 45px;
-    height: 45px;
-    display: grid;
-    place-items: center;
-    background: var(--border-soft);
-    color: var(--primary);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    margin-bottom: 24px;
 }
 .login-form-panel h2 {
     font-size: 25px;
@@ -1575,36 +1506,6 @@ html:has(dialog[open]) {
 }
 .recovery-link:disabled {
     opacity: 0.65;
-}
-.login-no-submit {
-    text-align: center;
-    color: var(--subtle);
-    font-size: 11px;
-    margin-top: 11px;
-}
-.login-preview-link {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 25px;
-    padding-top: 22px;
-    border-top: 1px solid var(--border);
-}
-.login-preview-link span {
-    font-size: 11px;
-    color: var(--subtle);
-}
-.login-preview-link a {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 42px;
-    color: var(--primary);
-    font-size: 13px;
-    font-weight: 550;
-}
-.login-preview-link a:hover {
-    color: var(--primary-hover);
 }
 .login-footer {
     display: flex;
@@ -1820,13 +1721,6 @@ html:has(dialog[open]) {
     }
     .measure-grid > div {
         padding-inline: 17px;
-    }
-    .login-workflow,
-    .login-institution-note {
-        display: none;
-    }
-    .login-lock {
-        margin-bottom: 20px;
     }
     .login-header {
         padding-inline: 24px;
@@ -2209,11 +2103,6 @@ html:has(dialog[open]) {
     .login-form-panel h2 {
         font-size: 24px;
     }
-    .login-lock {
-        margin-bottom: 20px;
-        width: 42px;
-        height: 42px;
-    }
     .form-field input {
         font-size: 14px;
     }
@@ -2225,7 +2114,6 @@ html:has(dialog[open]) {
 
 /* Keep active navigation and direction controls practical for touch and keyboard use. */
 .text-link,
-.login-preview-link a,
 .drawer-footer a,
 .nav-item,
 .choice-group label {
@@ -4257,80 +4145,12 @@ html.theming *::after {
     background: transparent;
     min-height: 88px;
 }
-.login-content {
-    width: min(1120px, 100%);
-    margin-inline: auto;
-    padding: 68px 36px 80px;
-    gap: clamp(60px, 8vw, 140px);
-    align-items: center;
-    grid-template-columns: minmax(0, 1fr) minmax(340px, 400px);
-}
-.login-institution {
-    gap: 12px;
-    margin-bottom: 40px;
-}
-.login-institution img {
-    width: 42px;
-    height: 42px;
-}
-.login-institution span {
-    color: var(--muted);
-    font-size: 12px;
-}
-.login-institution strong {
-    font-size: 11px;
-    color: var(--subtle);
-    font-weight: 400;
-}
-.login-introduction h1 {
-    font-size: clamp(40px, 4.5vw, 58px);
-    font-weight: 500;
-    letter-spacing: -2px;
-    line-height: 1.12;
-    color: var(--text);
-}
-.login-description {
-    color: var(--muted);
-    font-size: 15px;
-    line-height: 1.7;
-    max-width: 30ch;
-    margin-top: 24px;
-}
-.login-register {
-    margin-top: 46px;
-    border-top: 1px solid var(--border-soft);
-    max-width: 340px;
-}
-.login-register > div {
-    display: flex;
-    gap: 20px;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--border-soft);
-}
-.login-register span {
-    font-family: var(--font-mono);
-    color: var(--primary);
-    font-size: 10px;
-    line-height: 21px;
-}
-.login-register p {
-    font-size: 12px;
-    color: var(--muted);
-}
 .login-form-panel {
     border: 1px solid var(--border-soft);
     background: var(--surface);
     border-radius: 12px;
     padding: 34px;
     box-shadow: none;
-}
-.login-form-overline {
-    text-transform: uppercase;
-    font-family: var(--font-mono);
-    letter-spacing: 0.1em;
-    color: var(--subtle);
-    font-size: 9px;
-    margin-bottom: 12px;
 }
 .login-form-panel h2,
 .login-form-panel h1 {
@@ -4392,36 +4212,6 @@ html.theming *::after {
     color: var(--subtle);
 }
 @media (max-width: 800px) {
-    .login-content {
-        grid-template-columns: minmax(0, 420px);
-        justify-content: center;
-        gap: 32px;
-        padding: 40px 24px 54px;
-    }
-    .login-introduction {
-        padding: 0;
-    }
-    .login-introduction h1 {
-        font-size: 34px;
-        letter-spacing: -1.1px;
-    }
-    .login-introduction h1 br {
-        display: none;
-    }
-    .login-introduction h1 br::after {
-        content: ' ';
-    }
-    .login-institution {
-        margin-bottom: 22px;
-    }
-    .login-description {
-        font-size: 13px;
-        max-width: none;
-        margin-top: 12px;
-    }
-    .login-register {
-        display: none;
-    }
     .login-header {
         min-height: 76px;
         padding: 18px 24px;
@@ -4436,25 +4226,11 @@ html.theming *::after {
     }
 }
 @media (max-width: 480px) {
-    .login-content {
-        padding-inline: 20px;
-        gap: 28px;
-    }
     .login-form-panel {
         padding: 26px 22px;
     }
     .login-form-panel .form-field input {
         font-size: 16px;
-    }
-    .login-institution img {
-        width: 34px;
-        height: 34px;
-    }
-    .login-introduction h1 {
-        font-size: 30px;
-    }
-    .login-form-overline {
-        display: none;
     }
 }
 
@@ -4566,7 +4342,7 @@ html.theming *::after {
     }
 }
 
-/* Campus records, reporting controls and identity profiles. */
+/* University records, reporting controls and identity profiles. */
 .history-tabs {
     display: flex;
     gap: 24px;

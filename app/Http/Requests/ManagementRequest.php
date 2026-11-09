@@ -12,6 +12,11 @@ use Illuminate\Validation\ValidationException;
 
 class ManagementRequest extends FormRequest
 {
+    public function attributes(): array
+    {
+        return ['campus_number' => 'university number'];
+    }
+
     public function run(callable $action): mixed
     {
         try {

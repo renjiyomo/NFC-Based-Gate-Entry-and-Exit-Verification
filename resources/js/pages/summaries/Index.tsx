@@ -107,9 +107,10 @@ export default function Index({
                 <details className="compact-help">
                     <summary>Privacy, limits & review</summary>
                     <p>
-                        Synthetic aggregate counts only. No names, campus numbers or NFC references
-                        are sent. Google’s Free Tier data-use terms apply. The project must stay
-                        unlinked from billing; no paid fallback or automatic retry is allowed.
+                        Synthetic aggregate counts only. No names, university numbers or NFC
+                        references are sent. Google’s Free Tier data-use terms apply. The project
+                        must stay unlinked from billing; no paid fallback or automatic retry is
+                        allowed.
                     </p>
                     <p>
                         Up to {availability.daily_limit} attempts per workspace per UTC day. Drafts

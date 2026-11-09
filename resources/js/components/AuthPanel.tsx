@@ -25,7 +25,7 @@ export function AuthPanel({
                     <img src="/images/nfcheck-logo.png" width="44" height="44" alt="" />
                     <span>
                         <strong>NFCheck</strong>
-                        <small>Campus gate workspace</small>
+                        <small>Bicol University Polangui</small>
                     </span>
                 </Link>
                 <ThemeToggle />

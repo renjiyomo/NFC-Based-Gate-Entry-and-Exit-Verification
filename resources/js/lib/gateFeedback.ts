@@ -11,9 +11,9 @@ export function sequenceLabel(value: string): string {
         repeated_exit:
             'The previous record is also Exit. An Entry may have been missed. Check the person and selected direction.',
         previous_day_unclosed_entry:
-            'An Entry from an earlier campus day has no recorded Exit. This Entry is saved separately; the earlier gap remains in history.',
+            'An Entry from an earlier day has no recorded Exit. This Entry is saved separately; the earlier gap remains in history.',
         exit_after_earlier_day_entry:
-            'The last Entry was on an earlier campus day. This may be an overnight visit or a missed scan. Check with the person.',
+            'The last Entry was on an earlier day. This may be an overnight visit or a missed scan. Check with the person.',
         exit_without_entry_today:
             'There is no Entry recorded on the day of this Exit; the previous record is also Exit. Check for a missed scan or wrong direction.',
     };

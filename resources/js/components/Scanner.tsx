@@ -135,9 +135,7 @@ export default function Scanner() {
                         </Button>
                         <p className="scan-direction-note" role="status">
                             Selected direction:{' '}
-                            <strong>
-                                {direction === 'entry' ? 'Entry into campus' : 'Exit from campus'}
-                            </strong>
+                            <strong>{direction === 'entry' ? 'Entry' : 'Exit'}</strong>
                         </p>
                     </div>
                     <div className="browser-capability" id="scanner-availability">

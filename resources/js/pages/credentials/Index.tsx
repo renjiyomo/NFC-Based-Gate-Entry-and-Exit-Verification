@@ -47,7 +47,7 @@ export default function Index({
                         label="Search"
                         type="search"
                         maxLength={100}
-                        placeholder="Label, person or campus number"
+                        placeholder="Label, person or university number"
                         value={form.data.q}
                         onChange={(e) => form.setData('q', e.target.value)}
                     />

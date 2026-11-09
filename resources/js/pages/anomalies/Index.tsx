@@ -207,7 +207,7 @@ export default function Index({
                                 : 'Threshold rules are disabled pending policy approval.'}{' '}
                             After-hours checks are{' '}
                             {policy.open_hour === null
-                                ? 'disabled; campus hours have not been supplied'
+                                ? 'disabled; university hours have not been supplied'
                                 : 'enabled for configured Manila hours'}
                             .
                         </p>

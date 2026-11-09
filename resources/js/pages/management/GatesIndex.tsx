@@ -21,13 +21,13 @@ export default function GatesIndex({
         <ManagementPage
             page="gates"
             title="Gates & accounts"
-            description="One shared login for each campus gate."
+            description="One shared login for each university gate."
             action={<AddLink href="/admin/gates/create">Add gate</AddLink>}
         >
             <Panel>
                 <DirectoryFilters filters={filters} url="/admin/gates" />
                 <DataTable
-                    caption="Campus gates"
+                    caption="University gates"
                     columns={['Gate station', 'Gate code', 'Record status', 'Username', 'Details']}
                     empty="No gate stations match these filters"
                     count={records.data.length}

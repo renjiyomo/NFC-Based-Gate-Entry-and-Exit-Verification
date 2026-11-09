@@ -12,7 +12,7 @@ class ReportTable
         $queries = app(ReportQueries::class);
         if ($dataset === 'summary') {
             $s = $queries->summary($f, $source);
-            $rows = [['Summary', 'Effective confirmed passages', $s['entries'], $s['exits'], $s['passages']], ['Summary', 'Unique people with passage', '', '', $s['unique_people']], ['Checks', 'Verification attempts', '', '', $s['attempts']], ['Checks', 'Denied attempts', '', '', $s['denied']], ['Checks', 'Duplicate passages suppressed', '', '', $s['duplicates']], ['Corrections', 'Voided original passages', '', '', $s['voided']], ['Presence estimate', 'Last recorded inside, campus-wide', '', '', $s['presence']['inside']], ['Presence estimate', 'Last recorded outside, campus-wide', '', '', $s['presence']['outside']], ['Presence estimate', 'People with no effective passage', '', '', $s['presence']['unknown']]];
+            $rows = [['Summary', 'Effective confirmed passages', $s['entries'], $s['exits'], $s['passages']], ['Summary', 'Unique people with passage', '', '', $s['unique_people']], ['Checks', 'Verification attempts', '', '', $s['attempts']], ['Checks', 'Denied attempts', '', '', $s['denied']], ['Checks', 'Duplicate passages suppressed', '', '', $s['duplicates']], ['Corrections', 'Voided original passages', '', '', $s['voided']], ['Presence estimate', 'Last recorded inside, university-wide', '', '', $s['presence']['inside']], ['Presence estimate', 'Last recorded outside, university-wide', '', '', $s['presence']['outside']], ['Presence estimate', 'People with no effective passage', '', '', $s['presence']['unknown']]];
             foreach ($s['trend'] as $r) {
                 $rows[] = ['Daily', $r['date'], $r['entries'], $r['exits'], $r['entries'] + $r['exits']];
             }
@@ -44,6 +44,6 @@ class ReportTable
             return [CarbonImmutable::parse($d['time'])->setTimezone('Asia/Manila')->format('Y-m-d H:i:s.u'), $d['person']['name'] ?? 'Unidentified', $d['person']['number'] ?? '', $d['person']['kind'] ?? '', $d['gate']['code'], $d['guard'], $d['direction'], $d['outcome'], $d['reason'], $d['review'], $d['review_reason'] ?? '', $d['voided'] ? 'Voided' : ($d['passage_id'] ? 'Effective passage' : 'No passage'), $d['credential'] ?? '', $d['sequence_notice'] ?? ''];
         })->all();
 
-        return ['headers' => ['Time (Asia/Manila)', 'Person', 'Campus number', 'Person type', 'Gate', 'Gate account', 'Direction', 'Verification', 'Reason', 'Review', 'Review reason', 'Passage state', 'Credential label', 'Sequence notice'], 'rows' => $rows];
+        return ['headers' => ['Time (Asia/Manila)', 'Person', 'University number', 'Person type', 'Gate', 'Gate account', 'Direction', 'Verification', 'Reason', 'Review', 'Review reason', 'Passage state', 'Credential label', 'Sequence notice'], 'rows' => $rows];
     }
 }

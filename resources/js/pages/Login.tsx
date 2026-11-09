@@ -10,7 +10,7 @@ export default function Login({ preview = false }: { preview?: boolean }) {
     const { flash, simulator, hardwareLab } = useWorkspace();
     const form = useForm({ username: '', password: '' });
     return (
-        <div className="login-page">
+        <div className="login-page sign-in-page">
             <Head title="Sign in" />
             <a className="skip-link" href="#sign-in">
                 Skip to sign-in form
@@ -20,50 +20,34 @@ export default function Login({ preview = false }: { preview?: boolean }) {
                     <img src="/images/nfcheck-logo.png" width="36" height="36" alt="" />
                     <span>
                         <strong>NFCheck</strong>
-                        <small>Tap. Check. Verify.</small>
                     </span>
                 </Link>
                 <ThemeToggle />
             </header>
-            <main id="main-content" tabIndex={-1} className="login-content">
-                <section className="login-introduction" aria-labelledby="login-introduction-title">
-                    <div className="login-institution">
-                        <img
-                            src="/images/bup-seal.png"
-                            width="42"
-                            height="42"
-                            alt="Bicol University Polangui seal"
-                        />
-                        <div>
-                            <span>Bicol University</span>
-                            <strong>Polangui campus</strong>
-                        </div>
+            <main id="main-content" tabIndex={-1} className="sign-in-layout">
+                <section className="sign-in-identity" aria-labelledby="institution-name">
+                    <div className="sign-in-university">
+                        <img src="/images/bup-seal.png" width="52" height="52" alt="" />
+                        <p id="institution-name">Bicol University Polangui</p>
                     </div>
-                    <h1 id="login-introduction-title">
-                        Campus entry
-                        <br /> and exit.
-                    </h1>
-                    <p className="login-description">
-                        A clear record of the people passing through your gates.
-                    </p>
-                    <div className="login-register" aria-label="How NFCheck works">
-                        <div>
-                            <span>01</span>
-                            <p>Registered identities</p>
-                        </div>
-                        <div>
-                            <span>02</span>
-                            <p>NFC credentials</p>
-                        </div>
-                        <div>
-                            <span>03</span>
-                            <p>Entry &amp; exit records</p>
-                        </div>
+                    <div className="sign-in-message">
+                        <p className="sign-in-headline">
+                            Entry &amp; exit
+                            <br />
+                            verification.
+                        </p>
+                        <p className="sign-in-description">
+                            NFC-based records for students and employees.
+                        </p>
                     </div>
                 </section>
-                <section className="login-form-panel" id="sign-in" aria-labelledby="sign-in-title">
-                    <p className="login-form-overline">Your workspace</p>
-                    <h2 id="sign-in-title">Sign in</h2>
+                <section
+                    className="login-form-panel sign-in-form"
+                    id="sign-in"
+                    aria-labelledby="sign-in-title"
+                    tabIndex={-1}
+                >
+                    <h1 id="sign-in-title">Sign in</h1>
                     <p className="login-form-description">
                         Use your administrator or gate account.
                     </p>
@@ -164,7 +148,9 @@ export default function Login({ preview = false }: { preview?: boolean }) {
                         >
                             {form.processing ? 'Signing in…' : 'Sign in'}
                         </button>
-                        <p className="login-help">Need help signing in? Ask your administrator.</p>
+                        <p className="login-help">
+                            For account access, contact your administrator.
+                        </p>
                     </form>
                     {preview && (
                         <Link className="row-link" href="/preview/dashboard">
@@ -173,10 +159,6 @@ export default function Login({ preview = false }: { preview?: boolean }) {
                     )}
                 </section>
             </main>
-            <footer className="login-footer">
-                <span>NFCheck</span>
-                <span>Bicol University Polangui</span>
-            </footer>
         </div>
     );
 }

@@ -27,7 +27,7 @@ export default function Filters({
                 if (/nfcheck:v\d+:/i.test(form.data.q)) {
                     form.setError(
                         'q',
-                        'Search by person name or campus number. NFC references cannot be searched.',
+                        'Search by person name or university number. NFC references cannot be searched.',
                     );
                     return;
                 }
@@ -153,12 +153,12 @@ export default function Filters({
                     </Select>
                     <Field
                         name="q"
-                        label="Person or campus number"
+                        label="Person or university number"
                         type="search"
                         maxLength={100}
                         value={form.data.q}
                         onChange={(e) => form.setData('q', e.target.value)}
-                        placeholder="Name or campus number"
+                        placeholder="Name or university number"
                     />
                     {section === 'history' && (
                         <>

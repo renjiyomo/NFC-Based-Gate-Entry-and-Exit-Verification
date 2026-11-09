@@ -1,5 +1,7 @@
 # Current readiness — gate-account revision
 
+The [login and university wording](login-and-branding.md) update is verified locally: cleaner responsive sign-in, consistent Bicol University Polangui branding, 211 PHP tests/2,337 assertions and 36 frontend tests passed. Authentication policy, business records and physical/deployment limits are unchanged.
+
 The [interface refinement](interface-refinement.md) is verified locally: visible current campus totals, optional live updates, clearer monitoring/reports, rebuilt profiles/photo controls, blue BU Polangui-inspired actions, eye icons and improved gate/mobile layouts. Latest whole check: 211 PHP tests/2,337 assertions, 36 frontend tests and 11 MySQL races. The [earlier redesign](interface-redesign.md) records the portfolio theme foundation. Existing data/coin and physical/deployment limits below still apply.
 
 **The redesigned software flow is verified locally. Physical acceptance of automatic recording and production deployment remain pending.** The user could not connect the NFC phone for this revision. Earlier manual-flow physical tests do not prove the new interaction. See [current workflow](workflow-redesign.md) and [verification report](workflow-redesign-report.md).
