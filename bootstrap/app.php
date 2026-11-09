@@ -28,7 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo(fn (Request $request): string => $request->user()->isAdmin() ? '/admin/dashboard' : '/guard/scanner');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->dontFlash(['token', 'payload', 'completion_nonce', 'q', 'reason']);
+        $exceptions->dontFlash(['token', 'payload', 'completion_nonce', 'q', 'reason', 'api_key', 'prompt']);
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

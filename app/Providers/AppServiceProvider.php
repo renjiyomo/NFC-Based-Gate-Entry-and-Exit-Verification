@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\Summaries\ConfiguredProvider;
+use App\Services\Summaries\Provider;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
@@ -20,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         ini_set('zend.exception_ignore_args', '1');
+        $this->app->bind(Provider::class, ConfiguredProvider::class);
     }
 
     /**
@@ -52,6 +55,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('gate-read', fn (Request $request) => Limit::perMinute(180)->by(config('database.connections.mysql.database').':'.$request->user()->id));
         RateLimiter::for('guard-setup', fn (Request $request) => Limit::perMinute(5)->by(config('database.connections.mysql.database').':'.$request->user()->id));
         RateLimiter::for('report-export', fn (Request $request) => Limit::perMinute(10)->by(config('database.connections.mysql.database').':'.$request->user()->id));
+        RateLimiter::for('summary-generation', fn (Request $request) => [Limit::perMinute(3)->by(config('database.connections.mysql.database').':summary:'.$request->user()->id), Limit::perDay(20)->by(config('database.connections.mysql.database').':summary-day:'.$request->user()->id)]);
         ResetPassword::createUrlUsing(fn (User $user, string $token): string => rtrim(config('app.url'), '/').'/reset-password/'.rawurlencode($token).'?email='.rawurlencode($user->email));
     }
 }

@@ -1,6 +1,6 @@
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('serve', 'vite', 'build', 'typecheck', 'test', 'format', 'composer', 'npm', 'git', 'check', 'artisan', 'services', 'migrate', 'simulator', 'concurrency', 'hardware')]
+    [ValidateSet('serve', 'vite', 'build', 'typecheck', 'test', 'format', 'composer', 'npm', 'git', 'check', 'artisan', 'services', 'migrate', 'simulator', 'concurrency', 'hardware', 'summary-worker')]
     [string]$Action = 'serve',
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$ToolArguments = @()
@@ -40,6 +40,7 @@ try {
         'simulator' { & (Join-Path $PSScriptRoot 'start-simulator.ps1') }
         'hardware' { & (Join-Path $PSScriptRoot 'start-hardware.ps1') }
         'concurrency' { Invoke-Checked $phpPath @('scripts/test-gate-concurrency.php') }
+        'summary-worker' { Invoke-Checked $phpPath (@('scripts/run-summary-worker.php') + $ToolArguments) }
         'migrate' { Invoke-Checked $phpPath @('scripts/migrate-database.php') }
         'artisan' { Invoke-Checked $phpPath (@('artisan') + $ToolArguments) }
         'vite' { Invoke-Checked $npmPath @('run', 'dev') }

@@ -49,11 +49,17 @@ foreach ($schemas as $schema => $environment) {
             throw new RuntimeException('Unexpected table identifier.');
         }
         $permissions = match ($table) {
-            'audit_logs', 'scan_attempts', 'access_events', 'passage_corrections', 'anomaly_flags', 'anomaly_evidence', 'anomaly_reviews' => 'SELECT, INSERT', 'migrations' => 'SELECT', default => 'SELECT, INSERT, UPDATE, DELETE'
+            'audit_logs', 'scan_attempts', 'access_events', 'passage_corrections', 'anomaly_flags', 'anomaly_evidence', 'anomaly_reviews', 'summary_requests', 'summary_results', 'summary_reviews', 'summary_tasks' => 'SELECT, INSERT', 'summary_controls', 'migrations' => 'SELECT', default => 'SELECT, INSERT, UPDATE, DELETE'
         };
         $db->exec("GRANT $permissions ON `$schema`.`$table` TO '$user'@'127.0.0.1'");
         if ($table === 'scan_attempts') {
             $db->exec("GRANT UPDATE (review_status, reviewed_at, reviewed_by, review_reason, duplicate_of_event_id, updated_at) ON `$schema`.`scan_attempts` TO '$user'@'127.0.0.1'");
+        }
+        if ($table === 'summary_tasks') {
+            $db->exec("GRANT UPDATE (claimed_at) ON `$schema`.`summary_tasks` TO '$user'@'127.0.0.1'");
+        }
+        if ($table === 'summary_controls') {
+            $db->exec("GRANT UPDATE (quota_day, claims) ON `$schema`.`summary_controls` TO '$user'@'127.0.0.1'");
         }
     }
     echo "Scoped runtime privileges applied to $schema.\n";

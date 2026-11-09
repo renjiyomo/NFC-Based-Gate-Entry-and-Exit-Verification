@@ -1,0 +1,114 @@
+{
+    "scope": "Synthetic simulator aggregates only; no names, campus numbers, NFC references or notes",
+    "billing_status_evidence": "User reports newly created Google project shows Free Tier; no payment\/billing setup performed by the agent",
+    "request_count": 1,
+    "generations": [
+        {
+            "period": "daily",
+            "period_from": "2026-11-08",
+            "period_to": "2026-11-08",
+            "snapshot": {
+                "facts": {
+                    "exits": {
+                        "count": 1,
+                        "sentence": "1 effective Exit passage was recorded."
+                    },
+                    "flags": {
+                        "count": 3,
+                        "sentence": "3 saved review flags relate to attempts in this period; flags are not confirmed incidents."
+                    },
+                    "denied": {
+                        "count": 1,
+                        "sentence": "1 verification attempt was denied; these did not create passages."
+                    },
+                    "inside": {
+                        "count": 0,
+                        "sentence": "0 retained people were last recorded inside at the cutoff across all gates; this is an estimate."
+                    },
+                    "people": {
+                        "count": 1,
+                        "sentence": "1 distinct person had effective confirmed passages."
+                    },
+                    "voided": {
+                        "count": 0,
+                        "sentence": "0 original passages were excluded by correction decisions."
+                    },
+                    "entries": {
+                        "count": 4,
+                        "sentence": "4 effective Entry passages were recorded."
+                    },
+                    "attempts": {
+                        "count": 11,
+                        "sentence": "11 verification attempts were received."
+                    },
+                    "passages": {
+                        "count": 5,
+                        "sentence": "5 effective confirmed passages were recorded in total."
+                    },
+                    "duplicates": {
+                        "count": 1,
+                        "sentence": "1 duplicate passage confirmation was suppressed."
+                    },
+                    "flags_open": {
+                        "count": 2,
+                        "sentence": "2 saved review flags have the current status open."
+                    },
+                    "gate_1_exits": {
+                        "count": 1,
+                        "sentence": "1 effective Exit passage was recorded at Gate 1."
+                    },
+                    "flags_resolved": {
+                        "count": 0,
+                        "sentence": "0 saved review flags have the current status resolved."
+                    },
+                    "gate_1_entries": {
+                        "count": 4,
+                        "sentence": "4 effective Entry passages were recorded at Gate 1."
+                    },
+                    "flags_in_review": {
+                        "count": 0,
+                        "sentence": "0 saved review flags have the current status in review."
+                    },
+                    "flags_false_alarm": {
+                        "count": 1,
+                        "sentence": "1 saved review flag has the current status false alarm."
+                    }
+                },
+                "period": {
+                    "to": "2026-11-08",
+                    "from": "2026-11-08",
+                    "timezone": "Asia\/Manila"
+                },
+                "contract": "aggregate-facts-v1",
+                "limitations": {
+                    "not_attendance": "Gate activity does not establish classroom attendance or continuous presence.",
+                    "presence_estimate": "Recorded presence is an estimate; missing scans and guard observations limit it.",
+                    "review_indicators": "Review flags do not establish wrongdoing. Detection runs on demand and may not cover every record."
+                },
+                "gate_coverage": "All gates with effective activity in this selection."
+            },
+            "snapshot_hash": "daad8ac700185f18d9ee3066fa5e23e72115f72098c18b4c6517a1b20f5f2897",
+            "contract_version": "aggregate-facts-v1",
+            "status": "ready",
+            "provider": "gemini_free",
+            "model": "gemini-3.1-flash-lite",
+            "selected_facts": [
+                "entries",
+                "exits",
+                "attempts",
+                "denied",
+                "flags",
+                "passages",
+                "people",
+                "gate_1_entries",
+                "gate_1_exits",
+                "flags_open",
+                "flags_false_alarm",
+                "duplicates"
+            ],
+            "input_tokens": 528,
+            "output_tokens": 125,
+            "review": "approved"
+        }
+    ]
+}

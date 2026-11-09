@@ -4,6 +4,8 @@ Status: **Phase 7 monitoring, corrections and reporting implemented** in isolate
 
 ## Implemented Phase 7 additions
 
+Phase 9 migration 18 adds immutable summary requests/snapshots, outcomes and human reviews, plus one-claim tasks and a singleton per-schema quota counter. All four schemas have 18 migrations. History tables are SELECT/INSERT-only; task UPDATE is limited to `claimed_at`, and control UPDATE to `quota_day`/`claims`. Unique request keys and result/request constraints retain idempotency. Provider HTTP runs outside transactions; locks protect quota/claims and append-only reviews. [Phase 9 report](phase-9-report.md).
+
 Phase 8 migration 17 additionally creates `anomaly_flags`, `anomaly_evidence` and `anomaly_reviews`; all four schemas now have 17 migrations. Immutable flags retain source/rule/version/configuration/anchor/evidence; status/reason/administrator history is append-only. The unique source/rule/version/anchor key prevents duplicate detection rows. Source/time and flag/review indexes support the review queue. Runtime grants are SELECT/INSERT only. Reviews serialize on the already lockable anchor-attempt row, then use current reads and a revision check. [Phase 8 evidence and limitations](phase-8-report.md).
 
 Migration 16 adds `passage_corrections`: public UUID, event/actor foreign keys, note/void/reinstate action, reason and UTC microsecond creation time. It is append-only through model restrictions and SELECT/INSERT-only runtime grants. The latest void/reinstate action determines effectiveness; notes leave it unchanged. Stable person locking and expected correction revisions protect concurrent confirmation/correction. Original attempts and passages remain retained. All four recognized schemas now have 16 migrations.

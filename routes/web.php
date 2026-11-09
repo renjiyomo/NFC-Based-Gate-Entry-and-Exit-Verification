@@ -16,6 +16,7 @@ use App\Http\Controllers\Management\PersonController;
 use App\Http\Controllers\Monitoring\ExportController;
 use App\Http\Controllers\Monitoring\MonitoringController;
 use App\Http\Controllers\PreviewController;
+use App\Http\Controllers\Summaries\SummaryController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Middleware\EnsureLocalPreview;
 use App\Http\Middleware\EnsureNfcSimulator;
@@ -109,6 +110,13 @@ Route::middleware(['auth', 'auth.session', EnsurePasswordChanged::class])->group
         Route::post('/detect', [AnomalyController::class, 'detect'])->middleware('throttle:report-export');
         Route::get('/{anomaly}', [AnomalyController::class, 'show'])->whereUuid('anomaly');
         Route::post('/{anomaly}/reviews', [AnomalyController::class, 'review'])->whereUuid('anomaly')->middleware('throttle:management');
+    });
+    Route::prefix('admin/summaries')->middleware('can:admin.workspace')->group(function (): void {
+        Route::get('/', [SummaryController::class, 'index']);
+        Route::post('/', [SummaryController::class, 'store'])->middleware('throttle:summary-generation');
+        Route::get('/{summary}', [SummaryController::class, 'show'])->whereUuid('summary');
+        Route::post('/{summary}/reviews', [SummaryController::class, 'review'])->whereUuid('summary')->middleware('throttle:management');
+        Route::post('/{summary}/recover', [SummaryController::class, 'recover'])->whereUuid('summary')->middleware('throttle:management');
     });
     Route::get('/admin/{page}', [WorkspaceController::class, 'admin'])->middleware('can:admin.workspace')->name('admin.workspace');
     Route::get('/guard/scanner', [ActivityController::class, 'scanner'])->middleware('can:guard.workspace')->name('guard.scanner');

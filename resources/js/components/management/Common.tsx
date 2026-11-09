@@ -36,7 +36,7 @@ export function ManagementPage({
                 eyebrow={
                     page === 'scanner'
                         ? 'Gate operations'
-                        : page === 'anomalies'
+                        : page === 'anomalies' || page === 'summaries'
                           ? 'Human review'
                           : page === 'history'
                             ? 'Gate activity'
