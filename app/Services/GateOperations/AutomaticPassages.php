@@ -58,7 +58,7 @@ class AutomaticPassages
             app(AuditLogger::class)->record('verification.received', $user, $attempt, ['reason' => $reason, 'direction' => $data['direction'], 'source' => $source], $allowed ? 'success' : 'denied');
             if ($allowed && ! $duplicate) {
                 $last = AccessEvent::effective()->where('person_id', $check->person->id)->where('source', $source)->latest('confirmed_at')->latest('id')->sharedLock()->first();
-                $notice = $last ? ($last->direction === $data['direction'] ? 'repeated_'.$data['direction'] : null) : ($data['direction'] === 'exit' ? 'exit_without_recorded_entry' : null);
+                $notice = app(PassageSequence::class)->notice($last, $data['direction'], $at);
                 $event = AccessEvent::create(['public_id' => (string) Str::uuid(), 'scan_attempt_id' => $attempt->id, 'person_id' => $check->person->id, 'credential_assignment_id' => $check->assignment->id, 'guard_id' => $user->id, 'gate_id' => $gate->id, 'direction' => $data['direction'], 'source' => $source, 'policy_version' => 'gate-auto-v2', 'identity_method' => 'nfc_scan', 'sequence_notice' => $notice, 'confirmed_at' => $at]);
                 app(AuditLogger::class)->record('passage.recorded', $user, $event, ['direction' => $data['direction'], 'source' => $source, 'reason' => 'automatic_nfc_scan']);
             }
@@ -102,8 +102,12 @@ class AutomaticPassages
         $duplicate = $a->duplicate()->first();
         $person = $a->outcome === 'allowed' && $a->received_at->greaterThan(now()->subMinutes(config('nfcheck.guard_activity_minutes'))) ? $a->person : null;
         $photoBase = $a->source === 'simulated' ? '/simulator/guard/gates' : '/guard/gates';
+        $previous = $person && $event?->sequence_notice ? AccessEvent::effective()->where('person_id', $a->person_id)->where('source', $a->source)
+            ->where(fn ($q) => $q->where('confirmed_at', '<', $event->confirmed_at->format('Y-m-d H:i:s.u'))
+                ->orWhere(fn ($tie) => $tie->where('confirmed_at', '=', $event->confirmed_at->format('Y-m-d H:i:s.u'))->where('id', '<', $event->id)))
+            ->with('gate')->latest('confirmed_at')->latest('id')->first() : null;
 
-        return ['id' => $a->public_id, 'request_id' => $a->request_id, 'gate_id' => $a->gate_id, 'direction' => $a->direction, 'source' => $a->source, 'server_time' => now()->toISOString(), 'verification' => ['outcome' => $a->outcome, 'reason' => $a->reason, 'received_at' => $a->received_at->toISOString()],
+        return ['id' => $a->public_id, 'request_id' => $a->request_id, 'gate_id' => $a->gate_id, 'direction' => $a->direction, 'source' => $a->source, 'server_time' => now()->toISOString(), 'sequence_context' => $previous ? ['direction' => $previous->direction, 'confirmed_at' => $previous->confirmed_at->toISOString(), 'gate' => $previous->gate?->code] : null, 'verification' => ['outcome' => $a->outcome, 'reason' => $a->reason, 'received_at' => $a->received_at->toISOString()],
             'review' => ['status' => $a->review_status, 'expires_at' => null, 'reason' => $a->review_reason, 'reviewed_at' => $a->reviewed_at?->toISOString()], 'current_check' => ['eligible' => $a->outcome === 'allowed', 'reason' => $a->reason], 'identity' => $person ? ['name' => $person->full_name, 'number' => $person->campus_number, 'kind' => $person->person_type->value, 'photo_url' => $person->photo_path ? $photoBase.'/'.$a->gate_id.'/attempts/'.$a->public_id.'/photo' : null, 'sequence_notice' => $event?->sequence_notice] : null,
             'passage' => $event ? ['id' => $event->public_id, 'direction' => $event->direction, 'confirmed_at' => $event->confirmed_at->toISOString(), 'source' => $event->source, 'identity_method' => 'nfc_scan', 'sequence_notice' => $event->sequence_notice, 'voided' => $event->latestDecision?->action === 'void'] : null, 'duplicate_of' => $duplicate ? ['id' => $duplicate->public_id, 'direction' => $duplicate->direction, 'confirmed_at' => $duplicate->confirmed_at->toISOString()] : null];
     }

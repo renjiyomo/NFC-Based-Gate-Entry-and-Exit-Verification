@@ -35,6 +35,11 @@ class PersonController
         Gate::authorize('viewAny', Person::class);
         $filters = DirectoryData::filters($request);
         $type = $this->type($directory);
+        $catalog = CampusCatalog::options();
+        $groups = $type === PersonType::Student ? array_column($catalog['programs'], 'code') : $catalog['departments'];
+        abort_if($filters['group'] !== '' && ! in_array($filters['group'], [...$groups, '__legacy__'], true), 422, 'Choose a directory option.');
+        $maxYear = max(array_column($catalog['programs'], 'max_year_level'));
+        abort_if($filters['year_level'] !== '' && ($type !== PersonType::Student || ! in_array($filters['year_level'], [...array_map('strval', range(1, $maxYear)), '__legacy__'], true)), 422, 'Choose a year level.');
         $relation = $type === PersonType::Student ? 'studentProfile' : 'employeeProfile';
         $query = DirectoryData::records(Person::where('person_type', $type)->with([$relation, 'activeCredentialAssignment.credential']), $filters);
         if ($filters['q'] !== '') {
@@ -42,10 +47,18 @@ class PersonController
             $query->where(fn ($q) => $q->whereRaw("full_name LIKE ? ESCAPE '!'", [$like])->orWhereRaw("campus_number LIKE ? ESCAPE '!'", [$like]));
         }
         if ($filters['group'] !== '') {
-            $query->whereHas($relation, fn ($q) => $q->whereRaw(($type === PersonType::Student ? 'program' : 'department')." LIKE ? ESCAPE '!'", [DirectoryData::like($filters['group'])]));
+            $column = $type === PersonType::Student ? 'program' : 'department';
+            $query->whereHas($relation, fn ($q) => $filters['group'] === '__legacy__'
+                ? $q->where(fn ($old) => $old->whereNotIn($column, $groups)->orWhereNull($column))
+                : $q->where($column, $filters['group']));
+        }
+        if ($filters['year_level'] !== '') {
+            $query->whereHas('studentProfile', fn ($q) => $filters['year_level'] === '__legacy__'
+                ? $q->where(fn ($old) => $old->whereNotBetween('year_level', [1, $maxYear])->orWhereNull('year_level'))
+                : $q->where('year_level', (int) $filters['year_level']));
         }
 
-        return Inertia::render('management/PeopleIndex', ['directory' => $directory, 'filters' => $filters,
+        return Inertia::render('management/PeopleIndex', ['directory' => $directory, 'filters' => $filters, 'catalog' => $catalog,
             'records' => $query->orderBy('full_name')->orderBy('id')->paginate((int) $filters['per_page'])->appends($filters)->through(fn (Person $person) => DirectoryData::person($person))]);
     }
 
@@ -69,7 +82,7 @@ class PersonController
         $person->load(['studentProfile', 'employeeProfile']);
 
         return Inertia::render('management/PersonShow', ['directory' => $directory, 'record' => DirectoryData::person($person),
-            'credentials' => $person->credentialAssignments()->with('credential.assignment.person', 'credential.replaces')->latest('id')->limit(10)->get()->map(fn ($assignment) => CredentialData::one($assignment->credential))]);
+            'credentials' => $person->credentialAssignments()->with('credential.assignment.person', 'credential.replaces')->orderByRaw('id = ? DESC', [$person->active_credential_assignment_id ?? 0])->latest('id')->limit(10)->get()->map(fn ($assignment) => CredentialData::one($assignment->credential))]);
     }
 
     public function edit(string $directory, Person $person): Response
@@ -93,7 +106,7 @@ class PersonController
         $this->person($directory, $person, 'archive');
         $request->run(fn () => $people->archive($request->user(), $person, $request->integer('record_version')));
 
-        return redirect('/admin/'.$directory)->with('status', 'Record archived and access grants revoked. Its history is retained.');
+        return redirect('/admin/'.$directory)->with('status', 'Person archived and NFC credentials closed. History is retained.');
     }
 
     public function restore(ManagementRequest $request, string $directory, Person $person, PersonManagement $people): RedirectResponse
@@ -101,7 +114,7 @@ class PersonController
         $this->person($directory, $person, 'archive');
         $request->run(fn () => $people->archive($request->user(), $person, $request->integer('record_version'), true));
 
-        return redirect('/admin/'.$directory.'/'.$person->id)->with('status', 'Record restored as inactive. Review it before activating or granting access.');
+        return redirect('/admin/'.$directory.'/'.$person->id)->with('status', 'Person restored as inactive. Review the record before enabling it and issuing a new coin.');
     }
 
     public function photo(string $directory, Person $person): BinaryFileResponse

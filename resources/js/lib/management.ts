@@ -1,4 +1,9 @@
 export type PersonDirectory = 'students' | 'employees';
+export interface CampusCatalog {
+    programs: { code: string; name: string; max_year_level: number }[];
+    departments: string[];
+    semesters: string[];
+}
 export interface PersonRecord {
     id: number;
     kind: 'student' | 'employee';
@@ -78,6 +83,7 @@ export interface Filters {
     status: string;
     records: string;
     group: string;
+    year_level: string;
     access: string;
     gate_id: string | number;
     per_page: string | number;

@@ -9,16 +9,24 @@ import {
     Portrait,
     RecordBadge,
 } from '../../components/management/Common';
-import type { Filters, Paginated, PersonDirectory, PersonRecord } from '../../lib/management';
+import type {
+    CampusCatalog,
+    Filters,
+    Paginated,
+    PersonDirectory,
+    PersonRecord,
+} from '../../lib/management';
 
 export default function PeopleIndex({
     directory,
     records,
     filters,
+    catalog,
 }: {
     directory: PersonDirectory;
     records: Paginated<PersonRecord>;
     filters: Filters;
+    catalog: CampusCatalog;
 }) {
     const student = directory === 'students';
     const base = `/admin/${directory}`;
@@ -38,7 +46,27 @@ export default function PeopleIndex({
                 <DirectoryFilters
                     filters={filters}
                     url={base}
-                    groupLabel={student ? 'Program contains' : 'Department contains'}
+                    groupLabel={student ? 'Program' : 'Department'}
+                    groupOptions={
+                        student
+                            ? catalog.programs.map((p) => ({
+                                  value: p.code,
+                                  label: `${p.code} · ${p.name}`,
+                              }))
+                            : catalog.departments.map((name) => ({ value: name, label: name }))
+                    }
+                    years={
+                        student
+                            ? Array.from(
+                                  {
+                                      length: Math.max(
+                                          ...catalog.programs.map((p) => p.max_year_level),
+                                      ),
+                                  },
+                                  (_, i) => i + 1,
+                              )
+                            : undefined
+                    }
                 />
                 <DataTable
                     caption={`${directory} directory`}

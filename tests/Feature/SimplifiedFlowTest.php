@@ -9,9 +9,12 @@ use App\Models\NfcCredential;
 use App\Models\Person;
 use App\Models\ScanAttempt;
 use App\Services\Credentials\CredentialLifecycle;
+use App\Services\Monitoring\PassageCorrections;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\ManagementTestCase;
 
 class SimplifiedFlowTest extends ManagementTestCase
@@ -112,5 +115,109 @@ class SimplifiedFlowTest extends ManagementTestCase
             $this->post('/admin/students', $this->student([$field => ['unexpected']]))->assertSessionHasErrors($field);
         }
         $this->post('/admin/employees', $this->employee(['department' => ['unexpected']]))->assertSessionHasErrors('department');
+    }
+
+    public static function sequences(): array
+    {
+        return [
+            'first entry' => [null, 'entry', false, null],
+            'first exit' => [null, 'exit', false, 'exit_without_recorded_entry'],
+            'same-day repeated entry' => ['entry', 'entry', false, 'repeated_entry'],
+            'same-day repeated exit' => ['exit', 'exit', false, 'repeated_exit'],
+            'same-day completed visit' => ['entry', 'exit', false, null],
+            'same-day return' => ['exit', 'entry', false, null],
+            'new-day unclosed entry' => ['entry', 'entry', true, 'previous_day_unclosed_entry'],
+            'overnight exit' => ['entry', 'exit', true, 'exit_after_earlier_day_entry'],
+            'new-day repeated exit' => ['exit', 'exit', true, 'exit_without_entry_today'],
+            'new-day return' => ['exit', 'entry', true, null],
+        ];
+    }
+
+    #[DataProvider('sequences')]
+    public function test_sequence_warnings_record_real_scans_without_inventing_or_blocking_passages(?string $previous, string $direction, bool $nextDay, ?string $notice): void
+    {
+        $start = CarbonImmutable::parse('2026-11-09T15:59:40Z'); // 23:59 Manila; crossing midnight leaves the UTC date unchanged.
+        $this->travelTo($start);
+        [$gate, $account] = $this->station();
+        [$person, , $payload] = $this->coin();
+        $this->signIn($account);
+        if ($previous) {
+            $this->postJson('/guard/gates/'.$gate->id.'/scan', ['request_id' => (string) Str::uuid(), 'payload' => $payload, 'direction' => $previous])->assertOk();
+        }
+        $this->travelTo($start->addSeconds($nextDay ? 30 : 12));
+        $request = (string) Str::uuid();
+        $response = $this->postJson('/guard/gates/'.$gate->id.'/scan', ['request_id' => $request, 'payload' => $payload, 'direction' => $direction])
+            ->assertOk()->assertJsonPath('passage.direction', $direction)->assertJsonPath('passage.sequence_notice', $notice)->assertJsonPath('review.status', 'confirmed');
+        $this->assertSame($previous ? 2 : 1, AccessEvent::count());
+        $event = AccessEvent::where('public_id', $response->json('passage.id'))->sole();
+        $this->assertSame($notice, $event->sequence_notice);
+        if ($notice && $previous) {
+            $response->assertJsonPath('sequence_context.direction', $previous)->assertJsonPath('sequence_context.gate', $gate->code);
+        } else {
+            $response->assertJsonPath('sequence_context', null);
+        }
+        $this->withCredentials()->withCookie(config('session.cookie'), app('session')->getId());
+        $this->getJson('/guard/gates/'.$gate->id.'/activity')->assertOk()->assertJsonPath('records.0.sequence_notice', $notice);
+        $this->getJson('/guard/gates/'.$gate->id.'/requests/'.$request)->assertOk()->assertJsonPath('passage.sequence_notice', $notice)->assertJsonPath('passage.id', $event->public_id);
+        $this->assertSame($previous ? 2 : 1, AccessEvent::count());
+    }
+
+    public function test_midnight_does_not_reset_duplicate_window_and_voided_history_is_ignored(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-11-09T15:59:57Z'));
+        [$gate, $account] = $this->station();
+        [, , $payload] = $this->coin();
+        $this->signIn($account);
+        $body = ['payload' => $payload, 'direction' => 'entry'];
+        $this->postJson('/guard/gates/'.$gate->id.'/scan', [...$body, 'request_id' => (string) Str::uuid()])->assertOk();
+        $event = AccessEvent::sole();
+        $this->travel(5)->seconds();
+        $this->postJson('/guard/gates/'.$gate->id.'/scan', [...$body, 'request_id' => (string) Str::uuid()])->assertOk()->assertJsonPath('review.reason', 'duplicate_passage')->assertJsonPath('passage', null);
+        app(PassageCorrections::class)->append($this->admin, $event, ['expected_revision' => 0, 'action' => 'void', 'reason' => 'Synthetic wrong-direction correction'], 'physical');
+        $this->travel(12)->seconds();
+        $this->postJson('/guard/gates/'.$gate->id.'/scan', [...$body, 'request_id' => (string) Str::uuid(), 'direction' => 'exit'])->assertOk()->assertJsonPath('passage.sequence_notice', 'exit_without_recorded_entry')->assertJsonPath('sequence_context', null);
+        $this->assertSame(2, AccessEvent::count());
+        $this->assertSame(1, AccessEvent::effective()->count());
+    }
+
+    public function test_lost_coin_stops_immediately_and_failed_replacement_never_reactivates_it(): void
+    {
+        [$gate, $account] = $this->station();
+        [$person, $old, $oldPayload] = $this->coin();
+        $this->postJson('/admin/credentials/'.$old->public_id.'/revoke', ['reason' => 'lost'])->assertOk()->assertJsonPath('credential.status', 'revoked');
+        $this->assertNull($person->fresh()->active_credential_assignment_id);
+        $this->signIn($account);
+        $scan = fn ($payload) => $this->postJson('/guard/gates/'.$gate->id.'/scan', ['request_id' => (string) Str::uuid(), 'payload' => $payload, 'direction' => 'entry']);
+        $scan($oldPayload)->assertOk()->assertJsonPath('verification.reason', 'revoked')->assertJsonPath('identity', null)->assertJsonPath('passage', null);
+        $this->assertSame(0, AccessEvent::count());
+        $service = app(CredentialLifecycle::class);
+        $issue = fn () => $service->issue($this->admin, ['person_id' => $person->id, 'record_version' => $person->fresh()->record_version, 'label' => 'LOST-'.Str::random(12), 'mode' => 'lost', 'replaces_id' => $old->public_id, 'request_id' => (string) Str::uuid()], 'lost-replacement', 'physical');
+        $failed = $issue();
+        $service->terminate($this->admin, NfcCredential::where('public_id', $failed['credential']['id'])->sole(), 'cancel', 'issuance_cancelled');
+        $this->assertSame('revoked', $old->fresh()->status);
+        $this->assertNull($person->fresh()->active_credential_assignment_id);
+        $receipt = $issue();
+        $new = NfcCredential::where('public_id', $receipt['credential']['id'])->sole();
+        $scan($receipt['payload'])->assertOk()->assertJsonPath('verification.reason', 'pending')->assertJsonPath('passage', null);
+        $service->readBack($this->admin, $new, 'lost-replacement', $receipt['payload'], $receipt['completion_nonce'], 'physical');
+        $service->activate($this->admin, $new, 'lost-replacement', $receipt['payload'], $receipt['completion_nonce'], 'physical');
+        $this->assertNotSame($oldPayload, $receipt['payload']);
+        $scan($oldPayload)->assertOk()->assertJsonPath('verification.reason', 'revoked')->assertJsonPath('identity', null)->assertJsonPath('passage', null);
+        $scan($receipt['payload'])->assertOk()->assertJsonPath('passage.direction', 'entry')->assertJsonPath('identity.name', $person->full_name);
+        $this->assertSame(1, AccessEvent::count());
+        $this->assertSame('lost', $old->fresh()->close_reason);
+        $this->assertNotNull($old->assignment->fresh()->ended_at);
+    }
+
+    public function test_person_record_keeps_current_coin_visible_after_many_cancelled_replacements(): void
+    {
+        [$person, $current] = $this->coin();
+        $service = app(CredentialLifecycle::class);
+        for ($i = 0; $i < 11; $i++) {
+            $pending = $service->issue($this->admin, ['person_id' => $person->id, 'record_version' => $person->fresh()->record_version, 'label' => 'CANCELLED-'.Str::random(12), 'mode' => 'replace', 'replaces_id' => $current->public_id, 'request_id' => (string) Str::uuid()], 'cancelled-replacement', 'physical');
+            $service->terminate($this->admin, NfcCredential::where('public_id', $pending['credential']['id'])->sole(), 'cancel', 'issuance_cancelled');
+        }
+        $this->get('/admin/students/'.$person->id)->assertInertia(fn (Assert $p) => $p->has('credentials', 10)->where('credentials.0.id', $current->public_id)->where('credentials.0.selected', true));
+        $this->get('/admin/credentials/create?person_id='.$person->id)->assertOk()->assertInertia(fn (Assert $p) => $p->where('selectedPerson.id', $person->id)->where('mode', 'replace'));
     }
 }

@@ -14,6 +14,8 @@ The Gates & accounts list shows the gate and its username together; no separate 
 
 Students require name, student number, program, year level, academic year, semester and status. Select among the 17 BU Polangui programmes and supported year levels, currently 1–4. Academic year uses consecutive years such as 2026-2027. Employee records require name, employee number, department, position and status; choose one of the six departments. Photo upload is optional in the current form: JPEG/PNG/WebP up to 2 MB, privately normalized. Search before adding duplicates.
 
+The directory lists also have catalogue dropdowns: Program and Year level for Students, Department for Employees. Other / older record values finds retained older profiles. Exact program filtering keeps BSIT separate from BSIT Animation. Combine filters with search/status/archive options; Clear filters restores the full list.
+
 An active person plus an activated selected NFC credential can scan. No separate campus-access grant is needed. Deactivate a person or revoke their credential to stop eligibility. Academic year/semester describe the profile and do not automatically create an enrollment/attendance policy. Existing legacy profiles are preserved; choose current catalog values when editing them.
 
 ## Issue and replace coins
@@ -25,9 +27,13 @@ An active person plus an activated selected NFC credential can scan. No separate
 
 External erasure/rewrite cannot update the registry. Reconcile and revoke an orphaned reference, then deliberately issue a replacement. Never transfer an existing credential's ownership. Retain old labels/history. The previous student/employee active coins remain unchanged.
 
+For loss, open the person → Manage coin / report lost → Report lost or revoke coin → Lost tag → confirm. Verify Revoked, then use Issue replacement. The missing coin is not required. Check the person's identity first, and never postpone lost revocation until replacement activation. A failed replacement leaves the lost coin revoked. If the old coin is found, do not reactivate its old reference. See [edge cases and lost-coin procedure](scan-edge-cases.md).
+
 ## Monitor and correct
 
 Valid scans automatically record the selected Entry/Exit. Denials and duplicate suppression remain separate. Reports use Manila periods and effective, nonvoided records. A new NFC-scan record is not a manual identity attestation or independent proof of crossing. Presence is estimated, not attendance.
+
+Repeated directions, missing Entry and earlier-day unclosed records are amber warnings on saved scans. They remain visible in history; they are not the same as a suppressed rapid duplicate. New history gaps never automatically create/backdate an opposite passage or reset at midnight. Review a suspected wrong direction and apply a reasoned correction when warranted.
 
 Use reasoned append-only note/void/reinstate corrections for mistakes; do not edit originals. Anomalies are review indicators, not misconduct. Reports export privately with existing row bounds. AI remains Gemini Free Tier synthetic lab-only, without paid fallback/billing; main/production AI is excluded. Use [backup/recovery](backup-and-recovery.md), approved privacy/retention procedures and [guard recovery](security-guard-guide.md). Production and broader device/operational acceptance remain pending.
 

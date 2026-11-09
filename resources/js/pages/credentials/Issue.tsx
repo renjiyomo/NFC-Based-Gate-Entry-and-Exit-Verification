@@ -37,7 +37,9 @@ export default function Issue({
     simulated: boolean;
 }) {
     const [person, setPerson] = useState(selectedPerson);
-    const [mode, setMode] = useState(initialMode);
+    const [mode, setMode] = useState(
+        initialMode === 'new' && selectedPerson?.current ? 'replace' : initialMode,
+    );
     const [label, setLabel] = useState('');
     const [until, setUntil] = useState('');
     const [record, setRecord] = useState<CredentialRecord | null>(null);
@@ -367,8 +369,12 @@ export default function Issue({
                             value={mode}
                             onChange={(e) => setMode(e.target.value)}
                         >
-                            <option value="new">New credential</option>
-                            <option value="replace">Replace the current credential</option>
+                            <option value="new" disabled={Boolean(person?.current)}>
+                                New credential
+                            </option>
+                            <option value="replace" disabled={!person?.current}>
+                                Replace the current credential
+                            </option>
                             {initialMode === 'lost' && (
                                 <option value="lost">Replace a reported lost credential</option>
                             )}

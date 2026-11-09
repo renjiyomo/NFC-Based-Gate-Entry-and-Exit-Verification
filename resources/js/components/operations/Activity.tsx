@@ -5,6 +5,7 @@ import {
     operationRequest,
     reasonLabel,
     reviewStatusLabel,
+    sequenceLabel,
     type ActivityFeed,
 } from '../../lib/operations';
 import { manilaTime } from '../../lib/management';
@@ -116,7 +117,7 @@ export default function Activity({
                                 <td>
                                     <Badge
                                         tone={
-                                            record.voided
+                                            record.voided || record.sequence_notice
                                                 ? 'warning'
                                                 : record.confirmed_at
                                                   ? 'success'
@@ -134,6 +135,11 @@ export default function Activity({
                                     {record.review_reason && (
                                         <span className="table-secondary">
                                             {reasonLabel(record.review_reason)}
+                                        </span>
+                                    )}
+                                    {record.sequence_notice && (
+                                        <span className="table-secondary">
+                                            Warning: {sequenceLabel(record.sequence_notice)}
                                         </span>
                                     )}
                                 </td>

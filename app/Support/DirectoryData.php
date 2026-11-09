@@ -22,10 +22,10 @@ class DirectoryData
     {
         $validator = Validator::make($request->query(), ['q' => ['nullable', 'string', 'max:100'], 'status' => ['nullable', Rule::in(['active', 'inactive'])],
             'records' => ['nullable', Rule::in(['current', 'archived', 'all'])], 'group' => ['nullable', 'string', 'max:120'], 'access' => ['nullable', Rule::in(['authorized', 'not_authorized'])],
-            'gate_id' => ['nullable', 'integer', 'min:1'], 'per_page' => ['nullable', Rule::in([15, 30, 50])], 'page' => ['nullable', 'integer', 'min:1', 'max:100000']]);
+            'year_level' => ['nullable', 'string', 'max:16'], 'gate_id' => ['nullable', 'integer', 'min:1'], 'per_page' => ['nullable', Rule::in([15, 30, 50])], 'page' => ['nullable', 'integer', 'min:1', 'max:100000']]);
         abort_if($validator->fails(), 422, 'Invalid directory filters.');
 
-        return ['q' => '', 'status' => '', 'records' => 'current', 'group' => '', 'access' => '', 'gate_id' => '', 'per_page' => 15, ...array_filter($validator->validated(), fn ($value) => $value !== null)];
+        return ['q' => '', 'status' => '', 'records' => 'current', 'group' => '', 'year_level' => '', 'access' => '', 'gate_id' => '', 'per_page' => 15, ...array_filter(array_diff_key($validator->validated(), ['page' => true]), fn ($value) => $value !== null)];
     }
 
     public static function records(Builder $query, array $filters): Builder

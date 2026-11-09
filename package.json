@@ -11,7 +11,7 @@
     "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
-    "test:nfc": "node --test tests/frontend/nfc.test.mjs",
+    "test:nfc": "node --test tests/frontend/*.test.mjs",
     "format": "prettier --write resources/js resources/css vite.config.ts tsconfig.json",
     "format:check": "prettier --check resources/js resources/css vite.config.ts tsconfig.json"
   },

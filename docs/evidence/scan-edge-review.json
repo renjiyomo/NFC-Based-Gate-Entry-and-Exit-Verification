@@ -1,0 +1,132 @@
+{
+    "date": "2026-11-09",
+    "scope": "Local software and read-only browser checks; no revised physical NFC\/speaker acceptance",
+    "php_tests": 210,
+    "php_assertions": 2313,
+    "frontend_tests": 28,
+    "concurrency": {
+        "passed": true,
+        "cases": [
+            "two guards \/ different request IDs: one passage, one suppressed duplicate",
+            "same guard \/ same request ID: one attempt and one passage",
+            "confirmation versus cancellation: one terminal result consistent with passage",
+            "confirmation versus revocation: no passage after committed revocation",
+            "different administrators \/ overlapping detection: one flag per detection key",
+            "different administrators \/ same anomaly revision: one review and one stale rejection",
+            "same summary task \/ two workers: one claim and one validated fixture result",
+            "different summary tasks \/ one remaining claim: one result and one daily-limit denial",
+            "gate account \/ concurrent different scan IDs: one automatic passage and one duplicate",
+            "gate account \/ concurrent same scan ID: one attempt and one automatic passage",
+            "automatic scan versus lost revocation: no passage after committed revocation; later scans denied"
+        ],
+        "concurrent_overlap_observed": true,
+        "test_row_counts_restored": true
+    },
+    "runtime_counts": {
+        "nfcheck": {
+            "migrations": 19,
+            "users": 6,
+            "persons": 2,
+            "gates": 2,
+            "nfc_credentials": 0,
+            "scan_attempts": 0,
+            "access_events": 0,
+            "passage_corrections": 0,
+            "anomaly_flags": 0,
+            "anomaly_evidence": 0,
+            "anomaly_reviews": 0,
+            "summary_requests": 0,
+            "summary_tasks": 0,
+            "summary_results": 0,
+            "summary_reviews": 0,
+            "summary_controls": 1,
+            "pending_reviews": 0,
+            "event_sources": [],
+            "immutable_sql_denials": 23
+        },
+        "nfcheck_testing": {
+            "migrations": 19,
+            "users": 0,
+            "persons": 0,
+            "gates": 0,
+            "nfc_credentials": 0,
+            "scan_attempts": 0,
+            "access_events": 0,
+            "passage_corrections": 0,
+            "anomaly_flags": 0,
+            "anomaly_evidence": 0,
+            "anomaly_reviews": 0,
+            "summary_requests": 0,
+            "summary_tasks": 0,
+            "summary_results": 0,
+            "summary_reviews": 0,
+            "summary_controls": 1,
+            "pending_reviews": 0,
+            "event_sources": [],
+            "immutable_sql_denials": 23
+        },
+        "nfcheck_simulator": {
+            "migrations": 19,
+            "users": 4,
+            "persons": 2,
+            "gates": 1,
+            "nfc_credentials": 7,
+            "scan_attempts": 11,
+            "access_events": 5,
+            "passage_corrections": 3,
+            "anomaly_flags": 3,
+            "anomaly_evidence": 6,
+            "anomaly_reviews": 2,
+            "summary_requests": 1,
+            "summary_tasks": 1,
+            "summary_results": 1,
+            "summary_reviews": 1,
+            "summary_controls": 1,
+            "pending_reviews": 0,
+            "event_sources": [
+                {
+                    "source": "simulated",
+                    "count": 5
+                }
+            ],
+            "immutable_sql_denials": 23
+        },
+        "nfcheck_hardware": {
+            "migrations": 19,
+            "users": 4,
+            "persons": 2,
+            "gates": 1,
+            "nfc_credentials": 9,
+            "scan_attempts": 26,
+            "access_events": 6,
+            "passage_corrections": 0,
+            "anomaly_flags": 0,
+            "anomaly_evidence": 0,
+            "anomaly_reviews": 0,
+            "summary_requests": 0,
+            "summary_tasks": 0,
+            "summary_results": 0,
+            "summary_reviews": 0,
+            "summary_controls": 1,
+            "pending_reviews": 0,
+            "event_sources": [
+                {
+                    "source": "physical",
+                    "count": 6
+                }
+            ],
+            "immutable_sql_denials": 23
+        },
+        "requested_admins_active": 3
+    },
+    "selected_hardware_coin_labels": {
+        "HW-TAG-08": "employee",
+        "HW-TAG-09": "student"
+    },
+    "migration_added": false,
+    "browser_created_passages": false,
+    "browser_revoked_coins": false,
+    "phone_test_pending": true,
+    "live_ai_calls": 0,
+    "public_deployment": false
+}

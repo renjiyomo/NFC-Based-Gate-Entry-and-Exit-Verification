@@ -73,8 +73,9 @@ class CredentialController
     {
         $data = $request->validate(['person_id' => ['nullable', 'integer', 'min:1'], 'replaces_id' => ['nullable', 'uuid'], 'mode' => ['nullable', Rule::in(['new', 'replace', 'lost'])]]);
         $person = isset($data['person_id']) ? Person::where('status', 'active')->findOrFail($data['person_id']) : null;
+        $selected = $person ? $this->person($person) : null;
 
-        return Inertia::render('credentials/Issue', ['selectedPerson' => $person ? $this->person($person) : null, 'mode' => $data['mode'] ?? 'new', 'replacesId' => $data['replaces_id'] ?? null, 'simulated' => $request->routeIs('simulator.*')]);
+        return Inertia::render('credentials/Issue', ['selectedPerson' => $selected, 'mode' => $data['mode'] ?? (! empty($selected['current']) ? 'replace' : 'new'), 'replacesId' => $data['replaces_id'] ?? null, 'simulated' => $request->routeIs('simulator.*')]);
     }
 
     public function show(NfcCredential $credential): Response

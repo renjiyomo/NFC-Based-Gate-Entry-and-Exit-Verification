@@ -3,6 +3,7 @@ import { DataTable } from '../management/Common';
 import { Badge } from '../ui';
 import { manilaTime } from '../../lib/management';
 import { rowState, type HistoryRow } from '../../lib/monitoring';
+import { sequenceLabel } from '../../lib/gateFeedback';
 
 export default function HistoryTable({ rows }: { rows: HistoryRow[] }) {
     return (
@@ -37,7 +38,7 @@ export default function HistoryTable({ rows }: { rows: HistoryRow[] }) {
                     <td>
                         <Badge
                             tone={
-                                r.voided || r.outcome === 'denied'
+                                r.voided || r.outcome === 'denied' || r.sequence_notice
                                     ? 'warning'
                                     : r.passage_id
                                       ? 'success'
@@ -47,6 +48,11 @@ export default function HistoryTable({ rows }: { rows: HistoryRow[] }) {
                             {rowState(r)}
                         </Badge>
                         <span className="table-secondary">{r.review_reason ?? r.reason}</span>
+                        {r.sequence_notice && (
+                            <span className="table-secondary">
+                                Warning: {sequenceLabel(r.sequence_notice)}
+                            </span>
+                        )}
                     </td>
                     <td>
                         <Link className="table-action" href={`/admin/history/${r.view}/${r.id}`}>

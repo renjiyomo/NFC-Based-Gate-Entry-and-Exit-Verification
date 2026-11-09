@@ -87,17 +87,36 @@ class PeopleManagementTest extends ManagementTestCase
     public function test_search_filters_pagination_and_literal_wildcards_are_server_backed(): void
     {
         for ($i = 0; $i < 17; $i++) {
-            $this->makePerson('students', ['full_name' => sprintf('Synthetic identity %02d', $i), 'program' => $i < 10 ? 'Computing' : 'Engineering']);
+            $this->makePerson('students', ['full_name' => sprintf('Synthetic identity %02d', $i), 'program' => $i < 10 ? 'BSCS' : 'BSCpE']);
         }
         $this->makePerson('employees', ['full_name' => 'Synthetic employee']);
         $this->makePerson('students', ['full_name' => 'Literal %_ identity', 'status' => 'inactive']);
         $this->get('/admin/students?per_page=15')->assertInertia(fn (Assert $page) => $page->where('records.total', 18)->has('records.data', 15)->where('records.current_page', 1));
         $this->get('/admin/students?per_page=15&page=2')->assertInertia(fn (Assert $page) => $page->has('records.data', 3)->where('records.current_page', 2));
-        $this->get('/admin/students?group=Computing&status=active')->assertInertia(fn (Assert $page) => $page->where('records.total', 10));
+        $this->get('/admin/students?group=BSCS&status=active')->assertInertia(fn (Assert $page) => $page->where('records.total', 10));
         $this->get('/admin/students?q=%25_')->assertInertia(fn (Assert $page) => $page->where('records.total', 1)->where('records.data.0.full_name', 'Literal %_ identity'));
         $this->get('/admin/students?q='.urlencode("' OR 1=1 --"))->assertInertia(fn (Assert $page) => $page->where('records.total', 0));
         $this->get('/admin/students?per_page=10000')->assertStatus(422);
         $this->get('/admin/students?q[]=invalid')->assertStatus(422);
+    }
+
+    public function test_directory_dropdowns_use_exact_catalogue_values_and_keep_older_records_findable(): void
+    {
+        $it = $this->makePerson('students', ['program' => 'BSIT', 'year_level' => 1]);
+        $this->makePerson('students', ['program' => 'BSIT Animation', 'year_level' => 2]);
+        $older = $this->makePerson('students', ['program' => 'Older stored programme', 'year_level' => 7]);
+        $this->makePerson('employees', ['department' => 'Nursing Department']);
+        $this->makePerson('employees', ['department' => 'Computer Studies Department']);
+        $this->makePerson('employees', ['department' => 'Older stored department']);
+        $this->get('/admin/students?group=BSIT&year_level=1')->assertInertia(fn (Assert $p) => $p->has('catalog.programs', 17)->where('records.total', 1)->where('records.data.0.id', $it->id));
+        $this->get('/admin/students?group=__legacy__&year_level=__legacy__')->assertInertia(fn (Assert $p) => $p->where('records.total', 1)->where('records.data.0.id', $older->id));
+        $this->get('/admin/students?page=2')->assertInertia(fn (Assert $p) => $p->missing('filters.page'));
+        $this->get('/admin/employees?group='.urlencode('Nursing Department'))->assertInertia(fn (Assert $p) => $p->has('catalog.departments', 6)->where('records.total', 1));
+        $this->get('/admin/employees?group=__legacy__')->assertInertia(fn (Assert $p) => $p->where('records.total', 1));
+        foreach (['group=Invented', 'group[]=BSIT', 'year_level[]=1', 'year_level=999'] as $filter) {
+            $this->get('/admin/students?'.$filter)->assertStatus(422);
+        }
+        $this->get('/admin/employees?year_level=1')->assertStatus(422);
     }
 
     public function test_photos_are_reencoded_privately_and_only_authorized_admins_can_read_them(): void

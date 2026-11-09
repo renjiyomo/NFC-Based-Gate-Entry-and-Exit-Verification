@@ -37,6 +37,7 @@ export interface Operation {
     } | null;
     passage: Passage | null;
     duplicate_of: Passage | null;
+    sequence_context?: { direction: Direction; confirmed_at: string; gate: string | null } | null;
 }
 export interface ActivityRecord {
     voided?: boolean;
@@ -53,6 +54,7 @@ export interface ActivityRecord {
     received_at: string;
     confirmed_at: string | null;
     duplicate: boolean;
+    sequence_notice?: string | null;
 }
 export interface ActivityFeed {
     records: ActivityRecord[];
@@ -163,13 +165,7 @@ export function reasonLabel(reason: string): string {
         ? `Authorization changed: ${reasonLabel(reason.slice(8))}`
         : (labels[reason] ?? reason.replaceAll('_', ' '));
 }
-export function sequenceLabel(value: string): string {
-    return value === 'exit_without_recorded_entry'
-        ? 'No earlier entry is recorded. Review the person; this missing context does not automatically deny an exit.'
-        : value === 'repeated_entry'
-          ? 'The latest recorded direction is also Entry. Check that you observed a new passage.'
-          : 'The latest recorded direction is also Exit. Check that you observed a new passage.';
-}
+export { sequenceLabel } from './gateFeedback';
 export function reviewStatusLabel(status: string): string {
     return (
         (

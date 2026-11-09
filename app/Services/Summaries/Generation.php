@@ -146,7 +146,7 @@ class Generation
             }
             $c = $this->availability();
             SummaryResult::create(['summary_request_id' => $r->id, 'status' => $status, 'selected_facts' => $selection['ids'] ?? null, 'sentences' => $selection['sentences'] ?? null, 'error_code' => $error, 'provider' => $c['provider'], 'model' => $c['model'], ...$usage, 'created_at' => now()]);
-            app(AuditLogger::class)->record('summary.'.$status,null,$r,['source' => $r->source, 'reason' => $error ?? 'validated_fact_selection', 'policy_version' => Aggregates::VERSION]);
+            app(AuditLogger::class)->record('summary.'.$status, null, $r, ['source' => $r->source, 'reason' => $error ?? 'validated_fact_selection', 'policy_version' => Aggregates::VERSION]);
         }, 3);
     }
 }

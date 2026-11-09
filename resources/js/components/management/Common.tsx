@@ -201,11 +201,15 @@ export function DirectoryFilters({
     filters,
     url,
     groupLabel,
+    groupOptions,
+    years,
     gates,
 }: {
     filters: Filters;
     url: string;
     groupLabel?: string;
+    groupOptions?: { value: string; label: string }[];
+    years?: number[];
     gates?: boolean;
 }) {
     const form = useForm({ ...filters });
@@ -227,14 +231,47 @@ export function DirectoryFilters({
                     value={form.data.q}
                     onChange={(e) => form.setData('q', e.target.value)}
                 />
-                {groupLabel && (
-                    <Field
+                {groupLabel && groupOptions ? (
+                    <Select
                         name="group"
                         label={groupLabel}
-                        maxLength={120}
                         value={form.data.group}
                         onChange={(e) => form.setData('group', e.target.value)}
-                    />
+                    >
+                        <option value="">All {groupLabel.toLowerCase()}s</option>
+                        {groupOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                        <option value="__legacy__">Other / older record values</option>
+                    </Select>
+                ) : (
+                    groupLabel && (
+                        <Field
+                            name="group"
+                            label={groupLabel}
+                            maxLength={120}
+                            value={form.data.group}
+                            onChange={(e) => form.setData('group', e.target.value)}
+                        />
+                    )
+                )}
+                {years && (
+                    <Select
+                        name="year_level"
+                        label="Year level"
+                        value={form.data.year_level}
+                        onChange={(e) => form.setData('year_level', e.target.value)}
+                    >
+                        <option value="">All year levels</option>
+                        {years.map((year) => (
+                            <option key={year} value={year}>
+                                Year {year}
+                            </option>
+                        ))}
+                        <option value="__legacy__">Other / unspecified year</option>
+                    </Select>
                 )}
                 <Select
                     name="status"

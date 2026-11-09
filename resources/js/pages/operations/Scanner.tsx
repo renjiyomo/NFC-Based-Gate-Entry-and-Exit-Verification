@@ -16,6 +16,7 @@ import {
 } from '../../lib/operations';
 import { manilaTime } from '../../lib/management';
 import { useActivity } from '../../components/operations/Activity';
+import { gateFeedback, playFeedback, sequenceLabel } from '../../lib/gateFeedback';
 
 export default function Scanner({
     station,
@@ -37,6 +38,9 @@ export default function Scanner({
     const [missing, setMissing] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [status, setStatus] = useState('');
+    const [sound, setSound] = useState(false);
+    const [soundNote, setSoundNote] = useState('');
+    const audio = useRef<AudioContext | null>(null);
     const active = useRef<AbortController | null>(null);
     const request = useRef<string | null>(requestId);
     const payload = useRef<string | null>(null);
@@ -54,19 +58,28 @@ export default function Scanner({
                 preserveScroll: true,
             });
     }
-    function accept(r: Operation) {
+    async function prepareSound() {
+        try {
+            audio.current ??= new AudioContext();
+            await audio.current.resume();
+            setSoundNote(
+                audio.current.state === 'running'
+                    ? ''
+                    : 'Sound is unavailable. Read the on-screen result.',
+            );
+        } catch {
+            setSoundNote('Sound is unavailable. Read the on-screen result.');
+        }
+    }
+    function accept(r: Operation, announceSound = false) {
         if (!mounted.current) return;
         setResult(r);
         setUncertain(false);
         setMissing(false);
         payload.current = null;
-        setStatus(
-            r.passage
-                ? `${r.direction === 'entry' ? 'Entry' : 'Exit'} recorded.`
-                : r.duplicate_of
-                  ? 'Duplicate suppressed. No additional passage recorded.'
-                  : 'Credential rejected. No passage recorded.',
-        );
+        setStatus('');
+        if (announceSound && sound && audio.current)
+            playFeedback(audio.current, gateFeedback(r).tone);
         if (simulator) acceptVirtualTagHandoff();
         void activity.refresh();
     }
@@ -95,6 +108,7 @@ export default function Scanner({
                     payload: payload.current,
                     direction: frozen.current,
                 }),
+                true,
             );
         } catch (e) {
             setErrors(operationErrors(e));
@@ -111,6 +125,7 @@ export default function Scanner({
         setErrors({});
         setResult(null);
         setStatus('Present one NFC coin.');
+        if (sound) void prepareSound();
         active.current = new AbortController();
         try {
             const ref = simulator
@@ -164,6 +179,7 @@ export default function Scanner({
                 active.current?.abort();
                 payload.current = null;
                 setReading(false);
+                void audio.current?.suspend().catch(() => {});
             }
         };
         document.addEventListener('visibilitychange', hide);
@@ -172,9 +188,11 @@ export default function Scanner({
             mounted.current = false;
             active.current?.abort();
             payload.current = null;
+            void audio.current?.close().catch(() => {});
             document.removeEventListener('visibilitychange', hide);
         };
     }, []);
+    const feedback = result ? gateFeedback(result) : null;
     return (
         <ManagementPage
             page="scanner"
@@ -220,6 +238,16 @@ export default function Scanner({
                         automatically.
                     </p>
                     <Button
+                        aria-pressed={sound}
+                        onClick={() => {
+                            if (!sound) void prepareSound();
+                            setSound(!sound);
+                        }}
+                    >
+                        Sound {sound ? 'on' : 'off'}
+                    </Button>
+                    {soundNote && <p className="form-note">{soundNote}</p>}
+                    <Button
                         variant="primary"
                         disabled={
                             !station ||
@@ -244,23 +272,39 @@ export default function Scanner({
                     <p role="status" aria-live="polite">
                         {status}
                     </p>
-                    {result && (
-                        <div>
+                    {result && feedback && (
+                        <div
+                            className={`scan-result scan-result-${feedback.tone}`}
+                            role={
+                                feedback.tone === 'warning' || feedback.tone === 'denied'
+                                    ? 'alert'
+                                    : 'status'
+                            }
+                        >
                             <Badge
                                 tone={
-                                    result.passage
-                                        ? 'success'
-                                        : result.duplicate_of
-                                          ? 'neutral'
-                                          : 'warning'
+                                    feedback.tone === 'warning' || feedback.tone === 'denied'
+                                        ? 'warning'
+                                        : result.passage
+                                          ? 'success'
+                                          : result.duplicate_of
+                                            ? 'neutral'
+                                            : 'warning'
                                 }
                             >
-                                {result.passage
-                                    ? 'Recorded'
-                                    : result.duplicate_of
-                                      ? 'Duplicate suppressed'
-                                      : 'Rejected'}
+                                {feedback.title}
                             </Badge>
+                            <p className="scan-result-message">{feedback.message}</p>
+                            {result.sequence_context && (
+                                <p>
+                                    Previous effective record:{' '}
+                                    {result.sequence_context.direction === 'entry'
+                                        ? 'Entry'
+                                        : 'Exit'}{' '}
+                                    · {manilaTime(result.sequence_context.confirmed_at)} ·{' '}
+                                    {result.sequence_context.gate}
+                                </p>
+                            )}
                             {result.identity && (
                                 <>
                                     <Portrait
@@ -273,6 +317,13 @@ export default function Scanner({
                                     </p>
                                 </>
                             )}
+                            {result.duplicate_of && (
+                                <p>
+                                    Original{' '}
+                                    {result.duplicate_of.direction === 'entry' ? 'Entry' : 'Exit'}:{' '}
+                                    {manilaTime(result.duplicate_of.confirmed_at)}
+                                </p>
+                            )}
                             {result.passage ? (
                                 <p>
                                     {result.direction === 'entry' ? 'Entry' : 'Exit'} ·{' '}
@@ -283,7 +334,6 @@ export default function Scanner({
                                     <p>{reasonLabel(result.verification.reason)}</p>
                                 )
                             )}
-                            <p className="form-note">Recorded by this gate account.</p>
                         </div>
                     )}
                     {uncertain && (
@@ -336,6 +386,11 @@ export default function Scanner({
                               ? 'Recorded'
                               : 'Rejected'}{' '}
                         · {manilaTime(r.received_at)}
+                        {r.sequence_notice && (
+                            <span className="table-secondary">
+                                Warning: {sequenceLabel(r.sequence_notice)}
+                            </span>
+                        )}
                     </p>
                 ))}
             </Panel>

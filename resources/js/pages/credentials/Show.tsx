@@ -28,7 +28,11 @@ export default function Show({ record: initial }: { record: CredentialRecord }) 
                 { reason },
             );
             setRecord(result.credential);
-            setMessage('Credential closed. Its assignment and audit history are retained.');
+            setMessage(
+                result.credential.close_reason === 'lost' && result.credential.status === 'revoked'
+                    ? 'Lost coin revoked. It can no longer record Entry or Exit. Issue a replacement after checking the person’s identity.'
+                    : 'Credential closed. Its assignment and audit history are retained.',
+            );
             dialog.current?.close();
         } catch (error) {
             setErrors(credentialErrors(error));
@@ -125,7 +129,7 @@ export default function Show({ record: initial }: { record: CredentialRecord }) 
                         >
                             {record.status === 'pending'
                                 ? 'Cancel pending issuance'
-                                : 'Revoke credential'}
+                                : 'Report lost or revoke coin'}
                         </Button>
                     )}
                     {person &&
@@ -150,7 +154,9 @@ export default function Show({ record: initial }: { record: CredentialRecord }) 
                 </h2>
                 <p>
                     {record.label} for {person?.name}. This credential will stop being eligible; its
-                    history is retained.
+                    history is retained. For a lost coin, revocation takes effect when this request
+                    succeeds. You do not need the missing coin. A replacement stays unusable until
+                    its matching read-back and activation succeed.
                 </p>
                 <FormErrors errors={errors} />
                 {record.status === 'active' && (

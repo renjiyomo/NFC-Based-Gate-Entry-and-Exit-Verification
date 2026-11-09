@@ -2,6 +2,8 @@
 
 This is the current workflow requested after Phase 11. Earlier phase reports describe the previous individual-guard/manual-confirmation system. Their historical evidence remains intact; their grant/review/schedule instructions do not govern new scans.
 
+The follow-up [directory, scan edge-case and lost-coin review](scan-edge-cases.md) adds list dropdowns, visible day-aware history warnings and a clearer loss/replacement route. Its latest full checks passed 210 PHP tests/2,313 assertions, 28 frontend tests and 11 real races. The original redesign report remains its earlier checkpoint.
+
 ## Roles and sequence
 
 Two operator roles remain: **Administrator** and **Gate account** (the retained database role value is `guard`). Students/employees are registered persons, not login roles. Each gate has one unique username/password account. All guards at that gate use its session; the university manages guard dates/shifts outside NFCheck. New records identify the gate account, not an individual guard on duty. Ordinary session security/idle expiry still applies; there is no forced sign-out at a shift change.

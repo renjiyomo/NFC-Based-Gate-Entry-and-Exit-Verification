@@ -4,6 +4,7 @@ import { ManagementPage, Select, FormErrors, Pagination } from '../../components
 import { Badge, Button, Panel } from '../../components/ui';
 import { manilaTime, type Paginated } from '../../lib/management';
 import { rowState, type HistoryRow } from '../../lib/monitoring';
+import { sequenceLabel } from '../../lib/gateFeedback';
 
 type Correction = { id: string; action: string; reason: string; actor: string; at: string };
 export default function Show({
@@ -67,7 +68,10 @@ export default function Show({
                                 ? 'Automatic NFC scan; no manual identity confirmation'
                                 : (r.identity_method ?? 'No passage'),
                         ],
-                        ['Sequence notice', r.sequence_notice ?? 'None'],
+                        [
+                            'Sequence notice',
+                            r.sequence_notice ? sequenceLabel(r.sequence_notice) : 'None',
+                        ],
                     ].map(([label, value]) => (
                         <div key={label}>
                             <dt>{label}</dt>

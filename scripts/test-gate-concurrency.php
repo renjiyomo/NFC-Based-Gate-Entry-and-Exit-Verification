@@ -280,6 +280,20 @@ try {
     $output = $run([$one, $one], 'users', $guard1->id);
     $check(AccessEvent::where('person_id', $person->id)->count() === 1 && ScanAttempt::where('person_id', $person->id)->count() === 1 && $output[0]['passage'] === $output[1]['passage'], 'Automatic same-request retry was not idempotent.');
     $results[] = 'gate account / concurrent same scan ID: one attempt and one automatic passage';
+
+    [$person, $receipt, $credential] = $fixture();
+    $one = [...$one, 'request' => (string) Str::uuid(), 'payload' => $receipt['payload']];
+    $run([$one, ['actor' => $admin->id, 'gate' => $gate->id, 'credential' => $credential->id, 'action' => 'revoke']], 'persons', $person->id);
+    $check($credential->fresh()->status === 'revoked' && AccessEvent::where('person_id', $person->id)->count() <= 1, 'Automatic scan/lost revocation race failed.');
+    $event = AccessEvent::where('person_id', $person->id)->first();
+    if ($event) {
+        $passageAudit = DB::table('audit_logs')->where('action', 'passage.recorded')->where('target_id', $event->id)->value('id');
+        $revocationAudit = DB::table('audit_logs')->where('action', 'credential.revoked')->where('target_id', $credential->id)->value('id');
+        $check($passageAudit && $revocationAudit && $passageAudit < $revocationAudit, 'Automatic passage was recorded after lost revocation.');
+    }
+    $after = app(AutomaticPassages::class)->scan($guard1, $gate, ['request_id' => (string) Str::uuid(), 'payload' => $receipt['payload'], 'direction' => 'entry'], 'after-lost-revocation', 'physical');
+    $check($after['verification']['reason'] === 'revoked' && $after['identity'] === null && $after['passage'] === null, 'Lost coin was accepted after revocation completed.');
+    $results[] = 'automatic scan versus lost revocation: no passage after committed revocation; later scans denied';
 } finally {
     while (DB::transactionLevel() > 0) {
         DB::rollBack();

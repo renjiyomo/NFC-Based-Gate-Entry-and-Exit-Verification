@@ -4,6 +4,8 @@
 
 Current workflow: **One username/password account per gate, automatic NFC Entry/Exit recording, database-backed BU Polangui academic dropdowns, and no separate campus-access grants or guard shift forms.** Two roles: Administrator and Gate account. See [the current workflow](docs/workflow-redesign.md). Earlier phase reports remain historical evidence.
 
+Directory lists now include program/year and department dropdowns. Repeated-direction and overnight/missing-scan cases record with visible warnings; lost coins are revoked immediately before replacement. See [the decision table and lost-coin procedure](docs/scan-edge-cases.md).
+
 Open [NFCheck sign-in](http://127.0.0.1:8000/login). Create the gate and login together; register an active person; check/write/read-back/activate a coin; then use the gate account to choose Entry or Exit and scan. Valid scans save automatically. Gate status controls its login; university guard schedules stay outside NFCheck. Existing histories and active coins are retained.
 
 The [isolated NFC simulator](http://localhost:8002/login) uses its own schema, key, cookie, administrator, gate account, synthetic people and lab gate. Current username/password handoff for every workspace is in private `.tools/secrets/operator-accounts.json`. Older individual-guard handoffs are historical. Issue/write/activate a virtual tag, hand it to the lab gate account and sign in as `sim-gate-01` in the same tab. Use **localhost:8002** for the lab and **127.0.0.1:8000** for the main app to separate browser cookies. See [the Phase 5 report](docs/phase-5-report.md) and [NFC instructions](docs/nfc-integration.md).
@@ -18,7 +20,7 @@ Recovery messages arrive only in the [local mail inbox](http://127.0.0.1:8025). 
 
 ## Final checkpoint and guides
 
-Start with [final readiness](docs/final-readiness.md), the [administrator guide](docs/administrator-guide.md) and [security guard guide](docs/security-guard-guide.md). Deployment/HTTPS templates, environment/logging reference and encrypted local backup/restore procedures are prepared. The redesigned flow passed **196 PHP tests / 2,062 assertions, 25 NFC tests and ten concurrency scenarios**. No public deployment or additional live AI request occurred. See [Phase 11](docs/phase-11-report.md).
+Start with [final readiness](docs/final-readiness.md), the [administrator guide](docs/administrator-guide.md) and [security guard guide](docs/security-guard-guide.md). Deployment/HTTPS templates, environment/logging reference and encrypted local backup/restore procedures are prepared. The latest flow review passed **210 PHP tests / 2,313 assertions, 28 frontend tests and 11 concurrency scenarios**. No public deployment or additional live AI request occurred. See [Phase 11](docs/phase-11-report.md) for the earlier deployment-preparation checkpoint.
 
 ## Run locally
 
@@ -51,6 +53,7 @@ Normal workspace routes require authentication and server-side authorization. Op
 | Document | Contents |
 | --- | --- |
 | [Current workflow](docs/workflow-redesign.md) | Gate accounts, automatic NFC scans, academic catalogues and current login handoff |
+| [Scan edge cases](docs/scan-edge-cases.md) | Directory dropdowns, repeated/overnight scans, feedback and lost-coin recovery |
 | [Workflow verification](docs/workflow-redesign-report.md) | Current tests, browser checks, preserved records and recovery receipts |
 | [Final readiness](docs/final-readiness.md) | Scope reconciliation, evidence and campus-use acceptance inputs |
 | [Phase 11 report](docs/phase-11-report.md) | Deployment preparation, encrypted recovery drills and operator guides |

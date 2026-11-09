@@ -23,6 +23,7 @@ export default function PersonShow({
 }) {
     const { simulator } = useWorkspace();
     const base = `/admin/${directory}/${record.id}`;
+    const activeCoin = credentials.find((c) => c.selected && c.status === 'active');
     return (
         <ManagementPage
             page={directory}
@@ -77,11 +78,25 @@ export default function PersonShow({
                     {!record.archived_at && record.status === 'active' && (
                         <Link
                             className="button button-primary"
-                            href={`${simulator ? '/simulator/issue' : '/admin/credentials/issue'}?person_id=${record.id}`}
+                            href={`${simulator ? '/simulator/issue' : '/admin/credentials/create'}?person_id=${record.id}`}
                         >
-                            Issue or replace NFC credential
+                            {activeCoin ? 'Replace NFC coin' : 'Issue NFC coin'}
                         </Link>
                     )}
+                    {activeCoin && (
+                        <p>
+                            <Link
+                                href={`/admin/credentials/${activeCoin.id}`}
+                                className="button button-secondary"
+                            >
+                                Manage coin / report lost
+                            </Link>
+                        </p>
+                    )}
+                    <p className="form-note">
+                        For a lost coin, revoke it as lost immediately, then issue a replacement
+                        after checking the person's identity. The missing coin is not needed.
+                    </p>
                 </Panel>
             </div>
             <Panel
