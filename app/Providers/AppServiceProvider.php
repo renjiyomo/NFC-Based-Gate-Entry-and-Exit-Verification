@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -33,6 +34,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (config('cloud.enabled') && $this->app->environment('production')
+            && parse_url((string) config('app.url'), PHP_URL_SCHEME) === 'https') {
+            URL::forceScheme('https');
+        }
         Gate::define('admin.workspace', fn (User $user): bool => $user->isAdmin());
         Gate::define('guard.workspace', fn (User $user): bool => $user->isGuard());
         Gate::after(function (User $user, string $ability, ?bool $result, array $arguments): void {

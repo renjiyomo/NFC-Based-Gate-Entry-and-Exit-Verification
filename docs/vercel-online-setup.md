@@ -62,6 +62,8 @@ Vercel's Container runtime is Beta. If Container is absent from the preset choic
 
 `APP_URL` is initially empty. On a production Vercel deployment, startup derives `https://` plus the project's production `*.vercel.app` domain from `VERCEL_PROJECT_PRODUCTION_URL`. This avoids guessing the hostname. For a custom domain or another hosting provider, set APP_URL explicitly to the stable HTTPS origin. [Vercel system variables](https://vercel.com/docs/environment-variables/system-environment-variables).
 
+Production cloud URL generation uses HTTPS when the configured application origin is HTTPS. This keeps Vite assets and generated links secure even when the host forwards a request to the container over HTTP. Local HTTP development remains available. If a deployed page is blank, inspect its script URLs as well as its HTTP status; a successful HTML response alone does not establish that the frontend loaded.
+
 The repository sets one Function region, Sydney (`syd1`), close to the selected Supabase database. Keep this setting when using this database. [Vercel Function regions](https://vercel.com/docs/functions/configuring-functions/region).
 
 ### Storage credentials missing at startup
