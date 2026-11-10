@@ -36,7 +36,7 @@ The setup verifies the downloaded tools against committed hashes, installs PHP p
 2. Open the [NFCheck repository](https://github.com/renjiyomo/NFC-Based-Gate-Entry-and-Exit-Verification).
 3. Select the main branch, then Code → Download ZIP.
 4. Extract the ZIP into a short, writable local folder, for example `C:\NFCheck`. Avoid OneDrive/network folders and do not run files from inside the ZIP viewer.
-5. Open the extracted folder. You should see README.md, artisan, package.json, composer.lock and scripts directly inside it. If they are inside another nested folder, open that folder instead.
+5. Open the extracted folder. You should see artisan, package.json, composer.lock and scripts directly inside it. If they are inside another nested folder, open that folder instead.
 
 The ZIP intentionally has no .env, .tools, vendor, node_modules or database rows. Setup creates/downloads these locally. An empty database folder or no existing phpMyAdmin database is normal at this point.
 

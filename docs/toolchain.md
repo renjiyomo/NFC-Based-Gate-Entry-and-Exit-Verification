@@ -8,4 +8,4 @@ The verified local runtime baseline is PHP 8.5.12, Node 24.22.2, Composer 2.11.1
 
 The shared XAMPP PHP/Apache installation is not the selected application server. Preserve its existing services/configuration when working on this project. PostgreSQL/S3 are optional cloud services, not prerequisites for local MySQL use.
 
-See [setup](development.md), [database connections](database-setup.md) and [security](security.md).
+See [setup](development.md) and [database connections](database-setup.md).

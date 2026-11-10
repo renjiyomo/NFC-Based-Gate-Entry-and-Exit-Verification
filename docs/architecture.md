@@ -12,4 +12,4 @@ Missing Exit detection uses bounded idempotent catch-up pages with append-only a
 
 Local MySQL, isolated test/lab schemas and online PostgreSQL retain separate credentials, keys, cookies and sources. The cloud application uses verified TLS, a restricted database role, private object storage, database sessions and shared cache.
 
-See [database structure](database.md), [security](security.md), [NFC support](nfc-integration.md) and [deployment](deployment.md).
+See [database structure](database.md), [NFC support](nfc-integration.md) and [deployment](deployment.md).
