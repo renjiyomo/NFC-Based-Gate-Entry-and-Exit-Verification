@@ -5,7 +5,6 @@ export interface WorkspaceProps {
     [key: string]: unknown;
     app: {
         name: string;
-        phase: number;
         preview: boolean;
         testWorkspace?: boolean;
         simulator?: boolean;

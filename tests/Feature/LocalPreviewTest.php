@@ -9,7 +9,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
-class PhaseOnePreviewTest extends TestCase
+class LocalPreviewTest extends TestCase
 {
     protected function setUp(): void
     {
@@ -18,7 +18,7 @@ class PhaseOnePreviewTest extends TestCase
         $this->withoutVite();
         config(['nfcheck.ui_preview' => true]);
 
-        // Phase 1 shells must not establish an operational database connection.
+        // UI previews must not open the application database.
         DB::shouldReceive('connection')->never();
     }
 
@@ -39,7 +39,6 @@ class PhaseOnePreviewTest extends TestCase
                 ->component('Workspace')
                 ->where('page', $page)
                 ->where('app.preview', true)
-                ->where('app.phase', 11)
                 ->missing('auth')
                 ->missing('users'));
     }

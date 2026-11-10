@@ -54,48 +54,18 @@ class AssignmentController
             'operable' => $assignment->guardUser->isGuard() && ! $assignment->gate->trashed() && $assignment->gate->status->value === 'active']);
     }
 
-    private function parent(ManagementRequest $request, ?GuardGateAssignment $assignment = null): string
-    {
-        if ($gate = $request->route('gate')) {
-            abort_if($assignment && $assignment->gate_id !== $gate->id, 404);
-            abort_if($request->has('gate_id') && $request->integer('gate_id') !== $gate->id, 404);
-
-            return '/admin/gates/'.$gate->id;
-        }
-        $guard = $request->route('guard');
-        abort_unless($guard->role->value === 'guard', 403);
-        abort_if($assignment && $assignment->guard_id !== $guard->id, 404);
-        abort_if($request->has('guard_id') && $request->integer('guard_id') !== $guard->id, 404);
-
-        return '/admin/guards/'.$guard->id;
-    }
-
     public function store(ManagementRequest $request, AccessManagement $access): RedirectResponse
     {
         abort(410, 'Scheduled assignments and separate access grants are retired.');
-        $back = $this->parent($request);
-        $request->run(fn () => $access->assign($request->user(), $request->validated()));
-
-        return redirect($back)->with('status', 'Gate assignment saved. Scanning remains unavailable until its development phase.');
     }
 
     public function update(ManagementRequest $request, AccessManagement $access): RedirectResponse
     {
         abort(410, 'Scheduled assignments and separate access grants are retired.');
-        $assignment = $request->route('assignment');
-        $back = $this->parent($request, $assignment);
-        $request->run(fn () => $access->assign($request->user(), $request->validated(), $assignment));
-
-        return redirect($back)->with('status', 'Schedule replaced. The previous assignment is retained as revoked.');
     }
 
     public function destroy(ManagementRequest $request, AccessManagement $access): RedirectResponse
     {
         abort(410, 'Scheduled assignments and separate access grants are retired.');
-        $assignment = $request->route('assignment');
-        $back = $this->parent($request, $assignment);
-        $request->run(fn () => $access->revokeAssignment($request->user(), $assignment));
-
-        return redirect($back)->with('status', 'Gate assignment revoked.');
     }
 }

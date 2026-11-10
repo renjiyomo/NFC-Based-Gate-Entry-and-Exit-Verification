@@ -79,7 +79,7 @@ class MonitoringQueryPlanTest extends MonitoringTestCase
             $count = $query->first()->total;
             $result['queries'][$name] = ['keys' => $keys, 'access' => $access, 'matching_rows' => (int) $count, 'elapsed_ms' => round((microtime(true) - $started) * 1000, 3)];
         }
-        file_put_contents(base_path('.tools/artifacts/phase-7-query-plans.json'), json_encode($result, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+        file_put_contents(base_path('.tools/artifacts/monitoring-query-plans.json'), json_encode($result, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
         // Warm, sequential local measurements are evidence, not a campus capacity
         // guarantee. Count queries as well as elapsed time to catch page-size N+1.
         $performance = ['engine' => $result['engine'], 'fixture_passages' => AccessEvent::count(), 'fixture_attempts' => ScanAttempt::count(), 'samples' => 20, 'transaction_rollback' => true, 'workloads' => []];
@@ -111,6 +111,6 @@ class MonitoringQueryPlanTest extends MonitoringTestCase
         }
         $this->assertSame($performance['workloads']['history_25']['queries_max'], $performance['workloads']['history_100']['queries_max']);
         $this->assertLessThanOrEqual(9, $performance['workloads']['history_100']['queries_max']);
-        file_put_contents(base_path('.tools/artifacts/phase-10-performance.json'), json_encode($performance, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+        file_put_contents(base_path('.tools/artifacts/monitoring-performance.json'), json_encode($performance, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
     }
 }

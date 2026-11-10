@@ -6,7 +6,8 @@ NFCheck registers students and employees, manages NFC credentials, detects Entry
 
 ## Start here
 
-- [Set up on another computer](docs/development.md)
+- [Run a local backup on a groupmate's Windows laptop](docs/local-backup.md)
+- [Developer commands and maintenance](docs/development.md)
 - [Find and inspect the database](docs/database-setup.md)
 - [Database structure and reference SQL](docs/database.md)
 - [Administrator guide](docs/administrator-guide.md)
@@ -14,7 +15,16 @@ NFCheck registers students and employees, manages NFC credentials, detects Entry
 - [Hosting and deployment](docs/deployment.md)
 - [Browser and NFC requirements](docs/nfc-integration.md)
 
-On an already configured Windows computer:
+For a new Windows x64 installation, install PowerShell 7.4+ and Microsoft's Visual C++ x64 runtime, extract the source and open a terminal in its folder:
+
+```powershell
+pwsh -NoProfile -File .\scripts\setup-local.ps1
+.\scripts\dev.ps1 npm run dev
+```
+
+Setup downloads pinned private tools, installs locked dependencies and creates a separate local database. If interrupted, resolve the error and rerun setup with `-Resume`. Follow the [step-by-step guide](docs/local-backup.md) for prerequisites, the first password and troubleshooting. No NFC phone or cloud keys are needed for desktop browser testing. This repository is private; groupmates need access or a privately shared source ZIP.
+
+On an already configured Windows computer with npm available:
 
 ```powershell
 npm run dev

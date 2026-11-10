@@ -21,7 +21,7 @@ class NfcSetupTest extends DatabaseTestCase
     {
         $counts = array_map(fn ($table) => DB::table($table)->count(), ['nfc_credentials', 'scan_attempts', 'access_events']);
         foreach (['admin', 'guard'] as $role) {
-            $this->signIn($this->user(['role' => $role]))->get('/nfc/setup')->assertOk()->assertHeader('Cache-Control', 'no-store, private')->assertInertia(fn (Assert $page) => $page->component('nfc/Setup')->where('app.phase', 11)->where('app.hardwareLab', false)->missing('payload')->missing('completion_nonce'));
+            $this->signIn($this->user(['role' => $role]))->get('/nfc/setup')->assertOk()->assertHeader('Cache-Control', 'no-store, private')->assertInertia(fn (Assert $page) => $page->component('nfc/Setup')->where('app.hardwareLab', false)->missing('payload')->missing('completion_nonce'));
         }
         $this->assertSame($counts, array_map(fn ($table) => DB::table($table)->count(), ['nfc_credentials', 'scan_attempts', 'access_events']));
     }

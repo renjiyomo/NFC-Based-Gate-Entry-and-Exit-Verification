@@ -8,6 +8,8 @@ Use `npm run dev:frontend` in a second terminal for optional hot reload. If glob
 
 ## A groupmate's new Windows x64 computer
 
+For the guided browser-only backup setup, start with [Run NFCheck on a groupmate's Windows laptop](local-backup.md). The individual commands below are for development and maintenance.
+
 Downloading GitHub provides source code, not your database or passwords. The following creates a new independent local database. It does not connect to the original laptop's records.
 
 1. Download/clone the updated repository and extract it into a writable local folder. Open a terminal in that folder.
@@ -16,7 +18,7 @@ Downloading GitHub provides source code, not your database or passwords. The fol
 Use Microsoft's [PowerShell installation guide](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows). PHP's Windows build also requires the matching Visual C++ runtime; install it if PHP reports a missing runtime DLL, following [PHP's Windows requirements](https://www.php.net/manual/en/install.windows.manual.php). No hosting account, API key or payment card is needed for local setup.
 3. Run these commands one at a time. The initial downloads need internet and can take several minutes.
 
-The one-command option for a fresh clone is `pwsh -NoProfile -File .\scripts\setup-local.ps1`. It performs the steps below, creates username admin, then stops. Start afterward with `.\scripts\dev.ps1 npm run dev`; this uses the downloaded private Node/npm even if the computer has no global Node installation. It refuses an existing .env/database handoff; use the normal startup on an existing installation. If interrupted, resolve the failed step and continue the individual commands without replacing existing keys or databases.
+The one-command option for a fresh clone is `pwsh -NoProfile -File .\scripts\setup-local.ps1`. It performs the steps below, creates username admin, then stops. Start afterward with `.\scripts\dev.ps1 npm run dev`; this uses the downloaded private Node/npm even if the computer has no global Node installation. It refuses an existing .env/database handoff; use the normal startup on an existing installation. For a setup interrupted after creating its checkpoint, resolve the error and use `pwsh -NoProfile -File .\scripts\setup-local.ps1 -Resume`. The checkpoint belongs to its exact project folder and retains completed steps. Older/manual setups without a checkpoint use the individual commands without replacing existing keys or databases.
 
 ```powershell
 pwsh -NoProfile -File .\scripts\bootstrap-tools.ps1
@@ -56,3 +58,5 @@ Add a new forward migration under database/migrations, review it, then use `scri
 ```
 
 Run database tests and concurrency tests separately. Tests assert the dedicated testing database identity and restore scoped fixtures. See [database connections](database-setup.md) and [testing](testing-and-research.md).
+
+The setup orchestration can be checked offline with `pwsh -NoProfile -File .\tests\scripts\local-setup.ps1`. It uses owned disposable fixtures and stub stage commands to cover first setup, interruptions/resume and existing-installation protection; it does not start MySQL or establish virgin-machine acceptance.

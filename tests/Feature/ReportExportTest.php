@@ -74,9 +74,9 @@ class ReportExportTest extends MonitoringTestCase
         $this->assertStringStartsWith('%PDF-', $response->getContent());
         $this->assertGreaterThan(8000, strlen($response->getContent()));
         // Ignored synthetic artifact for visual export QA, not a production export.
-        file_put_contents(base_path('.tools/artifacts/phase-7-synthetic-summary.pdf'), $response->getContent());
+        file_put_contents(base_path('.tools/artifacts/synthetic-summary.pdf'), $response->getContent());
         $details = $this->get('/admin/reports/export?date=2026-11-09&format=pdf&dataset=passages')->assertOk();
-        file_put_contents(base_path('.tools/artifacts/phase-7-synthetic-details.pdf'), $details->getContent());
+        file_put_contents(base_path('.tools/artifacts/synthetic-details.pdf'), $details->getContent());
     }
 
     public function test_limits_validation_and_secret_flash_protection(): void
