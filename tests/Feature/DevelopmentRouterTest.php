@@ -19,12 +19,13 @@ class DevelopmentRouterTest extends DatabaseTestCase
         $env['SESSION_DRIVER'] = 'array';
         $env['CACHE_STORE'] = 'array';
         $server = new Process([PHP_BINARY, '-S', $address, '-t', public_path(), base_path('server.php')], public_path(), $env);
-        $server->setTimeout(20);
+        $server->setTimeout(45);
         $server->start();
         $marker = 'private-probe-'.str_repeat('q', 24);
         try {
             $ready = false;
-            $deadline = microtime(true) + 4;
+            // Cold Windows PHP process startup can exceed four seconds under load.
+            $deadline = microtime(true) + 15;
             do {
                 $probe = @stream_socket_client('tcp://'.$address, $code, $error, 0.1);
                 if ($probe) {

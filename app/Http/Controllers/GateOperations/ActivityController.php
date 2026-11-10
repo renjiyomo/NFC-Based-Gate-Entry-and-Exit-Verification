@@ -26,7 +26,7 @@ class ActivityController
         $validator = Validator::make($request->query(), ['request_id' => ['nullable', 'uuid'], 'direction' => ['nullable', Rule::in(['entry', 'exit'])]]);
         abort_if($validator->fails(), 422, 'Invalid request locator.');
 
-        return Inertia::render('operations/Scanner', ['stations' => self::stations($request->user()), 'station' => $gate ? ['id' => $gate->id, 'code' => $gate->code, 'name' => $gate->name] : null, 'requestId' => $gate ? ($validator->validated()['request_id'] ?? null) : null, 'requestDirection' => $validator->validated()['direction'] ?? null, 'reviewSeconds' => config('nfcheck.review_seconds'), 'duplicateSeconds' => config('nfcheck.duplicate_seconds')]);
+        return Inertia::render('operations/Scanner', ['stations' => self::stations($request->user()), 'station' => $gate ? ['id' => $gate->id, 'code' => $gate->code, 'name' => $gate->name] : null, 'requestId' => $gate ? ($validator->validated()['request_id'] ?? null) : null, 'duplicateSeconds' => config('nfcheck.duplicate_seconds')]);
     }
 
     public function index(Request $request): Response

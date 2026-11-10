@@ -33,9 +33,23 @@ class AutomaticPassages
 
     public function scan(User $actor, Gate $gate, array $data, string $session, string $source): array
     {
-        return DB::transaction(function () use ($actor, $gate, $data, $session, $source): array {
+        return $this->record($actor, $gate, $data, $session, $source, false);
+    }
+
+    public function automaticScan(User $actor, Gate $gate, array $data, string $session, string $source): array
+    {
+        if (array_intersect(['direction', 'person_id', 'source'], array_keys($data))) {
+            throw ValidationException::withMessages(['direction' => 'Identity and direction are determined by the server.']);
+        }
+
+        return $this->record($actor, $gate, $data, $session, $source, true);
+    }
+
+    private function record(User $actor, Gate $gate, array $data, string $session, string $source, bool $automatic): array
+    {
+        return DB::transaction(function () use ($actor, $gate, $data, $session, $source, $automatic): array {
             $user = $this->scope($actor, $gate, $source);
-            $fingerprint = hash_hmac('sha256', $data['direction']."\0".$data['payload'], (string) config('app.key'), true);
+            $fingerprint = hash_hmac('sha256', ($automatic ? 'state-v1' : $data['direction'])."\0".$data['payload'], (string) config('app.key'), true);
             $existing = ScanAttempt::where('guard_id', $user->id)->where('request_id', $data['request_id'])->lockForUpdate()->first();
             if ($existing) {
                 $this->owner($existing, $user, $gate, $session, $source);
@@ -53,15 +67,28 @@ class AutomaticPassages
                 throw new \LogicException('Invalid duplicate policy.');
             }
             $at = now();
+            $last = $allowed ? AccessEvent::effective()->where('person_id', $check->person->id)->where('source', $source)->latest('confirmed_at')->latest('id')->tap([DatabaseLocks::class, 'immutableRead'])->first() : null;
+            $policy = 'gate-auto-v2';
+            if ($automatic) {
+                $cutoff = config('nfcheck.operating_day_cutoff');
+                $decision = app(AutomaticDirection::class)->decide($last, $at, $cutoff, $window);
+                $data['direction'] = $decision['direction'];
+                $policy = 'gate-state-v1-'.str_replace(':', '', $cutoff);
+                if ($allowed && $last) {
+                    app(MissingExits::class)->recordLocked($last, $at);
+                }
+            }
             $duplicate = $allowed ? AccessEvent::effective()->where('person_id', $check->person->id)->where('gate_id', $gate->id)->where('direction', $data['direction'])->where('source', $source)->where('confirmed_at', '>', $at->copy()->subSeconds($window)->format('Y-m-d H:i:s.u'))->where('confirmed_at', '<=', $at->format('Y-m-d H:i:s.u'))->latest('confirmed_at')->latest('id')->tap([DatabaseLocks::class, 'immutableRead'])->first() : null;
+            if ($automatic) {
+                $duplicate = $allowed && $decision['duplicate'] ? $last : null;
+            }
             $attempt = ScanAttempt::create(['public_id' => (string) Str::uuid(), 'request_id' => $data['request_id'], 'guard_id' => $user->id, 'guard_auth_version' => $user->auth_version, 'session_digest' => hash_hmac('sha256', $session, (string) config('app.key'), true), 'gate_id' => $gate->id, 'gate_assignment_id' => null, 'payload_fingerprint' => $fingerprint,
-                'direction' => $data['direction'], 'source' => $source, 'person_id' => $check->person?->id, 'person_version' => $check->person?->record_version, 'credential_id' => $check->credential?->id, 'credential_assignment_id' => $check->assignment?->id, 'authorization_id' => null, 'outcome' => $allowed ? 'allowed' : 'denied', 'reason' => $reason, 'policy_version' => 'gate-auto-v2', 'duplicate_window_seconds' => $window, 'received_at' => $at, 'review_expires_at' => null,
+                'direction' => $data['direction'], 'source' => $source, 'person_id' => $check->person?->id, 'person_version' => $check->person?->record_version, 'credential_id' => $check->credential?->id, 'credential_assignment_id' => $check->assignment?->id, 'authorization_id' => null, 'outcome' => $allowed ? 'allowed' : 'denied', 'reason' => $reason, 'policy_version' => $policy, 'duplicate_window_seconds' => $window, 'received_at' => $at, 'review_expires_at' => null,
                 'review_status' => $allowed ? ($duplicate ? 'cancelled' : 'confirmed') : 'not_applicable', 'reviewed_at' => $allowed ? $at : null, 'reviewed_by' => $allowed ? $user->id : null, 'review_reason' => $allowed ? ($duplicate ? 'duplicate_passage' : 'automatic_nfc_scan') : null, 'duplicate_of_event_id' => $duplicate?->id]);
             app(AuditLogger::class)->record('verification.received', $user, $attempt, ['reason' => $reason, 'direction' => $data['direction'], 'source' => $source], $allowed ? 'success' : 'denied');
             if ($allowed && ! $duplicate) {
-                $last = AccessEvent::effective()->where('person_id', $check->person->id)->where('source', $source)->latest('confirmed_at')->latest('id')->tap([DatabaseLocks::class, 'immutableRead'])->first();
                 $notice = app(PassageSequence::class)->notice($last, $data['direction'], $at);
-                $event = AccessEvent::create(['public_id' => (string) Str::uuid(), 'scan_attempt_id' => $attempt->id, 'person_id' => $check->person->id, 'credential_assignment_id' => $check->assignment->id, 'guard_id' => $user->id, 'gate_id' => $gate->id, 'direction' => $data['direction'], 'source' => $source, 'policy_version' => 'gate-auto-v2', 'identity_method' => 'nfc_scan', 'sequence_notice' => $notice, 'confirmed_at' => $at]);
+                $event = AccessEvent::create(['public_id' => (string) Str::uuid(), 'scan_attempt_id' => $attempt->id, 'person_id' => $check->person->id, 'credential_assignment_id' => $check->assignment->id, 'guard_id' => $user->id, 'gate_id' => $gate->id, 'direction' => $data['direction'], 'source' => $source, 'policy_version' => $policy, 'identity_method' => 'nfc_scan', 'sequence_notice' => $notice, 'confirmed_at' => $at]);
                 app(AuditLogger::class)->record('passage.recorded', $user, $event, ['direction' => $data['direction'], 'source' => $source, 'reason' => 'automatic_nfc_scan']);
             }
 
@@ -82,7 +109,7 @@ class AutomaticPassages
 
     private function owner(ScanAttempt $a, User $user, Gate $gate, string $session, string $source): void
     {
-        abort_unless($a->policy_version === 'gate-auto-v2' && $a->guard_id === $user->id && $a->gate_id === $gate->id && $a->source === $source && $a->guard_auth_version === $user->auth_version && hash_equals($a->session_digest, hash_hmac('sha256', $session, (string) config('app.key'), true)), 404);
+        abort_unless(($a->policy_version === 'gate-auto-v2' || str_starts_with($a->policy_version, 'gate-state-v1-')) && $a->guard_id === $user->id && $a->gate_id === $gate->id && $a->source === $source && $a->guard_auth_version === $user->auth_version && hash_equals($a->session_digest, hash_hmac('sha256', $session, (string) config('app.key'), true)), 404);
     }
 
     public function photo(User $actor, Gate $gate, ScanAttempt $attempt, string $session, string $source): string
@@ -100,14 +127,16 @@ class AutomaticPassages
 
     private function result(ScanAttempt $a): array
     {
-        $event = $a->passage()->first();
-        $duplicate = $a->duplicate()->first();
+        // A different gate can establish its MySQL snapshot before waiting on
+        // the person lock. Read the committed winner used by the decision.
+        $event = $a->passage()->tap([DatabaseLocks::class, 'immutableRead'])->first();
+        $duplicate = $a->duplicate()->tap([DatabaseLocks::class, 'immutableRead'])->first();
         $person = $a->outcome === 'allowed' && $a->received_at->greaterThan(now()->subMinutes(config('nfcheck.guard_activity_minutes'))) ? $a->person : null;
         $photoBase = $a->source === 'simulated' ? '/simulator/guard/gates' : '/guard/gates';
         $previous = $person && $event?->sequence_notice ? AccessEvent::effective()->where('person_id', $a->person_id)->where('source', $a->source)
             ->where(fn ($q) => $q->where('confirmed_at', '<', $event->confirmed_at->format('Y-m-d H:i:s.u'))
                 ->orWhere(fn ($tie) => $tie->where('confirmed_at', '=', $event->confirmed_at->format('Y-m-d H:i:s.u'))->where('id', '<', $event->id)))
-            ->with('gate')->latest('confirmed_at')->latest('id')->first() : null;
+            ->with('gate')->latest('confirmed_at')->latest('id')->tap([DatabaseLocks::class, 'immutableRead'])->first() : null;
 
         return ['id' => $a->public_id, 'request_id' => $a->request_id, 'gate_id' => $a->gate_id, 'direction' => $a->direction, 'source' => $a->source, 'server_time' => now()->toISOString(), 'sequence_context' => $previous ? ['direction' => $previous->direction, 'confirmed_at' => $previous->confirmed_at->toISOString(), 'gate' => $previous->gate?->code] : null, 'verification' => ['outcome' => $a->outcome, 'reason' => $a->reason, 'received_at' => $a->received_at->toISOString()],
             'review' => ['status' => $a->review_status, 'expires_at' => null, 'reason' => $a->review_reason, 'reviewed_at' => $a->reviewed_at?->toISOString()], 'current_check' => ['eligible' => $a->outcome === 'allowed', 'reason' => $a->reason], 'identity' => $person ? ['name' => $person->full_name, 'number' => $person->campus_number, 'kind' => $person->person_type->value, 'photo_url' => $person->photo_path ? $photoBase.'/'.$a->gate_id.'/attempts/'.$a->public_id.'/photo' : null, 'sequence_notice' => $event?->sequence_notice] : null,

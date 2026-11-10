@@ -28,7 +28,7 @@ class DatabaseFoundationTest extends DatabaseTestCase
         $this->assertSame('nfcheck_testing', DB::selectOne('SELECT DATABASE() db')->db);
         // Existing local workspaces can retain the shared-cache migration as
         // pending while the cloud workspace already uses it.
-        $this->assertSame(19, DB::table('migrations')->where('migration', '<>', '2026_11_10_000020_create_shared_cache')->count());
+        $this->assertSame(19, DB::table('migrations')->whereNotIn('migration', ['2026_11_10_000020_create_shared_cache', '2026_11_10_000021_allow_state_based_passages', '2026_11_11_000022_create_credential_counters'])->count());
         $grants = json_encode(DB::select('SHOW GRANTS FOR CURRENT_USER'));
         foreach (['ALL PRIVILEGES', 'CREATE', 'ALTER', 'DROP', '`nfcheck`.'] as $privilege) {
             $this->assertStringNotContainsString($privilege, $grants);

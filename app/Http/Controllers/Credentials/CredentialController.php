@@ -116,7 +116,7 @@ class CredentialController
         try {
             $receipt = $lifecycle->issue($request->user(), $request->validated(), $request->session()->getId(), $source);
         } catch (UniqueConstraintViolationException) {
-            throw ValidationException::withMessages(['label' => 'The label or issuance request was already used. Review the registry; secrets are delivered only once.']);
+            throw ValidationException::withMessages(['request_id' => 'This issuance request was already used. Review the registry; secrets are delivered only once.']);
         }
 
         return response()->json($receipt, 201);

@@ -5,11 +5,11 @@ export type FeedbackTone = 'success' | 'warning' | 'denied' | 'duplicate';
 export function sequenceLabel(value: string): string {
     const labels: Record<string, string> = {
         exit_without_recorded_entry:
-            'No earlier Entry is recorded. A missed scan may explain this. Check the person and selected direction.',
+            'No earlier Entry is recorded. A missed scan may explain this. Review the person and scan history.',
         repeated_entry:
-            'The previous record is also Entry. An Exit may have been missed. Check the person and selected direction.',
+            'The previous record is also Entry. An Exit may have been missed. Review the person and scan history.',
         repeated_exit:
-            'The previous record is also Exit. An Entry may have been missed. Check the person and selected direction.',
+            'The previous record is also Exit. An Entry may have been missed. Review the person and scan history.',
         previous_day_unclosed_entry:
             'An Entry from an earlier day has no recorded Exit. This Entry is saved separately; the earlier gap remains in history.',
         exit_after_earlier_day_entry:
@@ -18,8 +18,7 @@ export function sequenceLabel(value: string): string {
             'There is no Entry recorded on the day of this Exit; the previous record is also Exit. Check for a missed scan or wrong direction.',
     };
     return (
-        labels[value] ??
-        'The recorded sequence needs checking. Review the person and selected direction.'
+        labels[value] ?? 'The recorded sequence needs checking. Review the person and scan history.'
     );
 }
 

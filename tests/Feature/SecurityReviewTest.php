@@ -40,6 +40,7 @@ class SecurityReviewTest extends ManagementTestCase
             '/admin/history/passages/00000000-0000-4000-8000-000000000001/corrections',
             '/admin/summaries/00000000-0000-4000-8000-000000000001/reviews',
             '/guard/gates/1/scan', '/simulator/guard/gates/1/scan',
+            '/guard/gates/1/automatic-scan', '/simulator/guard/gates/1/automatic-scan',
         ] as $url) {
             $this->withHeaders(['Sec-Fetch-Site' => 'cross-site'])->post($url, [])->assertStatus(419);
         }

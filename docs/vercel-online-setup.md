@@ -1,16 +1,20 @@
 # NFCheck online setup: next steps
 
-Prepared November 10, 2026. Supabase PostgreSQL and private photo storage are configured. The application code still needs to reach GitHub and pass its first Vercel container build. No public website has been deployed by this preparation.
+This guide configures the full PHP application with Supabase PostgreSQL and private photo storage. Local and online databases are independent. Use Hobby/Free accounts only and stop at any payment or billing requirement.
 
-## What is already done
+Before deploying the latest source to an existing installation, review its schema version. This source requires migration 22, including credential_counters, while an older online installation may still have migration 20. Apply guarded target-specific migrations and narrow counter privileges before deploying code that uses the new table. Do not rerun the fresh initializer or replace keys/passwords. Local migration commands do not update Supabase.
+
+The private maintenance computer can inspect this with `.tools/php/php.exe scripts/upgrade-postgres.php`. Its explicit `--apply` mode first verifies an encrypted owned-target recovery drill, then applies only pending migrations and restores scoped runtime grants. It requires the saved matching cloud target, runtime handoff and backup key. Run it in a planned maintenance window **before pushing a branch connected to automatic deployment**. The read-only check does not apply anything. New cloud installations use the initializer instead.
+
+## Online configuration
 
 - Online database: Supabase PostgreSQL 17.11, database `postgres`, private schema `nfcheck_online`.
-- 28 tables, 20 migrations, 17 programs and six departments.
-- Administrator usernames: `alexi`, `pauleen`, `zaidy`. All three must change their temporary password after first sign-in.
+- Latest schema: 29 tables, 22 migrations, 17 programs and six departments. Previously initialized online schemas need an explicit upgrade.
+- Initial administrator credentials are stored in the private operator handoff. Administrators must change their initial passwords when prompted.
 - Gate account: `gate1`, linked to Gate 1. Other gate accounts can be created through Gates & accounts.
 - The database application account has restricted permissions; the website does not use the Supabase database owner account.
 - Private photo bucket: `nfcheck-photos`. The Data API is not needed by this PHP application.
-- The online workspace starts with zero students/employees, NFC credentials and passages. Local records and existing coins were retained separately.
+- A newly initialized online workspace starts empty apart from catalogues and initial operators. Do not overwrite an existing workspace or import local records implicitly.
 
 ## Your private files
 
@@ -28,14 +32,14 @@ Do not upload these files to GitHub or share their contents/screenshots. Vercel'
 
 ## 1. Put the prepared source version on GitHub
 
-Use the prepared local source commit. From PowerShell in the project folder:
+After reviewing and committing the desired source changes, use PowerShell in the project folder:
 
 ```powershell
 Set-Location -LiteralPath 'C:\xampp\htdocs\NFC-Based Gate Entry and Exit Verification'
 .\scripts\dev.ps1 git push origin main
 ```
 
-If Git asks you to sign in, use your own GitHub account. Once the push finishes, open the repository on GitHub and confirm the root contains `Dockerfile`, `vercel.json` and the `deploy` folder. A previous unrelated phone-connection script edit may remain uncommitted locally; it is not required for this hosted setup. Never force-push to resolve a rejected push; review the reported conflict first.
+If Git asks you to sign in, use your own GitHub account. Once the push finishes, confirm the repository root contains Dockerfile, vercel.json and deploy. Exclude private environments, tools, database rows, portraits, passwords and local development notes. Never force-push to resolve a rejected push; review the conflict first.
 
 ## 2. Create a new Vercel project
 

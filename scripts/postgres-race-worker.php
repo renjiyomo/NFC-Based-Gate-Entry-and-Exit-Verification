@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Credentials\CredentialLifecycle;
 use App\Services\GateOperations\AutomaticPassages;
 use App\Support\PostgresCloud;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -28,14 +29,18 @@ try {
     PostgresCloud::configure($target['connection'], $target['schema']);
     config(['app.key' => $target['app_key']]);
     $input = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
+    CarbonImmutable::setTestNow(CarbonImmutable::parse($input['clock']));
     file_put_contents($input['started'], (string) DB::selectOne('SELECT pg_backend_pid() AS pid')->pid);
     $f = $input['fixture'];
     $result = DB::transaction(function () use ($input, $f): array {
         $kind = $input['kind'];
-        $actor = User::findOrFail($kind === 'revoke' ? $f['admin_id'] : $f['guard_id']);
+        $actor = User::findOrFail(in_array($kind, ['revoke', 'issue'], true) ? $f['admin_id'] : $f['guard_id']);
         if ($input['hold']) {
             User::whereKey($actor->id)->lockForUpdate()->firstOrFail();
             Person::whereKey($f['person_id'])->lockForUpdate()->firstOrFail();
+            if ($kind === 'issue') {
+                DB::table('credential_counters')->where('kind', 'student')->lockForUpdate()->firstOrFail();
+            }
             file_put_contents($input['held'], 'held');
             $deadline = microtime(true) + 25;
             while (! is_file($input['release'])) {
@@ -50,7 +55,12 @@ try {
 
             return ['status' => 'revoked'];
         }
-        $r = app(AutomaticPassages::class)->scan($actor, Gate::findOrFail($f['gate_id']), ['request_id' => $input['request_id'], 'payload' => $f['payload'], 'direction' => 'entry'], 'race-session', 'physical');
+        if ($kind === 'issue') {
+            $r = app(CredentialLifecycle::class)->issue($actor, ['person_id' => $f['person_id'], 'record_version' => Person::findOrFail($f['person_id'])->record_version, 'mode' => 'new', 'request_id' => $input['request_id']], 'label-race', 'physical');
+
+            return ['status' => 'issued', 'label' => $r['credential']['label']];
+        }
+        $r = app(AutomaticPassages::class)->automaticScan($actor, Gate::findOrFail($f['gate_id']), ['request_id' => $input['request_id'], 'payload' => $f['payload']], 'race-session', 'physical');
 
         return ['status' => 'scanned', 'passage' => $r['passage'] !== null, 'outcome' => $r['verification']['outcome'], 'duplicate' => $r['review']['reason'] === 'duplicate_passage'];
     }, 3);

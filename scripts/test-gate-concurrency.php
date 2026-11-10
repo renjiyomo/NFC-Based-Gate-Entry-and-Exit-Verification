@@ -8,6 +8,7 @@ use App\Models\AnomalyFlag;
 use App\Models\Gate;
 use App\Models\GuardGateAssignment;
 use App\Models\NfcCredential;
+use App\Models\Person;
 use App\Models\ScanAttempt;
 use App\Models\SummaryResult;
 use App\Models\SummaryTask;
@@ -17,11 +18,13 @@ use App\Services\Anomalies\Review;
 use App\Services\Credentials\CredentialLifecycle;
 use App\Services\GateOperations\AutomaticPassages;
 use App\Services\GateOperations\GateOperations;
+use App\Services\GateOperations\MissingExits;
 use App\Services\Monitoring\ReportFilters;
 use App\Services\PersonManagement;
 use App\Services\Summaries\Aggregates;
 use App\Services\Summaries\Generation;
 use App\Services\Summaries\Provider;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -69,8 +72,26 @@ if (($argv[1] ?? '') === '--worker') {
         echo "READY\n";
         flush();
         $actor = User::findOrFail($input['actor']);
+        if ($input['action'] === 'issue_label') {
+            $person = Person::findOrFail($input['person']);
+            $receipt = app(CredentialLifecycle::class)->issue($actor, ['person_id' => $person->id, 'record_version' => $person->record_version, 'mode' => 'new', 'request_id' => $input['request']], 'label-race', 'physical');
+            echo json_encode(['label' => $receipt['credential']['label']], JSON_THROW_ON_ERROR);
+            exit(0);
+        }
+        if ($input['action'] === 'missing_exit') {
+            $created = DB::transaction(function () use ($input): bool {
+                Person::whereKey($input['person'])->lockForUpdate()->firstOrFail();
+
+                return (bool) app(MissingExits::class)->recordLocked(AccessEvent::findOrFail($input['entry']), now())?->wasRecentlyCreated;
+            }, 3);
+            echo json_encode(['created' => $created], JSON_THROW_ON_ERROR);
+            exit(0);
+        }
         if ($input['action'] === 'auto_scan') {
-            $r = app(AutomaticPassages::class)->scan($actor, Gate::findOrFail($input['gate']), ['request_id' => $input['request'], 'payload' => $input['payload'], 'direction' => 'entry'], $input['session'], 'physical');
+            if (isset($input['clock'])) {
+                CarbonImmutable::setTestNow(CarbonImmutable::parse($input['clock']));
+            }
+            $r = app(AutomaticPassages::class)->automaticScan($actor, Gate::findOrFail($input['gate']), ['request_id' => $input['request'], 'payload' => $input['payload']], $input['session'], 'physical');
             echo json_encode(['id' => $r['id'], 'passage' => $r['passage']['id'] ?? null, 'duplicate' => $r['duplicate_of']['id'] ?? null], JSON_THROW_ON_ERROR);
             exit(0);
         }
@@ -123,6 +144,7 @@ $tables = ['users', 'persons', 'gates', 'guard_gate_assignments', 'access_author
 $counts = static fn (): array => array_combine($tables, array_map(static fn (string $table): int => (int) $maintenance->query('SELECT COUNT(*) FROM nfcheck_testing.'.$table)->fetchColumn(), $tables));
 $before = $counts();
 $quotaBefore = DB::table('summary_controls')->where('id', 1)->first();
+$counterBefore = DB::table('credential_counters')->get()->keyBy('kind');
 foreach (['scan_attempts', 'anomaly_flags', 'summary_requests'] as $table) {
     if ($before[$table] !== 0) {
         throw new RuntimeException('Concurrency fixtures require empty testing history; existing rows were left unchanged.');
@@ -138,11 +160,16 @@ $check = static function (bool $condition, string $message): void {
         throw new RuntimeException($message);
     }
 };
-$run = static function (array $inputs, string $lockTable, int $lockId) use ($root, $maintenance, &$children, $check): array {
+$run = static function (array $inputs, string $lockTable, int|string $lockId) use ($root, $maintenance, &$children, $check): array {
+    // Measure overlapping transactions, without worker startup time consuming
+    // the ten-second business window on a slow development machine.
+    $clock = now()->toISOString();
+    $inputs = array_map(fn ($input) => [...$input, 'clock' => $clock], $inputs);
     // The parent uses its testing-only maintenance connection to hold barriers,
     // including immutable tables; worker runtime grants remain unchanged.
     $maintenance->beginTransaction();
-    $barrier = $maintenance->prepare('SELECT id FROM nfcheck_testing.'.$lockTable.' WHERE id = ? FOR UPDATE');
+    $lockColumn = $lockTable === 'credential_counters' ? 'kind' : 'id';
+    $barrier = $maintenance->prepare('SELECT '.$lockColumn.' FROM nfcheck_testing.'.$lockTable.' WHERE '.$lockColumn.' = ? FOR UPDATE');
     $barrier->execute([$lockId]);
     $workers = [];
     try {
@@ -294,6 +321,32 @@ try {
     $after = app(AutomaticPassages::class)->scan($guard1, $gate, ['request_id' => (string) Str::uuid(), 'payload' => $receipt['payload'], 'direction' => 'entry'], 'after-lost-revocation', 'physical');
     $check($after['verification']['reason'] === 'revoked' && $after['identity'] === null && $after['passage'] === null, 'Lost coin was accepted after revocation completed.');
     $results[] = 'automatic scan versus lost revocation: no passage after committed revocation; later scans denied';
+    $secondGate = Gate::create(['code' => 'RACE-SECOND-'.Str::random(8), 'name' => 'Synthetic second race gate', 'status' => 'active']);
+    $guard2->forceFill(['gate_id' => $secondGate->id])->save();
+    [$person,$receipt] = $fixture();
+    $one = ['actor' => $guard1->id, 'gate' => $gate->id, 'action' => 'auto_scan', 'session' => 'state-cross-gate', 'request' => (string) Str::uuid(), 'payload' => $receipt['payload']];
+    $two = [...$one, 'actor' => $guard2->id, 'gate' => $secondGate->id, 'request' => (string) Str::uuid()];
+    $output = $run([$one, $two], 'persons', $person->id);
+    $check(AccessEvent::where('person_id', $person->id)->count() === 1 && count(array_filter($output, fn ($r) => $r['duplicate'] !== null)) === 1, 'Different gates did not serialize automatic state.');
+    $results[] = 'automatic direction / different gates: one Entry and one suppressed repeat under person lock';
+    CarbonImmutable::setTestNow(now()->subDays(2));
+    [$person,$receipt] = $fixture();
+    app(AutomaticPassages::class)->automaticScan($guard1, $gate, ['request_id' => (string) Str::uuid(), 'payload' => $receipt['payload']], 'overdue-entry', 'physical');
+    CarbonImmutable::setTestNow();
+    $entry = AccessEvent::where('person_id', $person->id)->sole();
+    $job = ['actor' => $admin->id, 'action' => 'missing_exit', 'person' => $person->id, 'entry' => $entry->id];
+    $output = $run([$job, $job], 'persons', $person->id);
+    $check(array_sum(array_column($output, 'created')) === 1 && AnomalyFlag::where('anchor_attempt_id', $entry->scan_attempt_id)->where('rule_code', 'missing_exit')->count() === 1, 'Concurrent cutoff jobs created duplicate Missing Exit flags.');
+    $results[] = 'concurrent Missing Exit jobs: one append-only flag and one idempotent existing result';
+    $labelJobs = [];
+    foreach ([$admin, $admin2] as $issuer) {
+        [$labelPerson,,$labelCredential] = $fixture();
+        app(CredentialLifecycle::class)->terminate($admin, $labelCredential->fresh(), 'revoke', 'damaged');
+        $labelJobs[] = ['actor' => $issuer->id, 'action' => 'issue_label', 'person' => $labelPerson->id, 'request' => (string) Str::uuid()];
+    }
+    $labelResults = $run($labelJobs, 'credential_counters', 'student');
+    $check(count(array_unique(array_column($labelResults, 'label'))) === 2, 'Concurrent issuers allocated the same label.');
+    $results[] = 'different administrators / simultaneous issuance: unique sequential labels';
 } finally {
     while (DB::transactionLevel() > 0) {
         DB::rollBack();
@@ -315,6 +368,7 @@ try {
         };
         $summaryIds = DB::table('summary_requests')->whereIn('actor_id', $ownedUsers)->pluck('id')->all();
         $flagIds = DB::table('anomaly_flags')->whereIn('anchor_attempt_id', DB::table('scan_attempts')->whereIn('guard_id', $ownedUsers)->select('id'))->pluck('id')->all();
+        $execute("DELETE FROM nfcheck_testing.audit_logs WHERE target_type = 'App\\\\Models\\\\AnomalyFlag' AND target_id IN (:ids)", $flagIds);
         foreach (['summary_reviews', 'summary_results', 'summary_tasks'] as $table) {
             $execute('DELETE FROM nfcheck_testing.'.$table.' WHERE summary_request_id IN (:ids)', $summaryIds);
         }
@@ -326,6 +380,10 @@ try {
         $execute('DELETE FROM nfcheck_testing.anomaly_flags WHERE id IN (:ids)', $flagIds);
         $restoreQuota = $maintenance->prepare('UPDATE nfcheck_testing.summary_controls SET quota_day = ?, claims = ? WHERE id = 1');
         $restoreQuota->execute([$quotaBefore->quota_day, $quotaBefore->claims]);
+        $restoreCounter = $maintenance->prepare('UPDATE nfcheck_testing.credential_counters SET last_number=? WHERE kind=?');
+        foreach ($counterBefore as $counter) {
+            $restoreCounter->execute([$counter->last_number, $counter->kind]);
+        }
         $execute('UPDATE nfcheck_testing.scan_attempts SET duplicate_of_event_id = NULL WHERE guard_id IN (:ids)', $ownedUsers);
         $execute('DELETE FROM nfcheck_testing.access_events WHERE guard_id IN (:ids)', $ownedUsers);
         $execute('DELETE FROM nfcheck_testing.scan_attempts WHERE guard_id IN (:ids)', $ownedUsers);
@@ -337,7 +395,7 @@ try {
         $execute('DELETE FROM nfcheck_testing.persons WHERE id IN (:ids)', $ownedPeople);
         $execute('DELETE FROM nfcheck_testing.guard_gate_assignments WHERE guard_id IN (:ids)', $ownedUsers);
         $execute('UPDATE nfcheck_testing.users SET gate_id = NULL WHERE id IN (:ids)', $ownedUsers);
-        $execute('DELETE FROM nfcheck_testing.gates WHERE id IN (:ids)', $ownedGate ? [$ownedGate] : []);
+        $execute('DELETE FROM nfcheck_testing.gates WHERE id IN (:ids)', array_values(array_filter([$ownedGate, $secondGate->id ?? null])));
         $execute('DELETE FROM nfcheck_testing.audit_logs WHERE actor_id IN (:ids)', $ownedUsers);
         $execute('DELETE FROM nfcheck_testing.users WHERE id IN (:ids)', $ownedUsers);
         $maintenance->commit();

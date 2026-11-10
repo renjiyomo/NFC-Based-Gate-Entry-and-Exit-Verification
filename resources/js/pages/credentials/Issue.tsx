@@ -40,7 +40,6 @@ export default function Issue({
     const [mode, setMode] = useState(
         initialMode === 'new' && selectedPerson?.current ? 'replace' : initialMode,
     );
-    const [label, setLabel] = useState('');
     const [until, setUntil] = useState('');
     const [record, setRecord] = useState<CredentialRecord | null>(null);
     const [busy, setBusy] = useState(false);
@@ -154,7 +153,6 @@ export default function Issue({
                 {
                     person_id: person.id,
                     record_version: person.record_version,
-                    label,
                     mode,
                     replaces_id:
                         mode === 'replace'
@@ -354,15 +352,11 @@ export default function Issue({
                                 setMode(p?.current ? 'replace' : 'new');
                             }}
                         />
-                        <Field
-                            name="label"
-                            label="Credential label"
-                            required
-                            maxLength={64}
-                            value={label}
-                            onChange={(e) => setLabel(e.target.value)}
-                            placeholder="Printed inventory label, e.g. TAG-001"
-                        />
+                        <p className="field-help">
+                            Credential labels are assigned automatically:{' '}
+                            {person?.kind === 'employee' ? 'TAG-EMPLOYEE-001' : 'TAG-STUDENT-001'}{' '}
+                            and onward. The assigned label appears after preparation.
+                        </p>
                         <Select
                             name="mode"
                             label="Issuance purpose"

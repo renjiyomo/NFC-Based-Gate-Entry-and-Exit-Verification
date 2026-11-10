@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\GateOperations;
 
+use App\Http\Requests\AutomaticScanRequest;
 use App\Http\Requests\GateOperationRequest;
 use App\Models\Gate;
 use App\Models\ScanAttempt;
@@ -21,7 +22,12 @@ class OperationController
 
     public function scan(GateOperationRequest $request, Gate $gate, AutomaticPassages $operations): JsonResponse
     {
-        return response()->json($operations->scan($request->user(), $gate, $request->validated(), $request->session()->getId(), $this->source($request)));
+        abort(410, 'Manual direction scanning has been retired. Reload the scanner to use automatic detection.');
+    }
+
+    public function automaticScan(AutomaticScanRequest $request, Gate $gate, AutomaticPassages $operations): JsonResponse
+    {
+        return response()->json($operations->automaticScan($request->user(), $gate, $request->validated(), $request->session()->getId(), $this->source($request)));
     }
 
     public function recover(Request $request, Gate $gate, string $requestId, AutomaticPassages $operations): JsonResponse

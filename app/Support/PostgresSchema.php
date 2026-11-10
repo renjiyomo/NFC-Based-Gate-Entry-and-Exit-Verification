@@ -79,14 +79,14 @@ final class PostgresSchema
             $name = $s.'.'.self::identifier($table);
             $permissions = match ($table) {
                 'audit_logs', 'scan_attempts', 'access_events', 'passage_corrections', 'anomaly_flags', 'anomaly_evidence', 'anomaly_reviews', 'summary_requests', 'summary_results', 'summary_reviews', 'summary_tasks' => 'SELECT, INSERT',
-                'summary_controls', 'migrations', 'campus_programs', 'campus_departments' => 'SELECT',
+                'credential_counters', 'summary_controls', 'migrations', 'campus_programs', 'campus_departments' => 'SELECT',
                 default => 'SELECT, INSERT, UPDATE, DELETE',
             };
             $admin->exec("REVOKE ALL ON TABLE $name FROM PUBLIC, anon, authenticated");
             $admin->exec("GRANT $permissions ON TABLE $name TO $r");
             $updates = match ($table) {
                 'scan_attempts' => 'review_status, reviewed_at, reviewed_by, review_reason, duplicate_of_event_id, updated_at',
-                'summary_tasks' => 'claimed_at', 'summary_controls' => 'quota_day, claims', default => null,
+                'summary_tasks' => 'claimed_at', 'summary_controls' => 'quota_day, claims', 'credential_counters' => 'last_number', default => null,
             };
             if ($updates) {
                 $admin->exec("GRANT UPDATE ($updates) ON TABLE $name TO $r");

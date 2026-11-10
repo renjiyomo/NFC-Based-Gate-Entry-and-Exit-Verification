@@ -2,10 +2,13 @@
 
 namespace App\Services\Anomalies;
 
+use App\Models\AccessEvent;
 use App\Models\AnomalyFlag;
+use App\Models\Person;
 use App\Models\ScanAttempt;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\GateOperations\MissingExits;
 use App\Services\ManagementGuard;
 use App\Services\Monitoring\ReportFilters;
 use App\Support\DatabaseLocks;
@@ -67,6 +70,14 @@ class Detection
 
     public function context(AnomalyFlag $flag): string
     {
+        if ($flag->rule_code === 'missing_exit') {
+            return DB::transaction(function () use ($flag): string {
+                $event = AccessEvent::where('scan_attempt_id', $flag->anchor_attempt_id)->firstOrFail();
+                Person::withTrashed()->whereKey($event->person_id)->lockForUpdate()->firstOrFail();
+
+                return app(MissingExits::class)->supported($event, now()) ? 'still_supported' : 'evidence_changed';
+            }, 3);
+        }
         $current = app(Rules::class)->evaluate($flag->anchor, $flag->policy)[$flag->rule_code] ?? null;
         $original = $flag->evidence()->pluck('scan_attempts.id')->sort()->values()->all();
 

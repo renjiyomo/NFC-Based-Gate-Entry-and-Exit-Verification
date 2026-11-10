@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\Credentials\CredentialController;
 use App\Http\Controllers\GateOperations\ActivityController;
+use App\Http\Controllers\GateOperations\MissingExitCronController;
 use App\Http\Controllers\GateOperations\OperationController;
 use App\Http\Controllers\Management\AssignmentController;
 use App\Http\Controllers\Management\AuthorizationController;
@@ -23,6 +24,8 @@ use App\Http\Middleware\EnsureNfcSimulator;
 use App\Http\Middleware\EnsurePasswordChanged;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/internal/missing-exits', MissingExitCronController::class)->name('missing-exits.cron');
 
 Route::get('/', fn (Request $request) => redirect()->route($request->user() ? ($request->user()->isAdmin() ? 'admin.dashboard' : 'guard.scanner') : 'login'));
 Route::middleware('guest')->group(function (): void {
@@ -43,6 +46,7 @@ Route::middleware(['auth', 'auth.session', EnsurePasswordChanged::class])->group
     foreach (['guard/gates' => 'operations.', 'simulator/guard/gates' => 'lab.'] as $prefix => $name) {
         Route::prefix($prefix)->middleware($name === 'lab.' ? [EnsureNfcSimulator::class, 'can:guard.workspace', 'can:operate,gate'] : ['can:guard.workspace', 'can:operate,gate'])->name($name)->group(function (): void {
             Route::post('/{gate}/scan', [OperationController::class, 'scan'])->whereNumber('gate')->middleware('throttle:gate-write')->name('scan');
+            Route::post('/{gate}/automatic-scan', [OperationController::class, 'automaticScan'])->whereNumber('gate')->middleware('throttle:gate-write')->name('automatic-scan');
             Route::get('/{gate}/requests/{requestId}', [OperationController::class, 'recover'])->whereNumber('gate')->whereUuid('requestId')->middleware('throttle:gate-read')->name('recover');
             Route::post('/{gate}/attempts/{attempt}/review', [OperationController::class, 'review'])->whereNumber('gate')->whereUuid('attempt')->middleware('throttle:gate-write')->name('review');
             Route::get('/{gate}/attempts/{attempt}/photo', [OperationController::class, 'photo'])->whereNumber('gate')->whereUuid('attempt')->middleware('throttle:gate-read')->name('photo');

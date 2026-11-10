@@ -66,6 +66,8 @@ try {
     config(['app.key' => $target['app_key']]);
     $app->forgetInstance('encrypter');
     $result['phase'] = 'postgresql_races';
+    // Workflow validation can outlive an idle pooler connection.
+    $admin = PostgresCloud::connect($c);
     $result['races'] = PostgresRaces::run($root, $target, $admin);
     $result['phase'] = 'encrypted_restore_drill';
     $result['recovery'] = PostgresRecovery::drill($root, $c, $schema, $target['app_key']);

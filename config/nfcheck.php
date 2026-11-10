@@ -9,5 +9,8 @@ return [
     'hardware_lab' => (bool) env('NFCHECK_HARDWARE_LAB', false),
     'review_seconds' => (int) env('NFCHECK_REVIEW_SECONDS', 30),
     'duplicate_seconds' => (int) env('NFCHECK_DUPLICATE_SECONDS', 10),
+    // Policy foundation only; activated with the automatic-direction integration.
+    'operating_day_cutoff' => env('NFCHECK_OPERATING_DAY_CUTOFF', '00:00'),
+    'cron_secret' => env('CRON_SECRET'),
     'guard_activity_minutes' => 30,
 ];

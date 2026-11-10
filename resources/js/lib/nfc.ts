@@ -68,7 +68,7 @@ const messages: Record<NfcErrorCode, string> = {
         'Open NFCheck through trusted HTTPS or the local USB connection. Ordinary Wi-Fi HTTP cannot use Web NFC.',
     embedded: 'Open NFCheck directly in a Chrome tab. NFC is unavailable inside an embedded page.',
     unsupported:
-        'Web NFC is unavailable in this browser. Use an updated Chrome browser on your NFC-enabled Android phone.',
+        'Web NFC is unavailable in this browser, including Safari on iOS. Use updated Chrome on an NFC-enabled Android phone to read or write coins.',
     hidden: 'Keep Chrome visible and the phone unlocked, then tap the NFC button again.',
     busy: 'Another NFC operation is active. Finish or cancel it before starting another.',
     permission:
@@ -237,6 +237,77 @@ export class NdefAdapter {
     }
     probe(signal: AbortSignal): Promise<void> {
         return this.perform('probe', signal);
+    }
+    /** One user-activated listener; no per-person radio restart or issuance changes. */
+    watch(
+        signal: AbortSignal,
+        onRead: (reference: string) => void,
+        onError: (error: NfcError, fatal: boolean) => void,
+    ): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (radioOwner) {
+                reject(new NfcError('busy'));
+                return;
+            }
+            if (signal.aborted) {
+                reject(new NfcError('aborted'));
+                return;
+            }
+            const internal = new AbortController();
+            radioOwner = internal;
+            let reader: NfcReader | undefined;
+            let stopped = false;
+            let ready = false;
+            const stop = () => {
+                if (stopped) return;
+                stopped = true;
+                reader?.removeEventListener('reading', reading);
+                reader?.removeEventListener('readingerror', failed);
+                signal.removeEventListener('abort', cancelled);
+                internal.abort();
+                if (radioOwner === internal) radioOwner = null;
+            };
+            const cancelled = () => {
+                stop();
+                if (!ready) reject(new NfcError('aborted'));
+            };
+            const reading = (event: Event) => {
+                if (stopped || signal.aborted) return;
+                try {
+                    onRead(referenceFromMessage((event as NfcReading).message.records));
+                } catch (error) {
+                    onError(nativeError(error, 'read'), false);
+                }
+            };
+            const failed = () => {
+                stop();
+                const error = new NfcError('read_failed');
+                if (!ready) reject(error);
+                onError(error, true);
+            };
+            signal.addEventListener('abort', cancelled, { once: true });
+            try {
+                reader = this.create();
+                reader.addEventListener('reading', reading);
+                reader.addEventListener('readingerror', failed);
+                // Must run inside the initial click, before any permission/network await.
+                Promise.resolve(reader.scan({ signal: internal.signal })).then(
+                    () => {
+                        if (!stopped) {
+                            ready = true;
+                            resolve();
+                        }
+                    },
+                    (error: unknown) => {
+                        stop();
+                        reject(nativeError(error, 'read'));
+                    },
+                );
+            } catch (error) {
+                stop();
+                reject(nativeError(error, 'read'));
+            }
+        });
     }
     private perform(mode: 'read', external: AbortSignal, payload?: string): Promise<string>;
     private perform(mode: 'tag', external: AbortSignal): Promise<TagSnapshot>;

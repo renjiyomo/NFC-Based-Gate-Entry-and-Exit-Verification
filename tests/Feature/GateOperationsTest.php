@@ -257,7 +257,7 @@ class GateOperationsTest extends ManagementTestCase
         $this->guard->forceFill(['gate_id' => $this->station->id])->save();
         $this->signIn($this->guard);
         $base = '/guard/gates/'.$this->station->id;
-        $result = $this->postJson($base.'/scan', ['payload' => $this->receipt['payload'], 'request_id' => (string) Str::uuid(), 'direction' => 'entry'])->assertOk()->json();
+        $result = $this->postJson($base.'/automatic-scan', ['payload' => $this->receipt['payload'], 'request_id' => (string) Str::uuid()])->assertOk()->json();
         $this->withCredentials()->withCookie(config('session.cookie'), app('session')->getId());
         $photo = $this->get($result['identity']['photo_url'])->assertOk()->assertHeader('Content-Type', 'image/jpeg');
         $this->assertStringContainsString('no-store', $photo->headers->get('Cache-Control'));
@@ -407,12 +407,14 @@ class GateOperationsTest extends ManagementTestCase
     public function test_http_routes_require_guard_assignment_json_and_server_fixed_source(): void
     {
         $base = '/guard/gates/'.$this->station->id;
-        $this->postJson($base.'/scan', [])->assertForbidden();
+        $this->postJson($base.'/automatic-scan', [])->assertForbidden();
         $this->guard->forceFill(['gate_id' => $this->station->id])->save();
         $this->signIn($this->guard);
-        $this->post($base.'/scan', [])->assertStatus(406);
-        $data = ['payload' => $this->receipt['payload'], 'request_id' => (string) Str::uuid(), 'direction' => 'entry', 'source' => 'simulated'];
-        $response = $this->postJson($base.'/scan', $data)->assertOk()->assertJsonPath('source', 'physical')->assertJsonPath('review.status', 'confirmed');
+        $this->post($base.'/automatic-scan', [])->assertStatus(406);
+        $data = ['payload' => $this->receipt['payload'], 'request_id' => (string) Str::uuid(), 'source' => 'simulated'];
+        $this->postJson($base.'/automatic-scan', $data)->assertUnprocessable()->assertJsonValidationErrors('source');
+        unset($data['source']);
+        $response = $this->postJson($base.'/automatic-scan', $data)->assertOk()->assertJsonPath('source', 'physical');
         $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
         $this->withCredentials()->withCookie(config('session.cookie'), app('session')->getId());
         $this->getJson($base.'/requests/'.$data['request_id'])->assertOk()->assertJsonPath('id', $response->json('id'));

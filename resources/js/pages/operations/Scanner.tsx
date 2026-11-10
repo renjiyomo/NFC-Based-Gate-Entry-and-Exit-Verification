@@ -1,10 +1,11 @@
 import { router } from '@inertiajs/react';
-import { ScanLine, Volume2, VolumeX, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { ScanLine, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button, Panel, Badge } from '../../components/ui';
 import { ManagementPage, FormErrors, Portrait } from '../../components/management/Common';
 import { useWorkspace } from '../../lib/workspace';
 import { NdefAdapter, nfcAvailable, readVirtualTag, acceptVirtualTagHandoff } from '../../lib/nfc';
+import { ScanLatch } from '../../lib/scanLatch';
 import {
     operationBase,
     operationRequest,
@@ -13,7 +14,6 @@ import {
     reasonLabel,
     type Operation,
     type Station,
-    type Direction,
 } from '../../lib/operations';
 import { manilaTime } from '../../lib/management';
 import { useActivity } from '../../components/operations/Activity';
@@ -24,41 +24,54 @@ export default function Scanner({
     station,
     duplicateSeconds,
     requestId,
-    requestDirection,
 }: {
     station: Station | null;
     duplicateSeconds: number;
     requestId: string | null;
-    requestDirection: Direction | null;
 }) {
     const { simulator } = useWorkspace();
-    const [direction, setDirection] = useState<Direction | null>(requestDirection);
     const [result, setResult] = useState<Operation | null>(null);
     const [busy, setBusy] = useState(false);
-    const [reading, setReading] = useState(false);
+    const [running, setRunning] = useState(false);
+    const [starting, setStarting] = useState(false);
     const [uncertain, setUncertain] = useState(Boolean(requestId));
     const [missing, setMissing] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const [status, setStatus] = useState('');
+    const [status, setStatus] = useState('Scanner stopped');
     const [sound, setSound] = useState(false);
     const [soundNote, setSoundNote] = useState('');
     const audio = useRef<AudioContext | null>(null);
     const active = useRef<AbortController | null>(null);
     const request = useRef<string | null>(requestId);
     const payload = useRef<string | null>(null);
-    const frozen = useRef<Direction | null>(requestDirection);
+    const pending = useRef(Boolean(requestId));
     const locked = useRef(false);
     const mounted = useRef(true);
+    const enabledSound = useRef(sound);
+    enabledSound.current = sound;
+    const clearResult = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const latch = useRef(new ScanLatch(duplicateSeconds * 1000));
     const activity = useActivity(station ? `/guard/gates/${station.id}/activity` : null);
     const base = station ? operationBase(station.id, simulator) : null;
+
     function locate(id: string | null) {
         request.current = id;
         if (station)
             router.replace({
-                url: `/guard/gates/${station.id}/scanner${id ? `?request_id=${id}&direction=${frozen.current}` : ''}`,
+                url: `/guard/gates/${station.id}/scanner${id ? '?request_id=' + id : ''}`,
                 preserveState: true,
                 preserveScroll: true,
             });
+    }
+    function stop(message = 'Scanner stopped') {
+        active.current?.abort();
+        active.current = null;
+        latch.current.clear();
+        if (mounted.current) {
+            setRunning(false);
+            setStarting(false);
+            setStatus(message);
+        }
     }
     async function prepareSound() {
         try {
@@ -67,23 +80,106 @@ export default function Scanner({
             setSoundNote(
                 audio.current.state === 'running'
                     ? ''
-                    : 'Sound is unavailable. Read the on-screen result.',
+                    : 'Sound unavailable. Read the on-screen result.',
             );
         } catch {
-            setSoundNote('Sound is unavailable. Read the on-screen result.');
+            setSoundNote('Sound unavailable. Read the on-screen result.');
         }
     }
-    function accept(r: Operation, announceSound = false) {
-        if (!mounted.current) return;
+    function accept(r: Operation) {
+        if (!mounted.current || document.hidden) return;
         setResult(r);
+        setErrors({});
         setUncertain(false);
         setMissing(false);
+        pending.current = false;
         payload.current = null;
-        setStatus('');
-        if (announceSound && sound && audio.current)
+        locate(null);
+        if (enabledSound.current && audio.current)
             playFeedback(audio.current, gateFeedback(r).tone);
         if (simulator) acceptVirtualTagHandoff();
+        setStatus(active.current ? 'Ready to Scan' : 'Scanner stopped');
+        if (clearResult.current) clearTimeout(clearResult.current);
+        clearResult.current = setTimeout(() => {
+            if (mounted.current) setResult(null);
+        }, 5000);
         void activity.refresh();
+    }
+    async function send() {
+        if (!base || !payload.current || !request.current) return;
+        pending.current = true;
+        setUncertain(true);
+        const id = request.current;
+        try {
+            const r = await operationRequest<Operation>(`${base}/automatic-scan`, {
+                request_id: id,
+                payload: payload.current,
+            });
+            if (request.current === id) accept(r);
+        } catch (e) {
+            stop('Connection or session interrupted');
+            if (mounted.current) setErrors(operationErrors(e));
+        }
+    }
+    async function onReference(reference: string) {
+        if (locked.current || pending.current || document.hidden || !active.current) return;
+        if (!latch.current.accept(reference)) {
+            setStatus('Already Scanned — remove the coin before presenting it again');
+            return;
+        }
+        locked.current = true;
+        setBusy(true);
+        setErrors({});
+        setResult(null);
+        setStatus('Processing');
+        payload.current = reference;
+        locate(crypto.randomUUID());
+        try {
+            await send();
+        } finally {
+            locked.current = false;
+            if (mounted.current) setBusy(false);
+        }
+    }
+    async function start() {
+        if (!base || locked.current || pending.current || active.current) return;
+        setErrors({});
+        active.current = new AbortController();
+        setStatus('Starting scanner');
+        if (sound) void prepareSound();
+        if (simulator) {
+            setRunning(true);
+            setStatus('Ready to Scan');
+            return;
+        }
+        const controller = active.current;
+        setStarting(true);
+        try {
+            await new NdefAdapter().watch(
+                controller.signal,
+                (reference) => void onReference(reference),
+                (error, fatal) => {
+                    if (!mounted.current || (controller.signal.aborted && !fatal)) return;
+                    if (!fatal && locked.current) return;
+                    if (fatal) stop('Reader stopped');
+                    setResult(null);
+                    setErrors({ nfc: error.message });
+                    if (!fatal) setStatus('Scan Rejected — ready for another coin');
+                },
+            );
+            if (!controller.signal.aborted && mounted.current) {
+                setRunning(true);
+                if (!locked.current) setStatus('Ready to Scan');
+            }
+        } catch (e) {
+            if (!controller.signal.aborted) {
+                stop('Scanner unavailable');
+                if (mounted.current)
+                    setErrors({ nfc: e instanceof Error ? e.message : 'Could not start NFC.' });
+            }
+        } finally {
+            if (mounted.current) setStarting(false);
+        }
     }
     async function recover() {
         if (!base || !request.current || locked.current) return;
@@ -93,63 +189,13 @@ export default function Scanner({
         try {
             accept(await operationRequest<Operation>(`${base}/requests/${request.current}`));
         } catch (e) {
-            setErrors(operationErrors(e));
-            if (e instanceof OperationError && e.status === 404) setMissing(true);
+            if (mounted.current) {
+                setErrors(operationErrors(e));
+                if (e instanceof OperationError && e.status === 404) setMissing(true);
+            }
         } finally {
             locked.current = false;
             if (mounted.current) setBusy(false);
-        }
-    }
-    async function send() {
-        if (!base || !payload.current || !request.current || !frozen.current) return;
-        setUncertain(true);
-        try {
-            accept(
-                await operationRequest<Operation>(`${base}/scan`, {
-                    request_id: request.current,
-                    payload: payload.current,
-                    direction: frozen.current,
-                }),
-                true,
-            );
-        } catch (e) {
-            setErrors(operationErrors(e));
-            if (e instanceof OperationError && [403, 419, 422, 429].includes(e.status)) {
-                setStatus('Request rejected. Recover its status before starting another scan.');
-            }
-        }
-    }
-    async function scan(reuse = false) {
-        if (!base || !direction || locked.current || (uncertain && !reuse)) return;
-        locked.current = true;
-        setBusy(true);
-        setReading(true);
-        setErrors({});
-        setResult(null);
-        setStatus('Present one NFC coin.');
-        if (sound) void prepareSound();
-        active.current = new AbortController();
-        try {
-            const ref = simulator
-                ? readVirtualTag()
-                : await new NdefAdapter().read(active.current.signal);
-            if (!ref) throw new Error('No virtual tag available');
-            payload.current = ref;
-            if (!reuse) {
-                frozen.current = direction;
-                locate(crypto.randomUUID());
-            }
-            setReading(false);
-            await send();
-        } catch {
-            setStatus('Reader stopped. No scan request was sent.');
-            setErrors({ nfc: 'The coin could not be read. Start a fresh scan when ready.' });
-        } finally {
-            locked.current = false;
-            if (mounted.current) {
-                setBusy(false);
-                setReading(false);
-            }
         }
     }
     async function retry() {
@@ -164,24 +210,59 @@ export default function Scanner({
             if (mounted.current) setBusy(false);
         }
     }
+    async function readForRecovery() {
+        if (locked.current || !missing) return;
+        locked.current = true;
+        setBusy(true);
+        const controller = new AbortController();
+        active.current = controller;
+        try {
+            payload.current = simulator
+                ? readVirtualTag()
+                : await new NdefAdapter().read(controller.signal);
+            if (!payload.current) throw new Error('No simulated coin available.');
+            await send();
+        } catch (e) {
+            if (mounted.current)
+                setErrors({ nfc: e instanceof Error ? e.message : 'Read failed.' });
+        } finally {
+            active.current = null;
+            locked.current = false;
+            if (mounted.current) {
+                setBusy(false);
+                if (!pending.current) setStatus('Scanner stopped — tap Start Scanner when ready');
+            }
+        }
+    }
     useEffect(() => {
         mounted.current = true;
         const hide = () => {
             if (document.hidden) {
-                active.current?.abort();
+                stop('Scanner paused — tap Start Scanner when ready');
                 payload.current = null;
-                setReading(false);
+                setResult(null);
                 void audio.current?.suspend().catch(() => {});
             }
         };
+        const pagehide = () => {
+            stop();
+            payload.current = null;
+            setResult(null);
+        };
         document.addEventListener('visibilitychange', hide);
+        window.addEventListener('pagehide', pagehide);
         if (requestId && station) void recover();
         return () => {
             mounted.current = false;
             active.current?.abort();
+            active.current = null;
             payload.current = null;
+            latch.current.clear();
+            if (clearResult.current) clearTimeout(clearResult.current);
             void audio.current?.close().catch(() => {});
+            audio.current = null;
             document.removeEventListener('visibilitychange', hide);
+            window.removeEventListener('pagehide', pagehide);
         };
     }, []);
     const feedback = result ? gateFeedback(result) : null;
@@ -189,15 +270,13 @@ export default function Scanner({
         <ManagementPage
             page="scanner"
             title="Gate scanner"
-            description="Select a direction, then scan one NFC coin. Valid scans record automatically."
+            description="Entry and Exit are detected automatically. Present one coin, then remove it."
         >
             <FormErrors errors={errors} />
             <Panel
                 className="gate-scanner"
-                title={station ? station.name : 'Gate not configured'}
-                subtitle={
-                    station ? station.code : 'Ask an administrator to configure this gate account.'
-                }
+                title={station?.name ?? 'Gate not configured'}
+                subtitle={station?.code ?? 'Ask an administrator to configure this gate account.'}
                 action={
                     <Button
                         className="sound-control"
@@ -219,111 +298,100 @@ export default function Scanner({
             >
                 <div className="scan-workspace">
                     <div className="scan-controls">
-                        <span className="control-label">Passage direction</span>
-                        <div
-                            className="scan-directions"
-                            role="group"
-                            aria-label="Passage direction"
-                        >
-                            {(['entry', 'exit'] as const).map((d) => (
-                                <Button
-                                    key={d}
-                                    variant={direction === d ? 'primary' : 'secondary'}
-                                    disabled={busy || uncertain}
-                                    aria-pressed={direction === d}
-                                    onClick={() => setDirection(d)}
-                                >
-                                    {d === 'entry' ? (
-                                        <ArrowDownLeft size={19} aria-hidden="true" />
-                                    ) : (
-                                        <ArrowUpRight size={19} aria-hidden="true" />
-                                    )}
-                                    {d === 'entry' ? 'Entry' : 'Exit'}
-                                </Button>
-                            ))}
-                        </div>
                         <div className="scan-prompt">
                             <ScanLine size={32} strokeWidth={1.4} aria-hidden="true" />
-                            <h2>
-                                {reading
-                                    ? 'Hold the coin near the phone'
-                                    : direction
-                                      ? 'Ready for ' + (direction === 'entry' ? 'Entry' : 'Exit')
-                                      : 'Choose Entry or Exit'}
+                            <h2 role="status" aria-live="polite">
+                                {busy
+                                    ? 'Processing'
+                                    : starting
+                                      ? 'Starting scanner'
+                                      : uncertain
+                                        ? 'Request needs recovery'
+                                        : running
+                                          ? 'Ready to Scan'
+                                          : 'Scanner stopped'}
                             </h2>
                             <p>
-                                {reading
-                                    ? 'Keep one coin against the back of the phone.'
-                                    : 'The selected direction stays ready for the next person.'}
+                                {running
+                                    ? 'Hold one coin near the NFC antenna, then remove it.'
+                                    : 'Start once to allow NFC access. Keep this page visible and the phone unlocked.'}
                             </p>
                         </div>
-                        <Button
-                            variant="primary"
-                            className="scan-main-action"
-                            disabled={
-                                !station ||
-                                !direction ||
-                                busy ||
-                                uncertain ||
-                                (!simulator && !nfcAvailable())
-                            }
-                            onClick={() => void scan()}
-                        >
-                            <ScanLine size={18} aria-hidden="true" />
-                            {reading
-                                ? 'Reading coin…'
-                                : busy
-                                  ? 'Checking…'
-                                  : result
-                                    ? 'Scan next coin'
-                                    : 'Scan NFC coin'}
-                        </Button>
-                        {reading && (
-                            <Button onClick={() => active.current?.abort()}>Cancel NFC read</Button>
+                        {!running ? (
+                            <Button
+                                variant="primary"
+                                className="scan-main-action"
+                                disabled={
+                                    !station ||
+                                    starting ||
+                                    busy ||
+                                    uncertain ||
+                                    (!simulator && !nfcAvailable())
+                                }
+                                onClick={() => void start()}
+                            >
+                                <ScanLine size={18} aria-hidden="true" />
+                                Start Scanner
+                            </Button>
+                        ) : (
+                            <Button onClick={() => stop()} disabled={busy}>
+                                Stop Scanner
+                            </Button>
+                        )}
+                        {simulator && running && (
+                            <Button
+                                disabled={busy || uncertain}
+                                onClick={() => {
+                                    const ref = readVirtualTag();
+                                    if (ref) void onReference(ref);
+                                    else setErrors({ nfc: 'No simulated coin is available.' });
+                                }}
+                            >
+                                Present simulated coin
+                            </Button>
                         )}
                         {!simulator && !nfcAvailable() && (
                             <p className="scanner-device-note">
-                                Scanning is available in Chrome on a compatible Android NFC phone.
+                                NFC scanning is unavailable in Safari/iOS. Use Chrome on a
+                                compatible NFC Android phone over HTTPS or the local USB connection.
                             </p>
                         )}
                         {soundNote && <p className="scanner-device-note">{soundNote}</p>}
                         <details className="compact-help">
                             <summary>Scan guidance</summary>
                             <p>
-                                Present one coin at a time. Repeated scans within {duplicateSeconds}{' '}
-                                seconds are suppressed. A warning may indicate a missing earlier
-                                scan; it does not block an otherwise valid passage.
+                                Repeat scans within {duplicateSeconds} seconds are ignored. Remove
+                                each coin after its result. The browser cannot confirm physical
+                                movement or who holds a coin.
                             </p>
                         </details>
                     </div>
                     <div className="scan-feedback-area">
-                        {status && (
-                            <p className="scan-live-status" role="status" aria-live="polite">
-                                {status}
-                            </p>
-                        )}
+                        <p className="scan-live-status" role="status" aria-live="polite">
+                            {status}
+                        </p>
                         {result && feedback ? (
                             <div
                                 className={'scan-result scan-result-' + feedback.tone}
-                                role={
-                                    feedback.tone === 'warning' || feedback.tone === 'denied'
-                                        ? 'alert'
-                                        : 'status'
-                                }
+                                role="status"
                             >
                                 <div className="scan-result-heading">
-                                    <h2>{feedback.title}</h2>
-                                    <Badge
-                                        tone={
-                                            feedback.tone === 'success'
-                                                ? 'success'
-                                                : feedback.tone === 'duplicate'
-                                                  ? 'blue'
-                                                  : 'warning'
-                                        }
-                                    >
-                                        {result.direction === 'entry' ? 'Entry' : 'Exit'}
-                                    </Badge>
+                                    <h2>
+                                        {result.passage?.voided
+                                            ? 'Record voided'
+                                            : result.duplicate_of
+                                              ? 'Already Scanned'
+                                              : result.passage
+                                                ? result.direction === 'entry'
+                                                    ? 'Entry Successful'
+                                                    : 'Exit Successful'
+                                                : 'Scan Rejected'}
+                                    </h2>
+                                    {(result.passage || result.duplicate_of) && (
+                                        <Badge tone={result.duplicate_of ? 'blue' : 'success'}>
+                                            {result.direction === 'entry' ? 'Entry' : 'Exit'}
+                                        </Badge>
+                                    )}
                                 </div>
                                 {result.identity && (
                                     <div className="scan-person">
@@ -349,46 +417,33 @@ export default function Scanner({
                                         {result.sequence_context.direction === 'entry'
                                             ? 'Entry'
                                             : 'Exit'}{' '}
-                                        · {manilaTime(result.sequence_context.confirmed_at)} ·{' '}
-                                        {result.sequence_context.gate}
+                                        · {manilaTime(result.sequence_context.confirmed_at)}
                                     </p>
                                 )}
-                                {result.duplicate_of && (
-                                    <p className="scan-context">
-                                        Original{' '}
-                                        {result.duplicate_of.direction === 'entry'
-                                            ? 'Entry'
-                                            : 'Exit'}{' '}
-                                        · {manilaTime(result.duplicate_of.confirmed_at)}
-                                    </p>
-                                )}
-                                {result.passage ? (
-                                    <p className="scan-receipt-time">
-                                        Recorded {manilaTime(result.passage.confirmed_at)}
-                                    </p>
-                                ) : (
-                                    !result.duplicate_of && (
-                                        <p className="scan-context">
-                                            {reasonLabel(result.verification.reason)}
-                                        </p>
-                                    )
+                                <p className="scan-receipt-time">
+                                    {manilaTime(
+                                        result.passage?.confirmed_at ??
+                                            result.verification.received_at,
+                                    )}
+                                </p>
+                                {!result.passage && !result.duplicate_of && (
+                                    <p>{reasonLabel(result.verification.reason)}</p>
                                 )}
                             </div>
                         ) : (
                             !uncertain && (
                                 <div className="scan-empty-result">
                                     <span className="scan-empty-mark" />
-                                    <h3>Scan result</h3>
-                                    <p>The person and Entry or Exit result will appear here.</p>
+                                    <h3>Latest result</h3>
+                                    <p>The verified person and detected action appear here.</p>
                                 </div>
                             )
                         )}
-                        {uncertain && (
+                        {uncertain && !busy && (
                             <div className="scan-recovery">
-                                <h2>Check the previous request</h2>
+                                <h2>Recover the previous request</h2>
                                 <p>
-                                    The connection was interrupted. Recover this request before
-                                    scanning another coin to avoid an extra record.
+                                    No new scans will be submitted until this request is resolved.
                                 </p>
                                 <div className="form-actions">
                                     <Button
@@ -403,12 +458,12 @@ export default function Scanner({
                                             Retry the same request
                                         </Button>
                                     )}
-                                    {missing && !payload.current && (
+                                    {missing && (
                                         <Button
-                                            disabled={busy || !frozen.current}
-                                            onClick={() => void scan(true)}
+                                            disabled={busy}
+                                            onClick={() => void readForRecovery()}
                                         >
-                                            Read coin for same request
+                                            Read original coin for same request
                                         </Button>
                                     )}
                                 </div>
@@ -420,11 +475,6 @@ export default function Scanner({
             <Panel
                 title="Recent scans at this gate"
                 subtitle="Latest scans from the last 30 minutes"
-                action={
-                    <Button onClick={() => void activity.refresh()} disabled={busy}>
-                        Refresh
-                    </Button>
-                }
             >
                 {!activity.feed && !activity.error && (
                     <div role="status" aria-label="Loading gate activity">
@@ -445,7 +495,9 @@ export default function Scanner({
                             <div>
                                 <strong>{r.person ?? 'Unidentified coin'}</strong>
                                 <span>
-                                    {r.direction === 'entry' ? 'Entry' : 'Exit'} ·{' '}
+                                    {r.confirmed_at || r.duplicate
+                                        ? (r.direction === 'entry' ? 'Entry' : 'Exit') + ' · '
+                                        : ''}
                                     {manilaTime(r.received_at)}
                                 </span>
                                 {r.sequence_notice && (
@@ -455,18 +507,10 @@ export default function Scanner({
                                 )}
                             </div>
                             <Badge
-                                tone={
-                                    r.duplicate
-                                        ? 'blue'
-                                        : r.sequence_notice
-                                          ? 'warning'
-                                          : r.confirmed_at
-                                            ? 'success'
-                                            : 'warning'
-                                }
+                                tone={r.duplicate ? 'blue' : r.confirmed_at ? 'success' : 'warning'}
                             >
                                 {r.duplicate
-                                    ? 'Duplicate'
+                                    ? 'Already Scanned'
                                     : r.confirmed_at
                                       ? 'Recorded'
                                       : 'Rejected'}

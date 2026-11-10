@@ -49,7 +49,7 @@ foreach ($schemas as $schema => $environment) {
             throw new RuntimeException('Unexpected table identifier.');
         }
         $permissions = match ($table) {
-            'audit_logs', 'scan_attempts', 'access_events', 'passage_corrections', 'anomaly_flags', 'anomaly_evidence', 'anomaly_reviews', 'summary_requests', 'summary_results', 'summary_reviews', 'summary_tasks' => 'SELECT, INSERT', 'summary_controls', 'migrations', 'campus_programs', 'campus_departments' => 'SELECT', default => 'SELECT, INSERT, UPDATE, DELETE'
+            'audit_logs', 'scan_attempts', 'access_events', 'passage_corrections', 'anomaly_flags', 'anomaly_evidence', 'anomaly_reviews', 'summary_requests', 'summary_results', 'summary_reviews', 'summary_tasks' => 'SELECT, INSERT', 'credential_counters', 'summary_controls', 'migrations', 'campus_programs', 'campus_departments' => 'SELECT', default => 'SELECT, INSERT, UPDATE, DELETE'
         };
         $db->exec("GRANT $permissions ON `$schema`.`$table` TO '$user'@'127.0.0.1'");
         if (in_array($table, ['campus_programs', 'campus_departments'], true)) {
@@ -68,6 +68,9 @@ foreach ($schemas as $schema => $environment) {
         }
         if ($table === 'summary_controls') {
             $db->exec("GRANT UPDATE (quota_day, claims) ON `$schema`.`summary_controls` TO '$user'@'127.0.0.1'");
+        }
+        if ($table === 'credential_counters') {
+            $db->exec("GRANT UPDATE (last_number) ON `$schema`.`credential_counters` TO '$user'@'127.0.0.1'");
         }
     }
     echo "Scoped runtime privileges applied to $schema.\n";

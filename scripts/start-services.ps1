@@ -1,4 +1,4 @@
-#Requires -Version 7.4
+#Requires -Version 5.1
 param([switch]$Initialize)
 $ErrorActionPreference = 'Stop'
 $serviceRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -12,13 +12,13 @@ function Protect-LocalDirectory([string]$Path) {
     New-Item -ItemType Directory -Path $Path -Force | Out-Null
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent().User
     $directoryInfo = [IO.DirectoryInfo]::new($Path)
-    $acl = [IO.FileSystemAclExtensions]::GetAccessControl($directoryInfo, [Security.AccessControl.AccessControlSections]::Access)
+    $acl = if ($PSVersionTable.PSVersion.Major -ge 7) { [IO.FileSystemAclExtensions]::GetAccessControl($directoryInfo, [Security.AccessControl.AccessControlSections]::Access) } else { $directoryInfo.GetAccessControl([Security.AccessControl.AccessControlSections]::Access) }
     $acl.SetAccessRuleProtection($true, $false)
     foreach ($existingRule in $acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier])) { $acl.RemoveAccessRuleSpecific($existingRule) }
     foreach ($sid in @($identity, [Security.Principal.SecurityIdentifier]::new('S-1-5-18'))) {
         $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($sid, 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow'))
     }
-    [IO.FileSystemAclExtensions]::SetAccessControl($directoryInfo, $acl)
+    if ($PSVersionTable.PSVersion.Major -ge 7) { [IO.FileSystemAclExtensions]::SetAccessControl($directoryInfo, $acl) } else { $directoryInfo.SetAccessControl($acl) }
 }
 
 foreach ($privateFolder in @('secrets','mysql-data','mail')) { Protect-LocalDirectory (Join-Path $serviceTools $privateFolder) }
@@ -60,13 +60,13 @@ foreach ($privateFile in @('.env', '.env.testing', '.env.simulator', '.env.hardw
     $privatePath = Join-Path $serviceRoot $privateFile
     if (Test-Path -LiteralPath $privatePath) {
         $privateInfo = [IO.FileInfo]::new($privatePath)
-        $fileAcl = [IO.FileSystemAclExtensions]::GetAccessControl($privateInfo, [Security.AccessControl.AccessControlSections]::Access)
+        $fileAcl = if ($PSVersionTable.PSVersion.Major -ge 7) { [IO.FileSystemAclExtensions]::GetAccessControl($privateInfo, [Security.AccessControl.AccessControlSections]::Access) } else { $privateInfo.GetAccessControl([Security.AccessControl.AccessControlSections]::Access) }
         $fileAcl.SetAccessRuleProtection($true, $false)
         foreach ($existingRule in $fileAcl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier])) { $fileAcl.RemoveAccessRuleSpecific($existingRule) }
         foreach ($fileSid in @([Security.Principal.WindowsIdentity]::GetCurrent().User, [Security.Principal.SecurityIdentifier]::new('S-1-5-18'))) {
             $fileAcl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($fileSid, 'FullControl', 'Allow'))
         }
-        [IO.FileSystemAclExtensions]::SetAccessControl($privateInfo, $fileAcl)
+        if ($PSVersionTable.PSVersion.Major -ge 7) { [IO.FileSystemAclExtensions]::SetAccessControl($privateInfo, $fileAcl) } else { $privateInfo.SetAccessControl($fileAcl) }
     }
 }
 $existingMail = @(Get-NetTCPConnection -LocalPort 1025 -State Listen -ErrorAction SilentlyContinue)

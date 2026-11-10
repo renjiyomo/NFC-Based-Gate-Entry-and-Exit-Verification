@@ -8,6 +8,7 @@ use App\Models\ScanAttempt;
 class Rules
 {
     public const TITLES = [
+        'missing_exit' => 'Missing Exit',
         'repeated_entry' => 'Entry follows a recorded Entry',
         'exit_without_entry' => 'Exit without a preceding recorded Entry',
         'denied_burst' => 'Repeated denied checks at one gate',
@@ -48,7 +49,7 @@ class Rules
             $previous = AccessEvent::effective()->where('source', $a->source)->where('person_id', $a->person_id)
                 ->where(fn ($q) => $q->where('confirmed_at', '<', $clock)->orWhere(fn ($t) => $t->where('confirmed_at', $clock)->where('id', '<', $event->id)))
                 ->orderByDesc('confirmed_at')->orderByDesc('id')->first();
-            if ($event->direction === 'entry' && $previous?->direction === 'entry') {
+            if ($event->direction === 'entry' && $previous?->direction === 'entry' && ! str_starts_with($event->policy_version, 'gate-state-v1-')) {
                 $add('repeated_entry', [$previous->scan_attempt_id, $a->id], 'The preceding effective passage for this person was also Entry. A missing Exit or a recording error may explain this; it does not establish misconduct.');
             }
             if ($event->direction === 'exit' && $previous?->direction !== 'entry') {

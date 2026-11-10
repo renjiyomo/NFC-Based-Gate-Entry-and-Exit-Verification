@@ -120,6 +120,6 @@ class WorkflowTest extends PostgresTestCase
         $this->get('/admin/dashboard')->assertOk();
         $this->signIn($f['guard']);
         $this->get('/admin/students')->assertForbidden();
-        $this->postJson('/guard/gates/'.$f['gate']->id.'/scan', ['request_id' => (string) Str::uuid(), 'payload' => $f['receipt']['payload'], 'direction' => 'entry'])->assertOk()->assertJsonPath('passage.direction', 'entry');
+        $this->postJson('/guard/gates/'.$f['gate']->id.'/automatic-scan', ['request_id' => (string) Str::uuid(), 'payload' => $f['receipt']['payload']])->assertOk()->assertJsonPath('passage.direction', 'entry');
     }
 }

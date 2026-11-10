@@ -126,7 +126,6 @@ class CredentialLifecycleTest extends ManagementTestCase
             $response = $this->postJson('/admin/credentials/issue', [
                 'person_id' => $person->id,
                 'record_version' => $person->fresh()->record_version,
-                'label' => 'CROSS-'.Str::uuid(),
                 'mode' => 'new',
                 'request_id' => (string) Str::uuid(),
             ])->assertCreated();
@@ -217,7 +216,7 @@ class CredentialLifecycleTest extends ManagementTestCase
         $this->assertSame(3, DB::table('credential_assignments')->count());
     }
 
-    public function test_inactive_people_cannot_receive_credentials_and_duplicate_labels_are_rejected(): void
+    public function test_inactive_people_cannot_receive_credentials_and_manual_labels_are_rejected(): void
     {
         $inactive = $this->makePerson(overrides: ['status' => 'inactive']);
         $this->rejects(fn () => $this->issue($inactive), 'person_id');
@@ -369,7 +368,7 @@ class CredentialLifecycleTest extends ManagementTestCase
     public function test_http_receipt_is_no_store_and_registry_person_and_detail_props_never_contain_secrets(): void
     {
         $person = $this->makePerson();
-        $data = ['person_id' => $person->id, 'record_version' => $person->record_version, 'label' => 'HTTP-LAB', 'mode' => 'new', 'request_id' => (string) Str::uuid(), 'source' => 'simulated'];
+        $data = ['person_id' => $person->id, 'record_version' => $person->record_version, 'mode' => 'new', 'request_id' => (string) Str::uuid(), 'source' => 'simulated'];
         $response = $this->postJson('/admin/credentials/issue', $data)->assertCreated()->assertJsonPath('credential.source', 'physical');
         $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
         $receipt = $response->json();

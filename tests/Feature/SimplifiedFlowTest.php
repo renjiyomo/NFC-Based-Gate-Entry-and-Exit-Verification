@@ -9,16 +9,26 @@ use App\Models\NfcCredential;
 use App\Models\Person;
 use App\Models\ScanAttempt;
 use App\Services\Credentials\CredentialLifecycle;
+use App\Services\GateOperations\AutomaticPassages;
 use App\Services\Monitoring\PassageCorrections;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\ManagementTestCase;
 
 class SimplifiedFlowTest extends ManagementTestCase
 {
+    // Historical manual-direction records remain readable/correctable.
+    private function legacyScan($gate, $account, array $data): TestResponse
+    {
+        $result = app(AutomaticPassages::class)->scan($account, $gate, $data, app('session')->getId(), 'physical');
+
+        return TestResponse::fromBaseResponse(response()->json($result));
+    }
+
     private function station(): array
     {
         $gate = Gate::create(['code' => 'AUTO-'.Str::random(8), 'name' => 'Synthetic gate', 'status' => 'active']);
@@ -75,21 +85,22 @@ class SimplifiedFlowTest extends ManagementTestCase
         [$gate,$account] = $this->station();
         [$person,$credential,$payload] = $this->coin();
         $this->signIn($account);
-        $body = ['request_id' => (string) Str::uuid(), 'payload' => $payload, 'direction' => 'entry'];
-        $a = $this->postJson('/guard/gates/'.$gate->id.'/scan', $body)->assertOk()->assertJsonPath('review.status', 'confirmed')->assertJsonPath('passage.identity_method', 'nfc_scan')->assertJsonPath('identity.name', $person->full_name)->json();
+        $body = ['request_id' => (string) Str::uuid(), 'payload' => $payload];
+        $a = $this->postJson('/guard/gates/'.$gate->id.'/automatic-scan', $body)->assertOk()->assertJsonPath('review.status', 'confirmed')->assertJsonPath('passage.identity_method', 'nfc_scan')->assertJsonPath('identity.name', $person->full_name)->json();
         $this->assertSame(1, AccessEvent::count());
         $this->assertSame(0, AccessAuthorization::count());
         $this->withCredentials()->withCookie(config('session.cookie'), app('session')->getId());
-        $this->postJson('/guard/gates/'.$gate->id.'/scan', $body)->assertOk()->assertJsonPath('passage.id', $a['passage']['id']);
+        $this->postJson('/guard/gates/'.$gate->id.'/automatic-scan', $body)->assertOk()->assertJsonPath('passage.id', $a['passage']['id']);
         $this->assertSame(1, ScanAttempt::count());
         $this->getJson('/guard/gates/'.$gate->id.'/requests/'.$body['request_id'])->assertOk()->assertJsonPath('passage.id', $a['passage']['id']);
-        $this->postJson('/guard/gates/'.$gate->id.'/scan', [...$body, 'direction' => 'exit'])->assertStatus(422);
-        $this->postJson('/guard/gates/'.$gate->id.'/scan', [...$body, 'request_id' => (string) Str::uuid()])->assertOk()->assertJsonPath('review.reason', 'duplicate_passage')->assertJsonPath('passage', null);
+        $this->postJson('/guard/gates/'.$gate->id.'/automatic-scan', [...$body, 'direction' => 'exit'])->assertStatus(422);
+        $this->postJson('/guard/gates/'.$gate->id.'/automatic-scan', [...$body, 'request_id' => (string) Str::uuid()])->assertOk()->assertJsonPath('review.reason', 'duplicate_passage')->assertJsonPath('passage', null);
         $this->assertSame(1, AccessEvent::count());
-        $this->postJson('/guard/gates/'.$gate->id.'/scan', [...$body, 'request_id' => (string) Str::uuid(), 'direction' => 'exit'])->assertOk()->assertJsonPath('passage.direction', 'exit');
+        $this->travel(10)->seconds();
+        $this->postJson('/guard/gates/'.$gate->id.'/automatic-scan', [...$body, 'request_id' => (string) Str::uuid()])->assertOk()->assertJsonPath('passage.direction', 'exit');
         $this->assertSame(2, AccessEvent::count());
         app(CredentialLifecycle::class)->terminate($this->admin, $credential->fresh(), 'revoke', 'lost');
-        $this->postJson('/guard/gates/'.$gate->id.'/scan', [...$body, 'request_id' => (string) Str::uuid()])->assertOk()->assertJsonPath('verification.reason', 'revoked')->assertJsonPath('identity', null)->assertJsonPath('passage', null);
+        $this->postJson('/guard/gates/'.$gate->id.'/automatic-scan', [...$body, 'request_id' => (string) Str::uuid()])->assertOk()->assertJsonPath('verification.reason', 'revoked')->assertJsonPath('identity', null)->assertJsonPath('passage', null);
         $this->assertSame(2, AccessEvent::count());
         $this->travel(31)->minutes();
         $this->getJson('/guard/gates/'.$gate->id.'/requests/'.$body['request_id'])->assertOk()->assertJsonPath('identity', null)->assertJsonPath('passage.id', $a['passage']['id']);
@@ -101,11 +112,11 @@ class SimplifiedFlowTest extends ManagementTestCase
         [$other] = $this->station();
         [$person,,$payload] = $this->coin();
         $this->signIn($account);
-        $body = ['request_id' => (string) Str::uuid(), 'payload' => $payload, 'direction' => 'entry'];
-        $this->postJson('/guard/gates/'.$other->id.'/scan', $body)->assertForbidden();
+        $body = ['request_id' => (string) Str::uuid(), 'payload' => $payload];
+        $this->postJson('/guard/gates/'.$other->id.'/automatic-scan', $body)->assertForbidden();
         $person->status = 'inactive';
         $person->save();
-        $this->postJson('/guard/gates/'.$gate->id.'/scan', $body)->assertOk()->assertJsonPath('verification.reason', 'person_inactive')->assertJsonPath('identity', null);
+        $this->postJson('/guard/gates/'.$gate->id.'/automatic-scan', $body)->assertOk()->assertJsonPath('verification.reason', 'person_inactive')->assertJsonPath('identity', null);
         $this->assertSame(0, AccessEvent::count());
     }
 
@@ -142,11 +153,11 @@ class SimplifiedFlowTest extends ManagementTestCase
         [$person, , $payload] = $this->coin();
         $this->signIn($account);
         if ($previous) {
-            $this->postJson('/guard/gates/'.$gate->id.'/scan', ['request_id' => (string) Str::uuid(), 'payload' => $payload, 'direction' => $previous])->assertOk();
+            $this->legacyScan($gate, $account, ['request_id' => (string) Str::uuid(), 'payload' => $payload, 'direction' => $previous])->assertOk();
         }
         $this->travelTo($start->addSeconds($nextDay ? 30 : 12));
         $request = (string) Str::uuid();
-        $response = $this->postJson('/guard/gates/'.$gate->id.'/scan', ['request_id' => $request, 'payload' => $payload, 'direction' => $direction])
+        $response = $this->legacyScan($gate, $account, ['request_id' => $request, 'payload' => $payload, 'direction' => $direction])
             ->assertOk()->assertJsonPath('passage.direction', $direction)->assertJsonPath('passage.sequence_notice', $notice)->assertJsonPath('review.status', 'confirmed');
         $this->assertSame($previous ? 2 : 1, AccessEvent::count());
         $event = AccessEvent::where('public_id', $response->json('passage.id'))->sole();
@@ -169,13 +180,13 @@ class SimplifiedFlowTest extends ManagementTestCase
         [, , $payload] = $this->coin();
         $this->signIn($account);
         $body = ['payload' => $payload, 'direction' => 'entry'];
-        $this->postJson('/guard/gates/'.$gate->id.'/scan', [...$body, 'request_id' => (string) Str::uuid()])->assertOk();
+        $this->legacyScan($gate, $account, [...$body, 'request_id' => (string) Str::uuid()])->assertOk();
         $event = AccessEvent::sole();
         $this->travel(5)->seconds();
-        $this->postJson('/guard/gates/'.$gate->id.'/scan', [...$body, 'request_id' => (string) Str::uuid()])->assertOk()->assertJsonPath('review.reason', 'duplicate_passage')->assertJsonPath('passage', null);
+        $this->legacyScan($gate, $account, [...$body, 'request_id' => (string) Str::uuid()])->assertOk()->assertJsonPath('review.reason', 'duplicate_passage')->assertJsonPath('passage', null);
         app(PassageCorrections::class)->append($this->admin, $event, ['expected_revision' => 0, 'action' => 'void', 'reason' => 'Synthetic wrong-direction correction'], 'physical');
         $this->travel(12)->seconds();
-        $this->postJson('/guard/gates/'.$gate->id.'/scan', [...$body, 'request_id' => (string) Str::uuid(), 'direction' => 'exit'])->assertOk()->assertJsonPath('passage.sequence_notice', 'exit_without_recorded_entry')->assertJsonPath('sequence_context', null);
+        $this->legacyScan($gate, $account, [...$body, 'request_id' => (string) Str::uuid(), 'direction' => 'exit'])->assertOk()->assertJsonPath('passage.sequence_notice', 'exit_without_recorded_entry')->assertJsonPath('sequence_context', null);
         $this->assertSame(2, AccessEvent::count());
         $this->assertSame(1, AccessEvent::effective()->count());
     }
@@ -187,7 +198,7 @@ class SimplifiedFlowTest extends ManagementTestCase
         $this->postJson('/admin/credentials/'.$old->public_id.'/revoke', ['reason' => 'lost'])->assertOk()->assertJsonPath('credential.status', 'revoked');
         $this->assertNull($person->fresh()->active_credential_assignment_id);
         $this->signIn($account);
-        $scan = fn ($payload) => $this->postJson('/guard/gates/'.$gate->id.'/scan', ['request_id' => (string) Str::uuid(), 'payload' => $payload, 'direction' => 'entry']);
+        $scan = fn ($payload) => $this->postJson('/guard/gates/'.$gate->id.'/automatic-scan', ['request_id' => (string) Str::uuid(), 'payload' => $payload]);
         $scan($oldPayload)->assertOk()->assertJsonPath('verification.reason', 'revoked')->assertJsonPath('identity', null)->assertJsonPath('passage', null);
         $this->assertSame(0, AccessEvent::count());
         $service = app(CredentialLifecycle::class);

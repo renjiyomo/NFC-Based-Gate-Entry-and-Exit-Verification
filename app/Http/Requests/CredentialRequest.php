@@ -17,9 +17,6 @@ class CredentialRequest extends FormRequest
     {
         // Credential writes are JSON-only, so invalid input is never flashed into a session.
         abort_unless($this->expectsJson(), 406, 'Credential requests must accept JSON.');
-        if (is_string($this->input('label'))) {
-            $this->merge(['label' => trim($this->input('label'))]);
-        }
     }
 
     protected function getRedirectUrl(): string
@@ -31,7 +28,7 @@ class CredentialRequest extends FormRequest
     {
         if ($this->routeIs('*.issue')) {
             return ['person_id' => ['required', 'integer', Rule::exists('persons', 'id')->whereNull('archived_at')->where('status', 'active')], 'record_version' => ['required', 'integer', 'min:1'],
-                'label' => ['required', 'string', 'max:64', 'not_regex:/[\p{C}]/u', 'not_regex:/nfcheck:v[0-9]+:/i', Rule::unique('nfc_credentials')],
+                'label' => ['prohibited'],
                 'mode' => ['required', Rule::in(['new', 'replace', 'lost'])], 'replaces_id' => ['nullable', 'required_unless:mode,new', 'uuid'], 'request_id' => ['required', 'uuid'],
                 'valid_until' => ['nullable', 'date_format:Y-m-d\TH:i', 'before:2100-01-01']];
         }

@@ -19,9 +19,13 @@ try {
         'AWS_ACCESS_KEY_ID' => $settings['supabase']['access_key_id'], 'AWS_SECRET_ACCESS_KEY' => $settings['supabase']['secret_access_key'],
     ]);
     $path = $root.'/.tools/secrets/cloud-production.env';
-    if (is_file($path) && $values['APP_URL'] === '') {
+    if (is_file($path)) {
         $old = Dotenv\Dotenv::parse(file_get_contents($path));
-        $values['APP_URL'] = $old['APP_URL'] ?? '';
+        foreach (['APP_URL', 'CRON_SECRET'] as $keep) {
+            if ($values[$keep] === '') {
+                $values[$keep] = $old[$keep] ?? '';
+            }
+        }
     }
     $lines = ['# Private server configuration. Never commit or paste this file into chat.'];
     foreach ($values as $name => $value) {

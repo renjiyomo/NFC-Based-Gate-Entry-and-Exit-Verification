@@ -68,7 +68,7 @@ class CredentialLifecycle
             $payload = $this->tokens->generate();
             $nonce = bin2hex(random_bytes(32));
             $person->forceFill(['record_version' => (int) $person->record_version + 1])->save();
-            $credential = NfcCredential::create(['public_id' => (string) Str::uuid(), 'label' => $data['label'], 'token_digest' => $this->tokens->digest($payload), 'status' => 'pending', 'source' => $source,
+            $credential = NfcCredential::create(['public_id' => (string) Str::uuid(), 'label' => app(CredentialLabels::class)->next($person->person_type->value), 'token_digest' => $this->tokens->digest($payload), 'status' => 'pending', 'source' => $source,
                 'created_by' => $actor->id, 'issuer_auth_version' => $actor->auth_version, 'issuance_request_id' => $data['request_id'], 'completion_digest' => hash('sha256', $nonce, true), 'issuer_session_digest' => $this->sessionDigest($sessionId),
                 'person_version' => $person->record_version, 'issuance_mode' => $mode, 'replaces_credential_id' => $replaces?->id, 'pending_expires_at' => now()->addMinutes(10), 'valid_until' => $until]);
             CredentialAssignment::create(['person_id' => $person->id, 'credential_id' => $credential->id, 'assigned_by' => $actor->id, 'assigned_at' => now()]);

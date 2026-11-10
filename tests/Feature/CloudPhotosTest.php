@@ -84,7 +84,7 @@ class CloudPhotosTest extends ManagementTestCase
         $gate = Gate::create(['code' => 'CLOUD-'.Str::random(8), 'name' => 'Synthetic gate', 'status' => 'active']);
         $guard = $this->user(['role' => 'guard', 'gate_id' => $gate->id]);
         $this->signIn($guard);
-        $scan = $this->postJson('/guard/gates/'.$gate->id.'/scan', ['request_id' => (string) Str::uuid(), 'payload' => $receipt['payload'], 'direction' => 'entry'])->assertOk();
+        $scan = $this->postJson('/guard/gates/'.$gate->id.'/automatic-scan', ['request_id' => (string) Str::uuid(), 'payload' => $receipt['payload']])->assertOk();
         $this->withCredentials()->withCookie(config('session.cookie'), app('session')->getId());
         $url = $scan->json('identity.photo_url');
         $this->get($url)->assertOk()->assertHeader('Cache-Control', 'no-store, private')->assertStreamedContent(Storage::disk('s3')->get($path));
