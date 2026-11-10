@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\ManagementGuard;
 use App\Services\Monitoring\ReportFilters;
+use App\Support\DatabaseIdentity;
+use App\Support\DatabaseLocks;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -27,7 +29,7 @@ class Generation
         return DB::transaction(function () use ($actor, $f, $source, $key): SummaryRequest {
             $admin = app(ManagementGuard::class)->actor($actor);
             abort_unless($admin->auth_version === $actor->auth_version && ! $admin->must_change_password, 403);
-            $existing = SummaryRequest::where('actor_id', $admin->id)->where('request_key', $key)->sharedLock()->first();
+            $existing = SummaryRequest::where('actor_id', $admin->id)->where('request_key', $key)->tap([DatabaseLocks::class, 'immutableRead'])->first();
             if ($existing) {
                 if ($existing->source !== $source || $existing->period !== $f->values['period'] || $existing->period_from !== $f->values['from'] || $existing->period_to !== $f->values['to']) {
                     throw ValidationException::withMessages(['request_key' => 'This request key belongs to a different period. Start a new generation.']);
@@ -69,7 +71,7 @@ class Generation
 
                 return false;
             }
-            $allowed = in_array(config('database.connections.mysql.database'), ['nfcheck_simulator', 'nfcheck_hardware', 'nfcheck_testing'], true);
+            $allowed = in_array(DatabaseIdentity::name(), ['nfcheck_simulator', 'nfcheck_hardware', 'nfcheck_testing'], true);
             if (! $allowed) {
                 $this->complete($r, 'unavailable', error: 'workspace_not_approved');
 

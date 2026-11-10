@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\BinaryDigest;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -33,7 +34,7 @@ class NfcCredential extends Model
 
     protected function casts(): array
     {
-        return ['person_version' => 'integer', 'issuer_auth_version' => 'integer', 'pending_expires_at' => 'immutable_datetime', 'read_back_at' => 'immutable_datetime', 'activated_at' => 'immutable_datetime', 'valid_until' => 'immutable_datetime', 'closed_at' => 'immutable_datetime'];
+        return ['token_digest' => BinaryDigest::class, 'completion_digest' => BinaryDigest::class, 'issuer_session_digest' => BinaryDigest::class, 'person_version' => 'integer', 'issuer_auth_version' => 'integer', 'pending_expires_at' => 'immutable_datetime', 'read_back_at' => 'immutable_datetime', 'activated_at' => 'immutable_datetime', 'valid_until' => 'immutable_datetime', 'closed_at' => 'immutable_datetime'];
     }
 
     public function assignment(): HasOne

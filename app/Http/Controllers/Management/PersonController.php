@@ -7,15 +7,15 @@ use App\Http\Requests\ManagementRequest;
 use App\Models\Person;
 use App\Services\Credentials\CredentialData;
 use App\Services\PersonManagement;
+use App\Services\PersonPhotos;
 use App\Support\CampusCatalog;
 use App\Support\DirectoryData;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PersonController
 {
@@ -44,7 +44,7 @@ class PersonController
         $query = DirectoryData::records(Person::where('person_type', $type)->with([$relation, 'activeCredentialAssignment.credential']), $filters);
         if ($filters['q'] !== '') {
             $like = DirectoryData::like($filters['q']);
-            $query->where(fn ($q) => $q->whereRaw("full_name LIKE ? ESCAPE '!'", [$like])->orWhereRaw("campus_number LIKE ? ESCAPE '!'", [$like]));
+            $query->where(fn ($q) => $q->whereRaw("LOWER(full_name) LIKE LOWER(?) ESCAPE '!'", [$like])->orWhereRaw("LOWER(campus_number) LIKE LOWER(?) ESCAPE '!'", [$like]));
         }
         if ($filters['group'] !== '') {
             $column = $type === PersonType::Student ? 'program' : 'department';
@@ -117,11 +117,10 @@ class PersonController
         return redirect('/admin/'.$directory.'/'.$person->id)->with('status', 'Person restored as inactive. Review the record before enabling it and issuing a new coin.');
     }
 
-    public function photo(string $directory, Person $person): BinaryFileResponse
+    public function photo(string $directory, Person $person, PersonPhotos $photos): StreamedResponse
     {
         $this->person($directory, $person);
-        abort_unless($person->photo_path && preg_match('/^person-photos\/[a-f0-9-]{36}\.jpg$/D', $person->photo_path) && Storage::disk('local')->exists($person->photo_path), 404);
 
-        return response()->file(Storage::disk('local')->path($person->photo_path), ['Content-Type' => 'image/jpeg', 'Content-Disposition' => 'inline; filename="person-photo.jpg"']);
+        return $photos->response($person->photo_path);
     }
 }

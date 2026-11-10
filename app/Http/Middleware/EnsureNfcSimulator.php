@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\DatabaseIdentity;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -12,7 +13,7 @@ class EnsureNfcSimulator
     {
         return app()->environment(['local', 'testing']) && config('nfcheck.nfc_simulator')
             && in_array($request->ip(), ['127.0.0.1', '::1'], true)
-            && in_array(config('database.connections.mysql.database'), ['nfcheck_simulator', 'nfcheck_testing'], true);
+            && in_array(DatabaseIdentity::name(), ['nfcheck_simulator', 'nfcheck_testing'], true);
     }
 
     public function handle(Request $request, Closure $next): Response

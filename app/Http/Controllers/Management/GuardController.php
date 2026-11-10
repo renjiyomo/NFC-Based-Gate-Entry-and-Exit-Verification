@@ -20,7 +20,7 @@ class GuardController
         $query = DirectoryData::records(User::where('role', 'guard')->whereNotNull('gate_id'), $filters);
         if ($filters['q'] !== '') {
             $like = DirectoryData::like($filters['q']);
-            $query->where(fn ($q) => $q->whereRaw("name LIKE ? ESCAPE '!'", [$like])->orWhereRaw("username LIKE ? ESCAPE '!'", [$like]));
+            $query->where(fn ($q) => $q->whereRaw("LOWER(name) LIKE LOWER(?) ESCAPE '!'", [$like])->orWhereRaw("LOWER(username) LIKE LOWER(?) ESCAPE '!'", [$like]));
         }
 
         return Inertia::render('management/GuardsIndex', ['filters' => $filters, 'records' => $query->orderBy('name')->paginate((int) $filters['per_page'])->appends($filters)->through(fn ($u) => DirectoryData::guard($u))]);

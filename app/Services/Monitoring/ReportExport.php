@@ -2,6 +2,7 @@
 
 namespace App\Services\Monitoring;
 
+use App\Support\DatabaseIdentity;
 use Dompdf\Dompdf;
 use Dompdf\Options as PdfOptions;
 use OpenSpout\Common\Entity\Cell\NumericCell;
@@ -21,7 +22,7 @@ class ReportExport
 
     public function label(string $source): string
     {
-        return match (config('database.connections.mysql.database')) {
+        return match (DatabaseIdentity::name()) {
             'nfcheck_hardware' => 'HARDWARE LAB - SYNTHETIC TEST RECORDS',
             'nfcheck_simulator', 'nfcheck_testing' => 'ISOLATED TEST WORKSPACE - '.$source,
             default => 'NFCheck Bicol University Polangui gate records - '.$source,
@@ -49,7 +50,7 @@ class ReportExport
                 $table = ['headers' => ['Time (Manila)', 'Person / university number', 'Gate / guard', 'Direction', 'Verification / reason', 'Review / reason', 'Passage state', 'Credential / sequence'],
                     'rows' => array_map(fn ($r) => [$r[0], $r[1]."\n".$r[2]."\n".$r[3], $r[4]."\n".$r[5], $r[6], $r[7]."\n".$r[8], $r[9]."\n".$r[10], $r[11], $r[12]."\n".$r[13]], $table['rows'])];
             }
-            $options = new PdfOptions(['isRemoteEnabled' => false, 'isPhpEnabled' => false, 'isJavascriptEnabled' => false, 'defaultFont' => 'DejaVu Sans', 'chroot' => [resource_path('views/reports'), base_path('vendor/dompdf/dompdf/lib/fonts')]]);
+            $options = new PdfOptions(['isRemoteEnabled' => false, 'isPhpEnabled' => false, 'isJavascriptEnabled' => false, 'defaultFont' => 'DejaVu Sans', 'fontCache' => sys_get_temp_dir(), 'tempDir' => sys_get_temp_dir(), 'chroot' => [resource_path('views/reports'), base_path('vendor/dompdf/dompdf/lib/fonts')]]);
             $pdf = new Dompdf($options);
             $pdf->loadHtml(view('reports.activity', compact('table', 'f', 'source', 'dataset', 'label'))->render(), 'UTF-8');
             $pdf->setPaper('A4', 'landscape');

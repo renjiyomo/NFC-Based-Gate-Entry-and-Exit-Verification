@@ -1,6 +1,7 @@
 <?php
 
 use App\Support\IsolatedDatabase;
+use App\Support\SchemaDialect;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -44,9 +45,9 @@ return new class extends Migration
         // Legacy observations remain intact; the new policy records an NFC scan,
         // not a human identity attestation. No grant/dated assignment is required.
         Schema::table('scan_attempts', fn (Blueprint $t) => $t->unsignedBigInteger('gate_assignment_id')->nullable()->change());
-        DB::statement("ALTER TABLE access_events MODIFY identity_method ENUM('photo','campus_document','nfc_scan') NOT NULL");
-        DB::statement('ALTER TABLE scan_attempts DROP CHECK attempt_outcome_review');
-        DB::statement('ALTER TABLE scan_attempts DROP CHECK attempt_allowed_deadline_present');
+        SchemaDialect::allowAutomaticIdentity();
+        SchemaDialect::dropCheck('scan_attempts', 'attempt_outcome_review');
+        SchemaDialect::dropCheck('scan_attempts', 'attempt_allowed_deadline_present');
         DB::statement("ALTER TABLE scan_attempts ADD CONSTRAINT attempt_outcome_review CHECK ((outcome = 'denied' AND review_status = 'not_applicable' AND review_expires_at IS NULL) OR (outcome = 'allowed' AND review_status <> 'not_applicable' AND person_id IS NOT NULL AND credential_id IS NOT NULL AND credential_assignment_id IS NOT NULL AND person_version IS NOT NULL AND ((policy_version = 'gate-auto-v2' AND review_status IN ('confirmed','cancelled') AND review_expires_at IS NULL) OR (policy_version <> 'gate-auto-v2' AND authorization_id IS NOT NULL AND review_expires_at IS NOT NULL AND review_expires_at > received_at))))");
     }
 

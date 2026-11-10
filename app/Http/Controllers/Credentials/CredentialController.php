@@ -10,6 +10,7 @@ use App\Services\Credentials\CredentialData;
 use App\Services\Credentials\CredentialDestination;
 use App\Services\Credentials\CredentialLifecycle;
 use App\Services\Credentials\CredentialVerifier;
+use App\Support\DatabaseIdentity;
 use App\Support\DirectoryData;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
@@ -28,7 +29,7 @@ class CredentialController
         Gate::authorize('viewAny', NfcCredential::class);
         $data = $request->validate(['kind' => ['required', Rule::in(['empty', 'reference', 'other'])], 'payload' => ['nullable', 'required_if:kind,reference', 'string', 'max:256']]);
         $source = $request->routeIs('simulator.*') ? 'simulated' : 'physical';
-        abort_if($source === 'physical' && config('database.connections.mysql.database') === 'nfcheck_simulator', 403);
+        abort_if($source === 'physical' && DatabaseIdentity::name() === 'nfcheck_simulator', 403);
         $result = $destination->inspect($data['kind'], $data['payload'] ?? null, $source);
         $audit->record('credential.destination_checked', $request->user(), metadata: ['reason' => $result['reason'], 'source' => $source]);
 
@@ -45,7 +46,7 @@ class CredentialController
         $query = NfcCredential::with(['assignment.person', 'replaces']);
         if (! empty($filters['q'])) {
             $like = DirectoryData::like($filters['q']);
-            $query->where(fn ($q) => $q->whereRaw("label LIKE ? ESCAPE '!'", [$like])->orWhereHas('assignment.person', fn ($p) => $p->whereRaw("full_name LIKE ? ESCAPE '!'", [$like])->orWhereRaw("campus_number LIKE ? ESCAPE '!'", [$like])));
+            $query->where(fn ($q) => $q->whereRaw("LOWER(label) LIKE LOWER(?) ESCAPE '!'", [$like])->orWhereHas('assignment.person', fn ($p) => $p->whereRaw("LOWER(full_name) LIKE LOWER(?) ESCAPE '!'", [$like])->orWhereRaw("LOWER(campus_number) LIKE LOWER(?) ESCAPE '!'", [$like])));
         }
         if (! empty($filters['source'])) {
             $query->where('source', $filters['source']);
@@ -91,7 +92,7 @@ class CredentialController
         $query = Person::where('status', 'active');
         if (! empty($data['q'])) {
             $like = DirectoryData::like($data['q']);
-            $query->where(fn ($q) => $q->whereRaw("full_name LIKE ? ESCAPE '!'", [$like])->orWhereRaw("campus_number LIKE ? ESCAPE '!'", [$like]));
+            $query->where(fn ($q) => $q->whereRaw("LOWER(full_name) LIKE LOWER(?) ESCAPE '!'", [$like])->orWhereRaw("LOWER(campus_number) LIKE LOWER(?) ESCAPE '!'", [$like]));
         }
         $results = $query->with('activeCredentialAssignment.credential')->orderBy('full_name')->orderBy('id')->paginate(20);
 
@@ -111,7 +112,7 @@ class CredentialController
     public function issue(CredentialRequest $request, CredentialLifecycle $lifecycle): JsonResponse
     {
         $source = $request->routeIs('simulator.*') ? 'simulated' : 'physical';
-        abort_if($source === 'physical' && config('database.connections.mysql.database') === 'nfcheck_simulator', 403);
+        abort_if($source === 'physical' && DatabaseIdentity::name() === 'nfcheck_simulator', 403);
         try {
             $receipt = $lifecycle->issue($request->user(), $request->validated(), $request->session()->getId(), $source);
         } catch (UniqueConstraintViolationException) {

@@ -2,6 +2,7 @@
 
 namespace App\Services\Credentials;
 
+use App\Casts\BinaryDigest;
 use App\Models\NfcCredential;
 use App\Models\Person;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +30,7 @@ class CredentialVerifier
         if (! $digest) {
             return new CredentialCheck('malformed');
         }
-        $id = NfcCredential::where('token_digest', $digest)->value('id');
+        $id = NfcCredential::where('token_digest', BinaryDigest::binding($digest))->value('id');
 
         return $id ? $this->lockedCredential((int) $id, $allowSimulated, $requireGrant) : new CredentialCheck('unknown');
     }

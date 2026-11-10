@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'photo_disk' => env('NFCHECK_PHOTO_DISK', 'local'),
+    'password_recovery' => (bool) env('NFCHECK_PASSWORD_RECOVERY', true),
     // Never allows preview access in production, even if enabled accidentally.
     'ui_preview' => (bool) env('NFCHECK_UI_PREVIEW', false),
     'nfc_simulator' => (bool) env('NFCHECK_NFC_SIMULATOR', false),

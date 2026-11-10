@@ -2,6 +2,7 @@
 
 namespace App\Services\Credentials;
 
+use App\Casts\BinaryDigest;
 use App\Models\NfcCredential;
 
 class CredentialDestination
@@ -18,7 +19,7 @@ class CredentialDestination
         if (! $digest) {
             return $blocked;
         }
-        $credential = NfcCredential::with('assignment.person')->where('token_digest', $digest)->first();
+        $credential = NfcCredential::with('assignment.person')->where('token_digest', BinaryDigest::binding($digest))->first();
         if (! $credential || $credential->source !== $source) {
             return [...$blocked, 'reason' => 'unknown_reference', 'message' => 'This NFCheck reference is unknown in this workspace. Its contents will not be overwritten.'];
         }

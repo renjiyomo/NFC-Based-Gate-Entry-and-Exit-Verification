@@ -7,9 +7,10 @@ use App\Models\Gate;
 use App\Models\ScanAttempt;
 use App\Services\GateOperations\AutomaticPassages;
 use App\Services\GateOperations\GateOperations;
+use App\Services\PersonPhotos;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OperationController
 {
@@ -33,8 +34,8 @@ class OperationController
         abort(410, 'Manual confirmation has been retired. Valid NFC scans record automatically.');
     }
 
-    public function photo(Request $request, Gate $gate, ScanAttempt $attempt, AutomaticPassages $operations): BinaryFileResponse
+    public function photo(Request $request, Gate $gate, ScanAttempt $attempt, AutomaticPassages $operations, PersonPhotos $photos): StreamedResponse
     {
-        return response()->file($operations->photo($request->user(), $gate, $attempt, $request->session()->getId(), $this->source($request)), ['Content-Type' => 'image/jpeg', 'Content-Disposition' => 'inline; filename="verification-photo.jpg"']);
+        return $photos->response($operations->photo($request->user(), $gate, $attempt, $request->session()->getId(), $this->source($request)), true);
     }
 }

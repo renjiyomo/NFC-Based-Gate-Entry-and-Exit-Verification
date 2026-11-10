@@ -9,6 +9,7 @@
         "dompdf/dompdf": "^3.1.6",
         "inertiajs/inertia-laravel": "^3.0",
         "laravel/framework": "^13.40",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "openspout/openspout": "^5.13"
     },
     "require-dev": {

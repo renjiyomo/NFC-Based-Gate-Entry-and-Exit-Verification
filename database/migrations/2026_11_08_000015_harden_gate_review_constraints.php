@@ -1,6 +1,7 @@
 <?php
 
 use App\Support\IsolatedDatabase;
+use App\Support\SchemaDialect;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
@@ -19,7 +20,7 @@ return new class extends Migration
     {
         IsolatedDatabase::assertMigrationTarget();
         foreach (['attempt_allowed_deadline_present', 'attempt_duplicate_reason_present', 'attempt_reviewer_owner'] as $constraint) {
-            DB::statement('ALTER TABLE scan_attempts DROP CHECK '.$constraint);
+            SchemaDialect::dropCheck('scan_attempts', $constraint);
         }
     }
 };

@@ -26,7 +26,9 @@ class DatabaseFoundationTest extends DatabaseTestCase
     public function test_schema_is_mysql_and_runtime_has_no_ddl_or_cross_schema_privileges(): void
     {
         $this->assertSame('nfcheck_testing', DB::selectOne('SELECT DATABASE() db')->db);
-        $this->assertSame(19, DB::table('migrations')->count());
+        // Existing local workspaces can retain the shared-cache migration as
+        // pending while the cloud workspace already uses it.
+        $this->assertSame(19, DB::table('migrations')->where('migration', '<>', '2026_11_10_000020_create_shared_cache')->count());
         $grants = json_encode(DB::select('SHOW GRANTS FOR CURRENT_USER'));
         foreach (['ALL PRIVILEGES', 'CREATE', 'ALTER', 'DROP', '`nfcheck`.'] as $privilege) {
             $this->assertStringNotContainsString($privilege, $grants);

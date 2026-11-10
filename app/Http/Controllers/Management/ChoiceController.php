@@ -20,7 +20,7 @@ class ChoiceController
         $selected = isset($data['selected']) ? (clone $query)->find($data['selected']) : null;
         if (! empty($data['q'])) {
             $like = DirectoryData::like($data['q']);
-            $query->where(fn ($q) => $q->whereRaw("name LIKE ? ESCAPE '!'", [$like])->orWhereRaw(($kind === 'guards' ? 'email' : 'code')." LIKE ? ESCAPE '!'", [$like]));
+            $query->where(fn ($q) => $q->whereRaw("LOWER(name) LIKE LOWER(?) ESCAPE '!'", [$like])->orWhereRaw(($kind === 'guards' ? 'email' : 'code')." LIKE ? ESCAPE '!'", [$like]));
         }
         $results = $query->orderBy('name')->orderBy('id')->paginate(25);
 

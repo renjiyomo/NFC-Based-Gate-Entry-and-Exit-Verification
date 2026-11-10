@@ -1,5 +1,7 @@
 # Deployment preparation
 
+November 10 online update: the user selected Supabase PostgreSQL for the free thesis test. Its private schema, restricted role and four initial accounts are initialized and software-tested. Follow [the current online guide](vercel-online-setup.md) and [cloud evidence](cloud-preparation.md). The dedicated MySQL/Nginx procedure below remains the earlier Phase 11 preparation, not the selected free-host route. No public deployment or push has occurred; the first Linux container build and online physical NFC checks remain pending.
+
 Current update: **The user-approved [gate-account workflow](workflow-redesign.md) supersedes earlier individual-guard, scheduled-assignment, separate-grant and manual-confirmation instructions.** Migration 19 / 26 tables; 196 PHP tests / 2,062 assertions, 25 NFC tests and ten concurrency scenarios passed. Program/department catalogues and academic year/semester are implemented. New automatic-flow physical acceptance remains pending; no GitHub publication or Vercel deployment occurred.
 
 Phase 11 prepares a reviewable release procedure; it does not deploy this workstation or authorize live campus operation. Current main/simulator/hardware services remain loopback-only. The shared XAMPP Apache project URL must continue returning 403.

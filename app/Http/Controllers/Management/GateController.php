@@ -21,7 +21,7 @@ class GateController
         $query = DirectoryData::records(Gate::query(), $filters)->with('account');
         if ($filters['q'] !== '') {
             $like = DirectoryData::like($filters['q']);
-            $query->where(fn ($q) => $q->whereRaw("name LIKE ? ESCAPE '!'", [$like])->orWhereRaw("code LIKE ? ESCAPE '!'", [$like]));
+            $query->where(fn ($q) => $q->whereRaw("LOWER(name) LIKE LOWER(?) ESCAPE '!'", [$like])->orWhereRaw("LOWER(code) LIKE LOWER(?) ESCAPE '!'", [$like]));
         }
 
         return Inertia::render('management/GatesIndex', ['filters' => $filters, 'records' => $query->orderBy('name')->orderBy('id')->paginate((int) $filters['per_page'])->appends($filters)->through(fn (Gate $gate) => DirectoryData::gate($gate))]);

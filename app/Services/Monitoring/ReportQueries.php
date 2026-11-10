@@ -7,6 +7,7 @@ use App\Models\Gate;
 use App\Models\NfcCredential;
 use App\Models\Person;
 use App\Models\ScanAttempt;
+use App\Support\DatabaseSql;
 use App\Support\DirectoryData;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +29,7 @@ class ReportQueries
                 }
                 if ($v['q'] !== '') {
                     $like = DirectoryData::like($v['q']);
-                    $p->where(fn ($s) => $s->whereRaw("full_name LIKE ? ESCAPE '!'", [$like])->orWhereRaw("campus_number LIKE ? ESCAPE '!'", [$like]));
+                    $p->where(fn ($s) => $s->whereRaw("LOWER(full_name) LIKE LOWER(?) ESCAPE '!'", [$like])->orWhereRaw("LOWER(campus_number) LIKE LOWER(?) ESCAPE '!'", [$like]));
                 }
             });
         }
@@ -83,19 +84,21 @@ class ReportQueries
     public function summary(ReportFilters $f, string $source): array
     {
         $events = $this->events($f, $source);
-        $counts = (clone $events)->selectRaw("COUNT(*) total, COALESCE(SUM(direction='entry'),0) entries, COALESCE(SUM(direction='exit'),0) exits, COUNT(DISTINCT person_id) people")->first();
+        $counts = (clone $events)->selectRaw("COUNT(*) total, COALESCE(SUM(CASE WHEN direction='entry' THEN 1 ELSE 0 END),0) entries, COALESCE(SUM(CASE WHEN direction='exit' THEN 1 ELSE 0 END),0) exits, COUNT(DISTINCT person_id) people")->first();
         $attempts = $this->attempts($f, $source);
-        $checks = (clone $attempts)->selectRaw("COUNT(*) total, COALESCE(SUM(outcome='denied'),0) denied, COALESCE(SUM(duplicate_of_event_id IS NOT NULL),0) duplicates")->first();
-        $days = (clone $events)->selectRaw("DATE(confirmed_at + INTERVAL 8 HOUR) day, SUM(direction='entry') entries, SUM(direction='exit') exits")->groupByRaw('DATE(confirmed_at + INTERVAL 8 HOUR)')->get()->keyBy('day');
+        $checks = (clone $attempts)->selectRaw("COUNT(*) total, COALESCE(SUM(CASE WHEN outcome='denied' THEN 1 ELSE 0 END),0) denied, COALESCE(SUM(CASE WHEN duplicate_of_event_id IS NOT NULL THEN 1 ELSE 0 END),0) duplicates")->first();
+        $date = DatabaseSql::manilaDate();
+        $hour = DatabaseSql::manilaHour();
+        $days = (clone $events)->selectRaw("$date AS report_date, SUM(CASE WHEN direction='entry' THEN 1 ELSE 0 END) entries, SUM(CASE WHEN direction='exit' THEN 1 ELSE 0 END) exits")->groupByRaw($date)->get()->keyBy('report_date');
         $trend = [];
         for ($day = $f->from->setTimezone('Asia/Manila'); $day->lessThan($f->until) && $day->lessThanOrEqualTo($f->asOf); $day = $day->addDay()) {
             $row = $days->get($day->toDateString());
             $trend[] = ['date' => $day->toDateString(), 'entries' => (int) ($row?->entries ?? 0), 'exits' => (int) ($row?->exits ?? 0)];
         }
-        $hourRows = (clone $events)->selectRaw('HOUR(confirmed_at + INTERVAL 8 HOUR) hour, COUNT(*) total')->groupByRaw('HOUR(confirmed_at + INTERVAL 8 HOUR)')->pluck('total', 'hour');
+        $hourRows = (clone $events)->selectRaw("$hour AS report_hour, COUNT(*) total")->groupByRaw($hour)->pluck('total', 'report_hour');
         $hourly = array_map(fn ($h) => ['label' => sprintf('%02d:00', $h), 'value' => (int) ($hourRows[$h] ?? 0)], range(0, 23));
-        $gateRows = (clone $events)->join('gates as rg', 'rg.id', '=', 'access_events.gate_id')->selectRaw("rg.id, rg.code, rg.name, SUM(access_events.direction='entry') entries, SUM(access_events.direction='exit') exits")->groupBy('rg.id', 'rg.code', 'rg.name')->orderBy('rg.code')->get()->map(fn ($r) => ['label' => $r->code.' · '.$r->name, 'entries' => (int) $r->entries, 'exits' => (int) $r->exits])->all();
-        $kindRows = (clone $events)->join('persons as rp', 'rp.id', '=', 'access_events.person_id')->selectRaw("rp.person_type kind, SUM(access_events.direction='entry') entries, SUM(access_events.direction='exit') exits")->groupBy('rp.person_type')->get()->keyBy('kind');
+        $gateRows = (clone $events)->join('gates as rg', 'rg.id', '=', 'access_events.gate_id')->selectRaw("rg.id, rg.code, rg.name, SUM(CASE WHEN access_events.direction='entry' THEN 1 ELSE 0 END) entries, SUM(CASE WHEN access_events.direction='exit' THEN 1 ELSE 0 END) exits")->groupBy('rg.id', 'rg.code', 'rg.name')->orderBy('rg.code')->get()->map(fn ($r) => ['label' => $r->code.' · '.$r->name, 'entries' => (int) $r->entries, 'exits' => (int) $r->exits])->all();
+        $kindRows = (clone $events)->join('persons as rp', 'rp.id', '=', 'access_events.person_id')->selectRaw("rp.person_type kind, SUM(CASE WHEN access_events.direction='entry' THEN 1 ELSE 0 END) entries, SUM(CASE WHEN access_events.direction='exit' THEN 1 ELSE 0 END) exits")->groupBy('rp.person_type')->get()->keyBy('kind');
         $kinds = array_map(fn ($kind) => ['label' => ucfirst($kind), 'entries' => (int) ($kindRows->get($kind)?->entries ?? 0), 'exits' => (int) ($kindRows->get($kind)?->exits ?? 0)], ['student', 'employee']);
         $reasons = (clone $attempts)->where('outcome', 'denied')->selectRaw('reason label, COUNT(*) value')->groupBy('reason')->orderByDesc('value')->orderBy('reason')->get()->map(fn ($r) => ['label' => $r->label, 'value' => (int) $r->value])->all();
 
@@ -114,17 +117,17 @@ class ReportQueries
         }
         if ($f->values['q'] !== '') {
             $like = DirectoryData::like($f->values['q']);
-            $people->where(fn ($q) => $q->whereRaw("full_name LIKE ? ESCAPE '!'", [$like])->orWhereRaw("campus_number LIKE ? ESCAPE '!'", [$like]));
+            $people->where(fn ($q) => $q->whereRaw("LOWER(full_name) LIKE LOWER(?) ESCAPE '!'", [$like])->orWhereRaw("LOWER(campus_number) LIKE LOWER(?) ESCAPE '!'", [$like]));
         }
         $row = DB::query()->fromSub($people->select('id'), 'people')->leftJoinSub($ranked, 'last_event', fn ($j) => $j->on('last_event.person_id', '=', 'people.id')->where('last_event.position_number', 1))
-            ->selectRaw("COALESCE(SUM(last_event.direction='entry'),0) inside_count, COALESCE(SUM(last_event.direction='exit'),0) outside_count, COALESCE(SUM(last_event.person_id IS NULL),0) unknown_count")->first();
+            ->selectRaw("COALESCE(SUM(CASE WHEN last_event.direction='entry' THEN 1 ELSE 0 END),0) inside_count, COALESCE(SUM(CASE WHEN last_event.direction='exit' THEN 1 ELSE 0 END),0) outside_count, COALESCE(SUM(CASE WHEN last_event.person_id IS NULL THEN 1 ELSE 0 END),0) unknown_count")->first();
 
         return ['inside' => (int) $row->inside_count, 'outside' => (int) $row->outside_count, 'unknown' => (int) $row->unknown_count, 'as_of' => $f->cutoff()->toIso8601String()];
     }
 
     public function directoryCounts(string $source): array
     {
-        $people = Person::selectRaw("COALESCE(SUM(person_type='student'),0) students, COALESCE(SUM(person_type='employee'),0) employees")->first();
+        $people = Person::selectRaw("COALESCE(SUM(CASE WHEN person_type='student' THEN 1 ELSE 0 END),0) students, COALESCE(SUM(CASE WHEN person_type='employee' THEN 1 ELSE 0 END),0) employees")->first();
         $active = NfcCredential::query()->join('credential_assignments as ca', 'ca.credential_id', '=', 'nfc_credentials.id')->join('persons as p', 'p.active_credential_assignment_id', '=', 'ca.id')
             ->where('nfc_credentials.source', $source)->where('nfc_credentials.status', 'active')->whereNull('ca.ended_at')->where(fn ($q) => $q->whereNull('valid_until')->orWhere('valid_until', '>', now()))->count();
 

@@ -1,0 +1,93 @@
+{
+  "checked_date": "2026-11-10",
+  "status": "cloud_database_initialized_host_acceptance_pending",
+  "deployment_performed": false,
+  "github_push_performed": false,
+  "credentials_in_output_or_git": false,
+  "postgres": {
+    "version": "17.11",
+    "verified_tls": true,
+    "schema": "nfcheck_online",
+    "tables": 28,
+    "migrations": 20,
+    "programs": 17,
+    "departments": 6,
+    "case_insensitive_identifier_indexes": 5,
+    "runtime_role_restricted": true,
+    "anonymous_schema_access_denied": true,
+    "history_update_denied": true,
+    "review_update_allowed": true,
+    "fact_update_denied": true,
+    "administrators": 3,
+    "gate_accounts": 1,
+    "handoff_passwords_verified": 4,
+    "administrators_must_change_password": 3,
+    "people": 0,
+    "credentials": 0,
+    "passages": 0
+  },
+  "supabase_storage": {
+    "synthetic_sdk_write_read_delete": true,
+    "anonymous_public_read_refused": true,
+    "actual_laravel_jpeg_write_stream_delete": true,
+    "real_person_photos_uploaded": false
+  },
+  "checks": {
+    "php_tests": 223,
+    "php_assertions": 2397,
+    "frontend_tests": 36,
+    "mysql_races": 11,
+    "postgres_tests": 6,
+    "postgres_assertions": 40,
+    "postgres_overlapping_races": 4,
+    "composer_advisories": 0,
+    "npm_vulnerabilities": 0,
+    "format_build_typecheck": "passed",
+    "resumed_focused_tests": 16,
+    "resumed_focused_assertions": 149,
+    "export_final_tests": 4,
+    "export_final_assertions": 40,
+    "local_foundation_tests": 14,
+    "local_foundation_assertions": 45,
+    "connection_portability_final_tests": 5,
+    "connection_portability_final_assertions": 23
+  },
+  "recovery": {
+    "disposable_source_28_table_restore_passed": true,
+    "initialized_online_28_table_restore_passed": true,
+    "source_unchanged": true,
+    "owned_probe_schemas_roles_removed": true,
+    "temporary_plaintext_removed": true,
+    "online_final_comparison_resumed_on_fresh_connection": true,
+    "encrypted_archives_retained_privately": true
+  },
+  "secret_exclusions": {
+    "publishable_files_checked": 447,
+    "saved_cloud_secret_matches": 0,
+    "all_private_cloud_files_ignored": true,
+    "scope": "Current publishable worktree, not all Git history"
+  },
+  "tidb": {
+    "version": "8.0.11-TiDB-v8.5.3-serverless",
+    "rejected": true,
+    "permitted_column_update_error": 8121,
+    "owned_probes_removed": true,
+    "temporary_global_setting_restored": true,
+    "used_by_online_application": false
+  },
+  "preserved": {
+    "original_mysql_migrations": 19,
+    "original_mysql_tables": 26,
+    "local_passwords_and_active_coins": true,
+    "no_local_business_data_copied": true,
+    "unrelated_phone_script_edit_excluded": true
+  },
+  "limitations": {
+    "docker_engine_available": false,
+    "container_built_or_started": false,
+    "hosted_https_acceptance": false,
+    "physical_online_nfc_acceptance": false,
+    "live_ai_call": false,
+    "payment_or_billing_change": false
+  }
+}

@@ -8,6 +8,7 @@ use App\Models\ScanAttempt;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\ManagementGuard;
+use App\Support\DatabaseLocks;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -22,8 +23,8 @@ class Review
             // Attempts already allow tightly scoped review-state UPDATE privileges;
             // use their stable row as mutex without granting flag mutation rights.
             ScanAttempt::whereKey($target->anchor_attempt_id)->lockForUpdate()->firstOrFail();
-            $flag = AnomalyFlag::whereKey($target->id)->where('source', $source)->sharedLock()->firstOrFail();
-            $last = $flag->reviews()->sharedLock()->first();
+            $flag = AnomalyFlag::whereKey($target->id)->where('source', $source)->tap([DatabaseLocks::class, 'immutableRead'])->firstOrFail();
+            $last = $flag->reviews()->tap([DatabaseLocks::class, 'immutableRead'])->first();
             if ((int) ($last?->id ?? 0) !== (int) $data['expected_revision']) {
                 throw ValidationException::withMessages(['expected_revision' => 'Another review was saved. Reload before continuing.']);
             }

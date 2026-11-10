@@ -8,6 +8,7 @@ use App\Models\Person;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\ManagementGuard;
+use App\Support\DatabaseLocks;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -21,7 +22,7 @@ class PassageCorrections
             abort_unless($admin->auth_version === $actor->auth_version, 403);
             abort_unless($target->source === $source, 404);
             Person::withTrashed()->whereKey($target->person_id)->lockForUpdate()->firstOrFail();
-            $event = AccessEvent::whereKey($target->id)->sharedLock()->firstOrFail();
+            $event = AccessEvent::whereKey($target->id)->tap([DatabaseLocks::class, 'immutableRead'])->firstOrFail();
             $previous = $event->corrections()->get();
             if ((int) ($previous->last()?->id ?? 0) !== (int) $data['expected_revision']) {
                 throw ValidationException::withMessages(['expected_revision' => 'The correction history changed. Reload before saving.']);

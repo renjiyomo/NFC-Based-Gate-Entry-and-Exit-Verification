@@ -2,6 +2,7 @@
 
 namespace App\Services\Summaries;
 
+use App\Support\DatabaseIdentity;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
@@ -32,7 +33,7 @@ class ConfiguredProvider implements Provider
         $reason = null;
         if ($c['enabled'] !== true) {
             $reason = 'disabled';
-        } elseif (! app()->environment(['local', 'testing']) || ! in_array(config('database.connections.mysql.database'), ['nfcheck_simulator', 'nfcheck_hardware', 'nfcheck_testing'], true)) {
+        } elseif (! app()->environment(['local', 'testing']) || ! in_array(DatabaseIdentity::name(), ['nfcheck_simulator', 'nfcheck_hardware', 'nfcheck_testing'], true)) {
             $reason = 'workspace_not_approved';
         } elseif ($c['provider'] !== 'gemini_free' || $c['model'] !== 'gemini-3.1-flash-lite') {
             $reason = 'unsupported_provider';

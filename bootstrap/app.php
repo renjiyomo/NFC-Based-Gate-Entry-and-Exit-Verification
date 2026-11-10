@@ -19,6 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        if (filter_var(env('NFCHECK_CLOUD', false), FILTER_VALIDATE_BOOL)) {
+            $proxies = array_values(array_filter(array_map('trim', explode(',', (string) env('NFCHECK_TRUSTED_PROXIES', '')))));
+            $middleware->trustProxies(at: $proxies, headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO | Request::HEADER_X_FORWARDED_PORT);
+            $host = parse_url((string) env('APP_URL'), PHP_URL_HOST);
+            $middleware->trustHosts(at: $host ? ['^'.preg_quote($host, '/').'$'] : [], subdomains: false);
+        }
         $middleware->prepend(SecurityHeaders::class);
         $middleware->prependToPriorityList(StartSession::class, EnsureLocalPreview::class);
         $middleware->prependToPriorityList(StartSession::class, EnsureNfcSimulator::class);

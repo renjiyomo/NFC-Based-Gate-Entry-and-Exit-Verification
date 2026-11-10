@@ -21,11 +21,14 @@ class PasswordResetController
 {
     public function request(): Response
     {
+        abort_unless(config('nfcheck.password_recovery'), 404);
+
         return Inertia::render('auth/ForgotPassword');
     }
 
     public function send(ForgotPasswordRequest $request, AuditLogger $audit): RedirectResponse
     {
+        abort_unless(config('nfcheck.password_recovery'), 404);
         $validated = $request->validated();
         $email = mb_strtolower(trim($validated['email']));
         try {
@@ -40,11 +43,14 @@ class PasswordResetController
 
     public function form(Request $request, string $token): Response
     {
+        abort_unless(config('nfcheck.password_recovery'), 404);
+
         return Inertia::render('auth/ResetPassword', ['token' => $token, 'email' => (string) $request->query('email', '')]);
     }
 
     public function update(PasswordResetRequest $request, AuditLogger $audit): RedirectResponse
     {
+        abort_unless(config('nfcheck.password_recovery'), 404);
         $status = DB::transaction(function () use ($request, $audit): string {
             User::where('email', $request->validated('email'))->lockForUpdate()->first();
 

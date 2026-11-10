@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\BinaryDigest;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -16,7 +17,7 @@ class ScanAttempt extends Model
 
     protected function casts(): array
     {
-        return ['guard_auth_version' => 'integer', 'person_version' => 'integer', 'duplicate_window_seconds' => 'integer', 'received_at' => 'immutable_datetime', 'review_expires_at' => 'immutable_datetime', 'reviewed_at' => 'immutable_datetime'];
+        return ['session_digest' => BinaryDigest::class, 'payload_fingerprint' => BinaryDigest::class, 'guard_auth_version' => 'integer', 'person_version' => 'integer', 'duplicate_window_seconds' => 'integer', 'received_at' => 'immutable_datetime', 'review_expires_at' => 'immutable_datetime', 'reviewed_at' => 'immutable_datetime'];
     }
 
     protected static function booted(): void

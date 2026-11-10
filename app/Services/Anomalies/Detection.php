@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\ManagementGuard;
 use App\Services\Monitoring\ReportFilters;
+use App\Support\DatabaseLocks;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -38,12 +39,14 @@ class Detection
                     $flag = AnomalyFlag::where($identity)->first();
                     if (! $flag) {
                         try {
-                            $flag = AnomalyFlag::create([...$identity, 'public_id' => (string) Str::uuid(), 'policy' => $policy, 'severity' => $candidate['severity'], 'explanation' => $candidate['explanation'], 'occurred_at' => $a->received_at, 'created_at' => now()]);
+                            // A savepoint keeps a PostgreSQL unique-key conflict
+                            // from aborting the surrounding detection transaction.
+                            $flag = DB::transaction(fn () => AnomalyFlag::create([...$identity, 'public_id' => (string) Str::uuid(), 'policy' => $policy, 'severity' => $candidate['severity'], 'explanation' => $candidate['explanation'], 'occurred_at' => $a->received_at, 'created_at' => now()]));
                         } catch (UniqueConstraintViolationException $error) {
                             // Under MySQL REPEATABLE READ the earlier snapshot can
                             // miss another administrator's committed winner. A
                             // shared locking read sees it without UPDATE grants.
-                            $flag = AnomalyFlag::where($identity)->sharedLock()->first();
+                            $flag = AnomalyFlag::where($identity)->tap([DatabaseLocks::class, 'immutableRead'])->first();
                             if (! $flag) {
                                 throw $error;
                             }

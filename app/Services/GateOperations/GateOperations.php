@@ -11,8 +11,10 @@ use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\Credentials\CredentialCheck;
 use App\Services\Credentials\CredentialVerifier;
+use App\Services\PersonPhotos;
+use App\Support\DatabaseIdentity;
+use App\Support\DatabaseLocks;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -78,11 +80,11 @@ class GateOperations
             if (($data['identity_checked'] ?? false) !== true || ! in_array($data['identity_method'] ?? '', ['photo', 'campus_document'], true)) {
                 $this->fail('identity_checked', 'Review the person and explicitly confirm the identity check.');
             }
-            if ($data['identity_method'] === 'photo' && (! $check->person->photo_path || ! Storage::disk('local')->exists($check->person->photo_path))) {
+            if ($data['identity_method'] === 'photo' && ! app(PersonPhotos::class)->exists($check->person->photo_path)) {
                 $this->fail('identity_method', 'The identity photograph is unavailable. Review a trusted university identity document or cancel.');
             }
             // The stable person lock serializes different guards and request IDs too.
-            $duplicate = AccessEvent::effective()->where('person_id', $attempt->person_id)->where('gate_id', $station->id)->where('direction', $attempt->direction)->where('source', $source)->where('confirmed_at', '>', now()->subSeconds($attempt->duplicate_window_seconds)->format('Y-m-d H:i:s.u'))->where('confirmed_at', '<=', now()->format('Y-m-d H:i:s.u'))->latest('confirmed_at')->latest('id')->sharedLock()->first();
+            $duplicate = AccessEvent::effective()->where('person_id', $attempt->person_id)->where('gate_id', $station->id)->where('direction', $attempt->direction)->where('source', $source)->where('confirmed_at', '>', now()->subSeconds($attempt->duplicate_window_seconds)->format('Y-m-d H:i:s.u'))->where('confirmed_at', '<=', now()->format('Y-m-d H:i:s.u'))->latest('confirmed_at')->latest('id')->tap([DatabaseLocks::class, 'immutableRead'])->first();
             if ($duplicate) {
                 $this->transition($attempt, 'cancelled', 'duplicate_passage', $guard, $duplicate);
 
@@ -105,9 +107,9 @@ class GateOperations
             $attempt = ScanAttempt::lockForUpdate()->findOrFail($target->id);
             abort_unless($attempt->review_status === 'pending' && $attempt->effectiveReviewStatus() === 'pending' && $this->reason($check, $source) === 'eligible_for_review' && $check->person->record_version === $attempt->person_version, 404);
             $path = $check->person->photo_path;
-            abort_unless($path && preg_match('/^person-photos\/[a-f0-9-]{36}\.jpg$/D', $path) && Storage::disk('local')->exists($path), 404);
+            abort_unless(app(PersonPhotos::class)->validPath($path), 404);
 
-            return Storage::disk('local')->path($path);
+            return $path;
         }, 3);
     }
 
@@ -115,9 +117,9 @@ class GateOperations
     {
         abort_unless(in_array($source, ['physical', 'simulated'], true), 404);
         if ($source === 'simulated') {
-            abort_unless(app()->environment(['local', 'testing']) && config('nfcheck.nfc_simulator') && in_array(config('database.connections.mysql.database'), ['nfcheck_testing', 'nfcheck_simulator'], true), 404);
+            abort_unless(app()->environment(['local', 'testing']) && config('nfcheck.nfc_simulator') && in_array(DatabaseIdentity::name(), ['nfcheck_testing', 'nfcheck_simulator'], true), 404);
         } else {
-            abort_if(config('database.connections.mysql.database') === 'nfcheck_simulator', 403);
+            abort_if(DatabaseIdentity::name() === 'nfcheck_simulator', 403);
         }
         $guard = User::withTrashed()->lockForUpdate()->findOrFail($actor->id);
         abort_unless($guard->isGuard() && ! $guard->must_change_password && $guard->auth_version === $actor->auth_version, 403);
@@ -199,7 +201,7 @@ class GateOperations
             'current_check' => ['eligible' => $reason === 'eligible_for_review', 'reason' => $reason],
             'review' => ['status' => $attempt->effectiveReviewStatus(), 'expires_at' => $attempt->review_expires_at?->toISOString(), 'reviewed_at' => $attempt->reviewed_at?->toISOString(), 'reason' => $attempt->review_reason],
             'identity' => $pending ? ['name' => $check->person->full_name, 'number' => $check->person->campus_number, 'kind' => $check->person->person_type->value, 'photo_url' => $check->person->photo_path ? $base.'/'.$attempt->gate_id.'/attempts/'.$attempt->public_id.'/photo' : null, 'sequence_notice' => $this->sequence($attempt->person_id, $attempt->direction, $source)] : null,
-            'passage' => $this->eventData($attempt->passage()->sharedLock()->first()), 'duplicate_of' => $this->eventData($attempt->duplicate()->sharedLock()->first())];
+            'passage' => $this->eventData($attempt->passage()->tap([DatabaseLocks::class, 'immutableRead'])->first()), 'duplicate_of' => $this->eventData($attempt->duplicate()->tap([DatabaseLocks::class, 'immutableRead'])->first())];
     }
 
     private function eventData(?AccessEvent $event): ?array
@@ -209,7 +211,7 @@ class GateOperations
 
     private function sequence(int $personId, string $direction, string $source): ?string
     {
-        $last = AccessEvent::effective()->where('person_id', $personId)->where('source', $source)->latest('confirmed_at')->latest('id')->sharedLock()->first();
+        $last = AccessEvent::effective()->where('person_id', $personId)->where('source', $source)->latest('confirmed_at')->latest('id')->tap([DatabaseLocks::class, 'immutableRead'])->first();
 
         return $last ? ($last->direction === $direction ? 'repeated_'.$direction : null) : ($direction === 'exit' ? 'exit_without_recorded_entry' : null);
     }
