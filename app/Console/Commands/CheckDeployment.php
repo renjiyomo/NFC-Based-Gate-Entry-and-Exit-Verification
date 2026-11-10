@@ -36,6 +36,34 @@ class CheckDeployment extends Command
             $this->line(json_encode($result, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
         } else {
             $this->table(['Check', 'Result'], array_map(fn ($name, $ok) => [$name, $ok ? 'PASS' : 'NEEDS REVIEW'], array_keys($checks), $checks));
+            if (! ($checks['private_photo_storage'] ?? true) && config('cloud.enabled')) {
+                $photoDisk = config('nfcheck.photo_disk') ?? config('filesystems.default');
+                $endpoint = parse_url((string) config('filesystems.disks.s3.endpoint'));
+                $this->warn('Private photo storage requires:');
+                if ($photoDisk !== 's3') {
+                    $this->line('  - NFCHECK_PHOTO_DISK=s3 (currently: '.($photoDisk ?: 'empty').')');
+                }
+                if (! (bool) config('filesystems.disks.s3.key') || ! (bool) config('filesystems.disks.s3.secret')) {
+                    $this->line('  - AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be set in Vercel');
+                }
+                if (empty(config('filesystems.disks.s3.bucket'))) {
+                    $this->line('  - AWS_BUCKET must be set in Vercel (e.g. nfcheck-photos)');
+                }
+                if (empty(config('filesystems.disks.s3.region'))) {
+                    $this->line('  - AWS_DEFAULT_REGION or AWS_REGION must be set in Vercel');
+                }
+                if (empty(config('filesystems.disks.s3.endpoint'))) {
+                    $this->line('  - AWS_ENDPOINT must be set in Vercel');
+                } elseif (($endpoint['scheme'] ?? '') !== 'https' || preg_match('/^[a-z0-9-]+\.(storage\.)?supabase\.co$/D', $endpoint['host'] ?? '') !== 1 || ($endpoint['path'] ?? '') !== '/storage/v1/s3') {
+                    $this->line('  - AWS_ENDPOINT format must be https://<project-ref>.storage.supabase.co/storage/v1/s3 with no trailing slash');
+                }
+                if (! (bool) config('filesystems.disks.s3.use_path_style_endpoint')) {
+                    $this->line('  - AWS_USE_PATH_STYLE_ENDPOINT=true must be set in Vercel');
+                }
+                if (file_exists(public_path('storage')) || is_link(public_path('storage'))) {
+                    $this->line('  - public/storage symlink must not exist in container');
+                }
+            }
             $this->line($result['scope']);
         }
 
