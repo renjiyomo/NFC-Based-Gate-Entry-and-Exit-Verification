@@ -16,7 +16,7 @@ try {
         'DB_HOST' => $runtime['connection']['host'], 'DB_USERNAME' => $runtime['connection']['username'], 'DB_PASSWORD' => $runtime['connection']['password'],
         'NFCHECK_DB_CA_BASE64' => base64_encode(file_get_contents($runtime['connection']['ca_file'])),
         'AWS_ENDPOINT' => $settings['supabase']['endpoint'], 'AWS_DEFAULT_REGION' => $settings['supabase']['region'], 'AWS_BUCKET' => $settings['supabase']['bucket'],
-        'AWS_ACCESS_KEY_ID' => $settings['supabase']['access_key_id'], 'AWS_SECRET_ACCESS_KEY' => $settings['supabase']['secret_access_key'],
+        'NFCHECK_S3_ACCESS_KEY_ID' => $settings['supabase']['access_key_id'], 'NFCHECK_S3_SECRET_ACCESS_KEY' => $settings['supabase']['secret_access_key'],
     ]);
     $path = $root.'/.tools/secrets/cloud-production.env';
     if (is_file($path)) {

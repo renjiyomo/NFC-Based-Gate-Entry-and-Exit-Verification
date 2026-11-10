@@ -64,6 +64,12 @@ Vercel's Container runtime is Beta. If Container is absent from the preset choic
 
 The repository sets one Function region, Sydney (`syd1`), close to the selected Supabase database. Keep this setting when using this database. [Vercel Function regions](https://vercel.com/docs/functions/configuring-functions/region).
 
+### Storage credentials missing at startup
+
+If runtime logs report missing photo-storage credentials after saving and redeploying, use `NFCHECK_S3_ACCESS_KEY_ID` and `NFCHECK_S3_SECRET_ACCESS_KEY` for the Supabase S3 pair. These project-specific names take precedence over the legacy `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` names, which remain supported. Vercel documents the AWS names as allowed but also notes that its runtime may provide its own values; a missing-key log does not by itself establish why a configured value is absent. Keep both new variables as Secret, scoped to Production, and deploy the source containing this configuration support. Do not switch secrets to readable Config variables or disable the storage check.
+
+Use the corresponding values from the private production environment file, without quotes. Keep `AWS_ENDPOINT`, `AWS_BUCKET`, `AWS_DEFAULT_REGION` and `AWS_USE_PATH_STYLE_ENDPOINT` configured as before. Regenerate the private environment file with `.tools/php/php.exe scripts/export-cloud-environment.php` only after saving the current S3 pair in the private cloud-services.json file. Never publish that file. Rotate a key pair exposed in screenshots, update the private handoff and Vercel, and revoke the exposed pair.
+
 ## 4. Deploy and inspect the result
 
 1. Click **Deploy**.
@@ -89,7 +95,7 @@ The workstation has no Docker engine, so this is the first Linux container build
 2. Sign in as an administrator. In NFC setup, run the access check and allow NFC for this new website origin.
 3. Use an unused blank test coin. Existing active localhost/hardware coins must stay separate. Their references are not registered in this fresh online database; issuance refuses unknown NFCheck references rather than overwriting them.
 4. Issue a credential to the synthetic person: check the blank coin, prepare, write that same coin, read back and activate after a match.
-5. Sign in as `gate1`. Select Entry, start scanning and present that coin. A valid scan records automatically. Repeat with Exit.
+5. Sign in as `gate1` and tap Start Scanner. Present the coin once and remove it. A valid scan records Entry automatically; after the ten-second duplicate window, the next valid scan records Exit. There is no manual direction choice or passage confirmation. Keep Chrome visible and the phone unlocked.
 6. Verify matching history rows and dashboard totals. Check duplicate suppression, a cancelled/revoked test credential and connection-error recovery before inviting your friend.
 7. Test using mobile data and then with the laptop turned off. A hosted setup must not depend on localhost or USB forwarding.
 

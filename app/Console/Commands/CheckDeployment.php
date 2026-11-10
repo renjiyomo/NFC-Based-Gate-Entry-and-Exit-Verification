@@ -44,7 +44,7 @@ class CheckDeployment extends Command
                     $this->line('  - NFCHECK_PHOTO_DISK=s3 (currently: '.($photoDisk ?: 'empty').')');
                 }
                 if (! (bool) config('filesystems.disks.s3.key') || ! (bool) config('filesystems.disks.s3.secret')) {
-                    $this->line('  - AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be set in Vercel');
+                    $this->line('  - Set NFCHECK_S3_ACCESS_KEY_ID and NFCHECK_S3_SECRET_ACCESS_KEY in Production, then deploy the updated source.');
                 }
                 if (empty(config('filesystems.disks.s3.bucket'))) {
                     $this->line('  - AWS_BUCKET must be set in Vercel (e.g. nfcheck-photos)');
