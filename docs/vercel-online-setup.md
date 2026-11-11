@@ -74,6 +74,8 @@ Use the corresponding values from the private production environment file, witho
 
 ## 4. Deploy and inspect the result
 
+For approved aggregate summaries, import the private `.tools/secrets/vercel-ai.env` into Production as well. Replace matching AI_SUMMARIES_* variables, keep the API key Secret and redeploy. This small file contains only six provider settings; it does not replace database, photo-storage or application-key values. See [activity checks and AI summaries](activity-and-summaries.md).
+
 1. Click **Deploy**.
 2. Wait for the Docker build. The frontend and PHP dependencies are built together.
 3. Inspect build/runtime logs if deployment fails. Share the error text with credentials removed; never send the private environment file.

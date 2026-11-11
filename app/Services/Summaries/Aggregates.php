@@ -12,7 +12,7 @@ class Aggregates
 
     public const LIMITATIONS = [
         'presence_estimate' => 'Recorded presence is an estimate; missing scans and guard observations limit it.',
-        'review_indicators' => 'Review flags do not establish wrongdoing. Detection runs on demand and may not cover every record.',
+        'review_indicators' => 'Review flags do not establish wrongdoing. Checks cover saved requests; missing scans and ignored radio readings are not recorded events.',
         'not_attendance' => 'Gate activity does not establish classroom attendance or continuous presence.',
     ];
 
@@ -37,6 +37,13 @@ class Aggregates
         $add('inside', $s['presence']['inside'], 'retained people were last recorded inside at the cutoff across all gates; this is an estimate.');
         $flags = AnomalyFlag::where('source', $source)->where('occurred_at', '>=', $f->from->format('Y-m-d H:i:s.u'))->where('occurred_at', '<', $f->until->format('Y-m-d H:i:s.u'))->where('occurred_at', '<=', $f->asOf->format('Y-m-d H:i:s.u'));
         $add('flags', (clone $flags)->count(), 'saved review flags relate to attempts in this period; flags are not confirmed incidents.');
+        foreach (['missing_exit' => 'Missing Exit', 'rapid_scans' => 'repeated-scan'] as $code => $label) {
+            $add('flags_'.$code, (clone $flags)->where('rule_code', $code)->count(), 'saved '.$label.' review flags relate to this period.');
+        }
+        $peak = collect($s['hourly'])->sortByDesc('value')->first();
+        if (($peak['value'] ?? 0) > 0) {
+            $add('peak_hour', (int) $peak['value'], 'passages were recorded during the '.$peak['label'].' Manila hour across this period, the highest hourly total.');
+        }
         foreach (['open', 'in_review', 'resolved', 'false_alarm'] as $status) {
             $q = clone $flags;
             $q->where(function ($q) use ($status): void {

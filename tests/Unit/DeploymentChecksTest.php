@@ -26,6 +26,6 @@ class DeploymentChecksTest extends TestCase
         foreach (['https://nfcheck.example.invalid', 'http://campus.example', 'https://user:password@campus.example', 'https://user@campus.example', 'https://campus.example?token=x'] as $url) {
             $this->assertFalse($review->evaluate([...$this->candidate(), 'app_url' => $url])['https_origin']);
         }
-        $this->assertFalse($review->evaluate([...$this->candidate(), 'private_ai_file' => true])['live_ai_disabled']);
+        $this->assertFalse($review->evaluate([...$this->candidate(), 'private_ai_file' => true])['ai_data_controls']);
     }
 }

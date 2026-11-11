@@ -56,18 +56,6 @@ export default function Show({
                         : 'The supporting records have changed since this check. Review the original evidence and any corrections before deciding.'}
                 </p>
                 <p>Latest reviewer: {f.reviewer ?? 'Not reviewed'}.</p>
-                <details className="chart-data">
-                    <summary>Rule version and configuration</summary>
-                    <p className="anomaly-version">{f.version}</p>
-                    <dl className="record-facts">
-                        {Object.entries(f.policy).map(([k, v]) => (
-                            <div key={k}>
-                                <dt>{readable(k)}</dt>
-                                <dd>{String(v ?? 'not configured')}</dd>
-                            </div>
-                        ))}
-                    </dl>
-                </details>
             </Panel>
             <Panel
                 className="anomaly-panel"

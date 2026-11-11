@@ -102,15 +102,6 @@ export default function PersonShow({
                         )}
                     </div>
                 </div>
-                {coin && (
-                    <details className="compact-help">
-                        <summary>Lost or damaged coin?</summary>
-                        <p>
-                            Open Manage coin and report it lost before issuing a replacement. The
-                            missing coin is not required.
-                        </p>
-                    </details>
-                )}
             </Panel>
             <Panel
                 title="Coin history"

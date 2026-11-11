@@ -9,6 +9,9 @@ class Rules
 {
     public const TITLES = [
         'missing_exit' => 'Missing Exit',
+        'rapid_scans' => 'Repeated scans within one minute',
+        'revoked_use' => 'Revoked coin presented',
+        'unavailable_credential' => 'Unavailable access presented',
         'repeated_entry' => 'Entry follows a recorded Entry',
         'exit_without_entry' => 'Exit without a preceding recorded Entry',
         'denied_burst' => 'Repeated denied checks at one gate',
@@ -20,10 +23,13 @@ class Rules
 
     public function policy(): array
     {
-        return ['algorithm' => 1, 'threshold_rules' => (bool) config('anomalies.threshold_rules'),
+        return ['algorithm' => 2, 'threshold_rules' => (bool) config('anomalies.threshold_rules'),
             'window_seconds' => (int) config('anomalies.window_seconds'), 'denied_count' => (int) config('anomalies.denied_count'),
             'revoked_count' => (int) config('anomalies.revoked_count'), 'duplicate_count' => (int) config('anomalies.duplicate_count'),
             'cross_gate_seconds' => (int) config('anomalies.cross_gate_seconds'),
+            'rapid_count' => (int) config('anomalies.rapid_count'),
+            'credential_alerts' => (bool) config('anomalies.credential_alerts'),
+            'cross_gate_enabled' => (bool) config('anomalies.cross_gate_enabled'),
             'open_hour' => config('anomalies.open_hour'), 'close_hour' => config('anomalies.close_hour')];
     }
 
@@ -55,7 +61,7 @@ class Rules
             if ($event->direction === 'exit' && $previous?->direction !== 'entry') {
                 $add('exit_without_entry', array_filter([$previous?->scan_attempt_id, $a->id]), 'No immediately preceding effective Entry is recorded for this Exit. Earlier missing scans or incomplete coverage may explain this.');
             }
-            if ($p['threshold_rules'] && $previous && $previous->gate_id !== $event->gate_id && $previous->confirmed_at->diffInMicroseconds($event->confirmed_at) < $p['cross_gate_seconds'] * 1000000) {
+            if ($p['threshold_rules'] && ($p['cross_gate_enabled'] ?? true) && $previous && $previous->gate_id !== $event->gate_id && $previous->confirmed_at->diffInMicroseconds($event->confirmed_at) < $p['cross_gate_seconds'] * 1000000) {
                 $add('cross_gate', [$previous->scan_attempt_id, $a->id], 'Two effective passages for this person occurred at different gates less than '.$p['cross_gate_seconds'].' seconds apart. Gate distance is not known; review recording and timing context.');
             }
             if ($p['open_hour'] !== null && $p['close_hour'] !== null) {
@@ -69,7 +75,30 @@ class Rules
         if (! $p['threshold_rules']) {
             return $found;
         }
+        $automatic = str_starts_with($a->policy_version, 'gate-state-v1-');
+        if ($automatic && ($p['credential_alerts'] ?? false) && $a->outcome === 'denied') {
+            if ($a->reason === 'revoked' && $a->credential_id) {
+                $add('revoked_use', [$a->id], 'A revoked coin was presented at this gate. Check the credential history and assist the holder with the current coin.', 'medium');
+            } elseif (in_array($a->reason, ['expired', 'person_inactive', 'not_selected', 'cancelled', 'pending'], true)) {
+                $add('unavailable_credential', [$a->id], 'This scan was rejected because the credential or person record is unavailable for access. Review the saved rejection reason.');
+            }
+        }
+        if ($automatic && $a->person_id && $a->outcome === 'allowed' && ($p['rapid_count'] ?? 0) >= 3) {
+            $ids = ScanAttempt::where('source', $a->source)->where('gate_id', $a->gate_id)->where('person_id', $a->person_id)->where('outcome', 'allowed')
+                ->where('received_at', '>', $a->received_at->subSeconds($p['window_seconds'])->format('Y-m-d H:i:s.u'))
+                ->where(fn ($q) => $q->where('received_at', '<', $a->received_at->format('Y-m-d H:i:s.u'))->orWhere(fn ($q) => $q->where('received_at', $a->received_at->format('Y-m-d H:i:s.u'))->where('id', '<=', $a->id)))
+                ->orderByDesc('received_at')->orderByDesc('id')->limit($p['rapid_count'])->pluck('id')->all();
+            if (count($ids) === $p['rapid_count']) {
+                $add('rapid_scans', $ids, $p['rapid_count'].' separate registered-coin scans were received for this person at this gate within '.$p['window_seconds'].' seconds. Check for repeated tapping, quick returns or reader issues.');
+            }
+        }
         foreach (['denied_burst' => $p['denied_count'], 'revoked_burst' => $p['revoked_count'], 'duplicate_burst' => $p['duplicate_count']] as $code => $threshold) {
+            if ($automatic && $code === 'revoked_burst' && ($p['credential_alerts'] ?? false)) {
+                continue;
+            }
+            if ($automatic && $code === 'duplicate_burst' && ($p['rapid_count'] ?? 0) >= 3) {
+                continue;
+            }
             if (($code === 'denied_burst' && $a->outcome !== 'denied') || ($code === 'revoked_burst' && ($a->reason !== 'revoked' || ! $a->credential_id)) || ($code === 'duplicate_burst' && (! $a->duplicate_of_event_id || ! $a->person_id))) {
                 continue;
             }

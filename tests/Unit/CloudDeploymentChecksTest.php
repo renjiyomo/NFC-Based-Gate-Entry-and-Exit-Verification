@@ -24,4 +24,14 @@ class CloudDeploymentChecksTest extends TestCase
             $this->assertFalse($bad[$check]);
         }
     }
+
+    public function test_enabled_summaries_require_explicit_aggregate_scope_and_free_tier_limits(): void
+    {
+        $review = new DeploymentChecks;
+        $enabled = [...$this->candidate(), 'ai_enabled' => true, 'ai_aggregate_scope' => true, 'ai_free_tier' => true, 'ai_provider' => 'gemini_free', 'ai_model' => 'gemini-3.1-flash-lite', 'ai_inline' => true, 'ai_daily_limit' => 3, 'ai_timeout' => 12, 'ai_output_limit' => 600];
+        $this->assertNotContains(false, $review->evaluate($enabled));
+        foreach (['ai_aggregate_scope' => false, 'ai_free_tier' => false, 'ai_provider' => 'paid', 'ai_model' => 'other', 'ai_inline' => false, 'ai_daily_limit' => 4, 'ai_timeout' => 30, 'ai_output_limit' => 2000, 'private_ai_file' => true] as $key => $value) {
+            $this->assertFalse($review->evaluate([...$enabled, $key => $value])['ai_data_controls']);
+        }
+    }
 }

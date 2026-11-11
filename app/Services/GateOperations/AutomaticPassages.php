@@ -6,6 +6,7 @@ use App\Models\AccessEvent;
 use App\Models\Gate;
 use App\Models\ScanAttempt;
 use App\Models\User;
+use App\Services\Anomalies\Detection;
 use App\Services\AuditLogger;
 use App\Services\Credentials\CredentialVerifier;
 use App\Services\PersonPhotos;
@@ -90,6 +91,10 @@ class AutomaticPassages
                 $notice = app(PassageSequence::class)->notice($last, $data['direction'], $at);
                 $event = AccessEvent::create(['public_id' => (string) Str::uuid(), 'scan_attempt_id' => $attempt->id, 'person_id' => $check->person->id, 'credential_assignment_id' => $check->assignment->id, 'guard_id' => $user->id, 'gate_id' => $gate->id, 'direction' => $data['direction'], 'source' => $source, 'policy_version' => $policy, 'identity_method' => 'nfc_scan', 'sequence_notice' => $notice, 'confirmed_at' => $at]);
                 app(AuditLogger::class)->record('passage.recorded', $user, $event, ['direction' => $data['direction'], 'source' => $source, 'reason' => 'automatic_nfc_scan']);
+            }
+
+            if ($automatic) {
+                app(Detection::class)->inspect($attempt, $user);
             }
 
             return $this->result($attempt);

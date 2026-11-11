@@ -19,6 +19,7 @@ export default function GateShow({ record }: { record: GateRecord }) {
                     base={`/admin/gates/${record.id}`}
                     record={record}
                     name={record.name}
+                    editLabel="Edit gate"
                 />
             }
         >
@@ -40,12 +41,17 @@ export default function GateShow({ record }: { record: GateRecord }) {
                         </dd>
                     </div>
                 </dl>
-                <p className="panel-message">
-                    This shared account operates the gate across guard shifts.
-                </p>
-                <Link className="button button-primary" href={`/admin/gates/${record.id}/edit`}>
-                    Edit gate or reset password
-                </Link>
+                <div className="gate-account-footer">
+                    <p>One shared login for this gate.</p>
+                    {!record.archived_at && (
+                        <Link
+                            className="button button-secondary"
+                            href={`/admin/gates/${record.id}/edit#password`}
+                        >
+                            {record.account_id ? 'Reset password' : 'Create account'}
+                        </Link>
+                    )}
+                </div>
             </Panel>
         </ManagementPage>
     );

@@ -2376,6 +2376,41 @@ html:has(dialog[open]) {
 .record-facts {
     padding: 0 24px 24px;
 }
+.gate-account-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 20px 24px;
+    border-top: 1px solid var(--border-soft);
+}
+.gate-account-footer p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+.summary-prose {
+    padding-block: 16px;
+    max-width: 78ch;
+}
+.summary-prose h3 {
+    font-size: 14px;
+    margin: 0 0 10px;
+}
+.summary-prose p {
+    margin: 0 0 24px;
+    line-height: 1.85;
+}
+.activity-rule-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 24px;
+    margin: 16px 0 28px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+}
 .record-facts > div {
     display: grid;
     grid-template-columns: minmax(110px, 1fr) minmax(0, 1.3fr);
@@ -3012,19 +3047,6 @@ html:has(dialog[open]) {
     width: 100%;
     min-height: 8rem;
 }
-.anomaly-version {
-    overflow-wrap: anywhere;
-    font-family: monospace;
-}
-.summary-sentences {
-    padding-left: 1.5rem;
-    margin: 1rem 0;
-}
-.summary-sentences li {
-    line-height: 1.8;
-    margin-bottom: 0.6rem;
-}
-
 .scan-result {
     border: 1px solid;
     border-left-width: 5px;
@@ -4456,6 +4478,9 @@ html.theming *::after {
 .activity-section .report-filter-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+.activity-section .activity-filter-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
 .activity-section .period-fields + .advanced-filters {
     margin-top: 16px;
 }
@@ -4470,7 +4495,8 @@ html.theming *::after {
     .activity-record > .record-facts {
         grid-template-columns: 1fr;
     }
-    .activity-section .report-filter-grid {
+    .activity-section .report-filter-grid,
+    .activity-section .activity-filter-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
@@ -4482,7 +4508,8 @@ html.theming *::after {
         grid-template-columns: 1fr;
         gap: 7px;
     }
-    .activity-section .report-filter-grid {
+    .activity-section .report-filter-grid,
+    .activity-section .activity-filter-grid {
         grid-template-columns: 1fr;
     }
     .registry-section,
@@ -4755,11 +4782,6 @@ html.theming *::after {
 }
 .summary-period .report-filters > .button {
     margin-top: 14px;
-}
-.summary-sentences {
-    padding-left: 20px;
-    font-size: 14px;
-    color: var(--text);
 }
 .table-notice {
     margin-top: 6px;

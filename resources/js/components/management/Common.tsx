@@ -449,10 +449,12 @@ export function ArchiveActions({
     base,
     record,
     name,
+    editLabel = 'Edit record',
 }: {
     base: string;
     record: { record_version: number; archived_at: string | null };
     name: string;
+    editLabel?: string;
 }) {
     return (
         <div className="record-actions">
@@ -468,7 +470,7 @@ export function ArchiveActions({
             ) : (
                 <>
                     <Link href={`${base}/edit`} className="button button-secondary">
-                        Edit record
+                        {editLabel}
                     </Link>
                     <ConfirmAction
                         url={base}

@@ -15,7 +15,7 @@ class AnomalyEvaluationTest extends MonitoringTestCase
 {
     public function test_labeled_synthetic_rule_scenarios_and_documented_false_alarm(): void
     {
-        config(['anomalies.threshold_rules' => true]);
+        config(['anomalies.threshold_rules' => true, 'anomalies.cross_gate_enabled' => true]);
         $rules = app(Rules::class);
         $policy = $rules->policy();
         $rows = [];

@@ -210,38 +210,7 @@ export default function Index(props: Props) {
                             </div>
                         ))}
                     </section>
-                    <details className="compact-help">
-                        <summary>What do these numbers mean?</summary>
-                        <p>
-                            Entries and Exits count saved passages in the selected period. Rejected
-                            and duplicate scans do not add a passage. {number(s.attempts)} scans
-                            were checked; {number(s.duplicates)} duplicates were suppressed. Voided
-                            passages are excluded.
-                        </p>
-                        {section === 'dashboard' && (
-                            <p>
-                                Estimated inside uses each person’s last effective passage across
-                                all gates up to {manilaTime(s.presence.as_of)}, regardless of the
-                                gate/account filter or start date. Missing scans can make this
-                                estimate incomplete. It is not a live headcount or classroom
-                                attendance.
-                            </p>
-                        )}
-                        {section === 'dashboard' && (
-                            <p>
-                                Live updates check for new records without reloading the whole page.
-                                They never create a scan or passage.
-                            </p>
-                        )}
-                        {directory && (
-                            <p>
-                                Student and employee totals include current active and inactive
-                                records; archived people are excluded. Active NFC coins are
-                                selected, unexpired credentials in this workspace. These registry
-                                totals do not change with the activity period.
-                            </p>
-                        )}
-                    </details>
+
                     <div className="report-two-columns">
                         <Panel
                             title="Entries & exits over time"
@@ -327,24 +296,6 @@ export default function Index(props: Props) {
                                         ))}
                                     </dl>
                                 </details>
-                            </Panel>
-                            <Panel title="Reading the charts">
-                                <div className="panel-copy">
-                                    <p>
-                                        Use the same date range and filters to compare activity. A
-                                        person may have several passages during one day.
-                                    </p>
-                                    <p>
-                                        Charts include effective records only. Missing scans and
-                                        incomplete gate coverage affect the results.
-                                    </p>
-                                    <Link
-                                        className="text-link"
-                                        href={reportUrl('/admin/reports', filters)}
-                                    >
-                                        Download these results →
-                                    </Link>
-                                </div>
                             </Panel>
                         </div>
                     )}

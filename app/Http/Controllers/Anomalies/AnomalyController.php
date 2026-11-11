@@ -47,7 +47,10 @@ class AnomalyController
         $open = AnomalyFlag::where('source', $source)->where(fn ($q) => $q->whereDoesntHave('latestReview')->orWhereHas('latestReview', fn ($v) => $v->whereIn('status', ['open', 'in_review'])))->count();
         app(AuditLogger::class)->record('anomaly.viewed', $r->user(), metadata: ['source' => $source]);
 
-        return Inertia::render('anomalies/Index', ['flags' => $flags, 'filters' => [...$f->values, ...$extra], 'period' => $f->metadata(), 'source' => $source, 'openCount' => $open, 'rules' => Rules::TITLES, 'policy' => app(Rules::class)->policy()]);
+        $codes = ['missing_exit', 'rapid_scans', 'revoked_use', 'unavailable_credential', 'denied_burst'];
+        $codes = array_unique([...$codes, ...AnomalyFlag::where('source', $source)->distinct()->pluck('rule_code')->all()]);
+
+        return Inertia::render('anomalies/Index', ['flags' => $flags, 'filters' => [...$f->values, ...$extra], 'period' => $f->metadata(), 'source' => $source, 'openCount' => $open, 'rules' => array_intersect_key(Rules::TITLES, array_flip($codes)), 'policy' => app(Rules::class)->policy()]);
     }
 
     public function detect(Request $r, Detection $detector)

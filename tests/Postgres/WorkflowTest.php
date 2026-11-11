@@ -3,7 +3,9 @@
 namespace Tests\Postgres;
 
 use App\Models\AccessEvent;
+use App\Models\AnomalyFlag;
 use App\Models\ScanAttempt;
+use App\Services\Anomalies\Detection;
 use App\Services\Credentials\CredentialLifecycle;
 use App\Services\GateOperations\AutomaticPassages;
 use App\Services\Monitoring\PassageCorrections;
@@ -18,6 +20,29 @@ use Tests\PostgresTestCase;
 
 class WorkflowTest extends PostgresTestCase
 {
+    public function test_automatic_single_gate_flags_are_append_only_and_idempotent(): void
+    {
+        config(['anomalies.threshold_rules' => true]);
+        $this->travelTo(CarbonImmutable::parse('2026-11-11T01:00:00Z'));
+        $f = $this->fixture();
+        $service = app(AutomaticPassages::class);
+        $data = ['request_id' => (string) Str::uuid(), 'payload' => $f['receipt']['payload']];
+        $service->automaticScan($f['guard'], $f['gate'], $data, 'activity-session', 'physical');
+        foreach ([11, 22, 33] as $seconds) {
+            $this->travelTo(CarbonImmutable::parse('2026-11-11T01:00:00Z')->addSeconds($seconds));
+            $service->automaticScan($f['guard'], $f['gate'], [...$data, 'request_id' => (string) Str::uuid()], 'activity-session', 'physical');
+        }
+        $flag = AnomalyFlag::where('rule_code', 'rapid_scans')->sole();
+        $this->assertSame(3, $flag->evidence()->count());
+        $this->assertSame(4, AccessEvent::count());
+        $this->assertSame(4, ScanAttempt::count());
+        $this->assertSame(0, app(Detection::class)->run(new ReportFilters(['date' => '2026-11-11']), 'physical', $this->admin)['created']);
+        app(CredentialLifecycle::class)->terminate($this->admin, $f['credential']->fresh(), 'revoke', 'lost');
+        $result = $service->automaticScan($f['guard'], $f['gate'], [...$data, 'request_id' => (string) Str::uuid()], 'activity-session', 'physical');
+        $this->assertNull($result['passage']);
+        $this->assertSame(1, AnomalyFlag::where('rule_code', 'revoked_use')->count());
+    }
+
     public function test_binary_credentials_and_automatic_scan_idempotency_duplicates_exit_and_recovery(): void
     {
         $this->travelTo(CarbonImmutable::now('UTC'));

@@ -1,4 +1,5 @@
 import { useForm } from '@inertiajs/react';
+import { useEffect } from 'react';
 import {
     Field,
     Select,
@@ -19,6 +20,11 @@ export default function GateForm({ record }: { record: GateRecord | null }) {
         record_version: record?.record_version ?? 1,
     });
     const base = '/admin/gates';
+    useEffect(() => {
+        if (window.location.hash === '#password') {
+            document.getElementById('password')?.focus();
+        }
+    }, []);
     return (
         <ManagementPage
             page="gates"

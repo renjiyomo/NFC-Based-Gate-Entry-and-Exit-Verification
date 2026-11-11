@@ -49,7 +49,16 @@ export default function NavigationFeedback({ children }: { children: ReactNode }
                 if (focusFrame !== null) window.cancelAnimationFrame(focusFrame);
                 focusFrame = window.requestAnimationFrame(() => {
                     const main = document.getElementById('main-content');
-                    main?.focus({ preventScroll: true });
+                    const target = document.getElementById(window.location.hash.slice(1));
+                    if (
+                        target instanceof HTMLElement &&
+                        main?.contains(target) &&
+                        target.matches('input, select, textarea, button, a[href], [tabindex]')
+                    ) {
+                        target.focus();
+                    } else {
+                        main?.focus({ preventScroll: true });
+                    }
                     main?.setAttribute('aria-busy', String(activeVisits.size > 0));
                     const title = main?.querySelector('h1, h2')?.textContent?.trim();
                     setAnnouncement(title ? `${title} loaded.` : 'Workspace view loaded.');

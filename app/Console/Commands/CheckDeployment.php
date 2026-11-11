@@ -29,6 +29,9 @@ class CheckDeployment extends Command
             'db_driver' => $database['driver'], 'db_schema' => $database['search_path'] ?? '', 'db_url_unset' => empty($database['url']), 'db_user' => $database['username'], 'trusted_proxies' => config('cloud.trusted_proxies'), 'password_recovery' => config('nfcheck.password_recovery'),
             'log_channel' => config('logging.default'), 'log_level' => config('logging.channels.'.config('logging.default').'.level'), 'log_days' => config('logging.channels.daily.max_files'),
             'ai_enabled' => config('ai_summaries.enabled'), 'private_ai_file' => is_file(base_path('.tools/secrets/ai-provider.json')),
+            'ai_aggregate_scope' => config('ai_summaries.allow_aggregate_workspaces'), 'ai_free_tier' => config('ai_summaries.free_tier_confirmed'),
+            'ai_provider' => config('ai_summaries.provider'), 'ai_model' => config('ai_summaries.model'), 'ai_inline' => config('ai_summaries.inline_generation'),
+            'ai_daily_limit' => config('ai_summaries.max_requests_per_day'), 'ai_timeout' => config('ai_summaries.timeout_seconds'), 'ai_output_limit' => config('ai_summaries.max_output_tokens'),
             'built_assets' => is_file(public_path('build/manifest.json')), 'hot_file' => is_file(public_path('hot')),
         ]);
         $result = ['configuration_passed' => ! in_array(false, $checks, true), 'checks' => $checks, 'scope' => 'Configuration only; independently verify TLS, DB grants/migration target, mail, recovery, device/load evidence and institutional approval.'];

@@ -16,6 +16,7 @@ export default function Show({
         contract: string;
         changed: boolean;
         sentences: string[] | null;
+        selectedFacts: string[];
         error: string | null;
         provider: string | null;
         model: string | null;
@@ -27,6 +28,9 @@ export default function Show({
 }) {
     const form = useForm({ decision: 'approved', reason: '', expected_revision: revision });
     const recovery = useForm({});
+    const selected = (s.selectedFacts ?? []).filter((id) => s.snapshot.facts[id]);
+    const activity = selected.filter((id) => !id.startsWith('flags'));
+    const checks = selected.filter((id) => id.startsWith('flags'));
     useEffect(() => {
         form.setData('expected_revision', revision);
         form.setData('reason', '');
@@ -79,11 +83,30 @@ export default function Show({
                 {s.status === 'ready' && s.sentences ? (
                     <>
                         <Badge>{readable(s.review)}</Badge>
-                        <ul className="summary-sentences">
-                            {s.sentences.map((v, i) => (
-                                <li key={i}>{v}</li>
-                            ))}
-                        </ul>
+                        <div className="summary-prose">
+                            {selected.length ? (
+                                <>
+                                    <h3>Gate activity</h3>
+                                    <p>
+                                        {activity
+                                            .map((id) => s.snapshot.facts[id].sentence)
+                                            .join(' ')}
+                                    </p>
+                                    {checks.length > 0 && (
+                                        <>
+                                            <h3>Activity checks</h3>
+                                            <p>
+                                                {checks
+                                                    .map((id) => s.snapshot.facts[id].sentence)
+                                                    .join(' ')}
+                                            </p>
+                                        </>
+                                    )}
+                                </>
+                            ) : (
+                                s.sentences.map((sentence, index) => <p key={index}>{sentence}</p>)
+                            )}
+                        </div>
                     </>
                 ) : (
                     <p>
@@ -113,42 +136,31 @@ export default function Show({
                     {s.completed_at ? `Completed ${manilaTime(s.completed_at)}` : 'Not completed'}
                 </p>
             </Panel>
-            <details className="insight-details">
-                <summary>View saved numbers and generation details</summary>
-                <Panel className="anomaly-panel" title="Saved numbers">
-                    <p>
-                        Provider: {s.provider ?? 'Not processed'} · Model:{' '}
-                        {s.model ?? 'Not processed'}.
-                    </p>
-                    <p>
-                        Format {s.contract}. Gate labels are anonymous within this summary.{' '}
-                        {s.snapshot.gate_coverage}
-                    </p>
-                    <p className="anomaly-version">Snapshot fingerprint: {s.hash}</p>
-                    <p>
-                        Provider-reported tokens: input {s.tokens.input ?? 'not reported'}, output
-                        including thinking {s.tokens.output ?? 'not reported'}.
-                    </p>
-                    <div className="report-scroll management-table">
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Fact</th>
-                                    <th scope="col">Validated statement</th>
+
+            <Panel className="anomaly-panel" title="Saved numbers">
+                <p>
+                    Provider: {s.provider ?? 'Not processed'} · Model: {s.model ?? 'Not processed'}.
+                </p>
+                <div className="report-scroll management-table">
+                    <table className="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Fact</th>
+                                <th scope="col">Validated statement</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {Object.entries(s.snapshot.facts).map(([k, v]) => (
+                                <tr key={k}>
+                                    <td>{readable(k)}</td>
+                                    <td>{v.sentence}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {Object.entries(s.snapshot.facts).map(([k, v]) => (
-                                    <tr key={k}>
-                                        <td>{readable(k)}</td>
-                                        <td>{v.sentence}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </Panel>
-            </details>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </Panel>
+
             {s.status === 'ready' && (
                 <Panel
                     className="anomaly-panel"

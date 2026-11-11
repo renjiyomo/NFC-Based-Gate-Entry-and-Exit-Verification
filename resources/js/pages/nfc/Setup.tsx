@@ -159,15 +159,6 @@ export default function Setup() {
                 <p className="credential-feedback" role="status" aria-live="polite">
                     {result}
                 </p>
-                <details className="compact-help">
-                    <summary>About these checks</summary>
-                    <p>
-                        Access checks confirm browser permission. A format check reads one coin
-                        without writing it or recording an Entry or Exit. Keep the phone unlocked
-                        and this tab visible. The reader stops after a result, 30 seconds,
-                        cancellation, or leaving this tab.
-                    </p>
-                </details>
             </Panel>
             <Link
                 href={user?.role === 'admin' ? '/admin/credentials' : '/guard/scanner'}

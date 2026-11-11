@@ -27,7 +27,12 @@ final class DeploymentChecks
             'private_sessions' => $c['session_driver'] === 'database' && $c['session_encrypt'] === true && $c['session_http_only'] === true && $c['session_secure'] === true && in_array($c['same_site'], ['lax', 'strict'], true) && $c['session_minutes'] > 0 && $c['session_minutes'] <= 30,
             'private_photo_storage' => ! $c['public_storage_link'] && ($cloud ? $privateS3 : ($photoDisk === 'local' && $c['local_serve'] === false)),
             'bounded_private_logging' => in_array($c['log_channel'], ['daily', 'stderr'], true) && in_array($c['log_level'], ['notice', 'warning', 'error', 'critical', 'alert', 'emergency'], true) && $c['log_days'] > 0 && $c['log_days'] <= 30,
-            'live_ai_disabled' => $c['ai_enabled'] === false && ! $c['private_ai_file'],
+            'ai_data_controls' => ! $c['private_ai_file'] && ($c['ai_enabled'] === false || (
+                ($c['ai_aggregate_scope'] ?? false) === true && ($c['ai_free_tier'] ?? false) === true
+                && ($c['ai_provider'] ?? '') === 'gemini_free' && ($c['ai_model'] ?? '') === 'gemini-3.1-flash-lite'
+                && ($c['ai_inline'] ?? false) === true && ($c['ai_daily_limit'] ?? 0) === 3
+                && ($c['ai_timeout'] ?? 0) === 12 && ($c['ai_output_limit'] ?? 0) === 600
+            )),
             'built_assets_only' => $c['built_assets'] && ! $c['hot_file'],
         ];
         if ($cloud) {

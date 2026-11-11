@@ -44,8 +44,8 @@ export default function Index({
     return (
         <ManagementPage
             page="summaries"
-            title="Activity summaries"
-            description="Review activity summaries before using or sharing them."
+            title="AI summaries"
+            description="Create a summary of recorded gate activity."
         >
             <div className="report-period">
                 <div>
@@ -58,6 +58,21 @@ export default function Index({
                 </div>
                 <Badge>{availability.ready ? 'Free Tier available' : 'AI unavailable'}</Badge>
             </div>
+            <section className="metric-grid" aria-label="Summary source figures">
+                {[
+                    ['Entries', 'entries'],
+                    ['Exits', 'exits'],
+                    ['Rejected scans', 'denied'],
+                    ['Activity flags', 'flags'],
+                ].map(([label, id]) => (
+                    <div className="metric-card" key={id}>
+                        <div className="metric-label">{label}</div>
+                        <strong className="metric-value">
+                            {facts.facts[id]?.count.toLocaleString() ?? '—'}
+                        </strong>
+                    </div>
+                ))}
+            </section>
             <section className="activity-section summary-period">
                 <h2>Summary period</h2>
                 <form
@@ -99,24 +114,12 @@ export default function Index({
             >
                 <p className="summary-availability">
                     {availability.ready
-                        ? 'Gemini Free Tier is available for synthetic lab summaries.'
+                        ? 'Gemini Free Tier is ready.'
                         : 'AI generation is unavailable in this workspace. ' +
                           readable(availability.reason ?? 'not configured') +
-                          '. Recorded numbers remain available below.'}
+                          '. Recorded numbers remain available above.'}
                 </p>
-                <details className="compact-help">
-                    <summary>Privacy, limits & review</summary>
-                    <p>
-                        Synthetic aggregate counts only. No names, university numbers or NFC
-                        references are sent. Google’s Free Tier data-use terms apply. The project
-                        must stay unlinked from billing; no paid fallback or automatic retry is
-                        allowed.
-                    </p>
-                    <p>
-                        Up to {availability.daily_limit} attempts per workspace per UTC day. Drafts
-                        select existing facts and require administrator review before use.
-                    </p>
-                </details>
+
                 <form
                     onSubmit={(e) => {
                         e.preventDefault();
@@ -129,44 +132,11 @@ export default function Index({
                         variant="primary"
                         disabled={!availability.ready || generation.processing}
                     >
-                        {generation.processing ? 'Saving request…' : 'Create draft summary'}
+                        {generation.processing ? 'Generating summary…' : 'Create draft summary'}
                     </Button>
                 </form>
             </Panel>
-            <details className="insight-details">
-                <summary>Numbers included in this period</summary>{' '}
-                <Panel
-                    className="anomaly-panel"
-                    title="Recorded numbers"
-                    subtitle="Counts from saved records; available without AI."
-                >
-                    <div className="report-scroll management-table">
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Measure</th>
-                                    <th scope="col">Count</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {Object.entries(facts.facts).map(([id, f]) => (
-                                    <tr key={id}>
-                                        <td>{readable(id)}</td>
-                                        <td>{f.count.toLocaleString()}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    <p>{facts.gate_coverage} Gate aliases are anonymous within this snapshot.</p>
-                    <details className="chart-data">
-                        <summary>Read measurement limits</summary>
-                        {Object.values(facts.limitations).map((v) => (
-                            <p key={v}>{v}</p>
-                        ))}
-                    </details>
-                </Panel>
-            </details>
+
             <Panel
                 className="anomaly-panel"
                 title="Saved summaries"

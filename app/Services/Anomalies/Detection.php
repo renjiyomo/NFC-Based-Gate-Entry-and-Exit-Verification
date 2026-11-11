@@ -9,6 +9,7 @@ use App\Models\ScanAttempt;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\GateOperations\MissingExits;
+use App\Services\GateOperations\OperatingDay;
 use App\Services\ManagementGuard;
 use App\Services\Monitoring\ReportFilters;
 use App\Support\DatabaseLocks;
@@ -37,35 +38,87 @@ class Detection
             $checked = 0;
             foreach ($q->orderBy('received_at')->orderBy('id')->get() as $a) {
                 $checked++;
-                foreach ($rules->evaluate($a, $policy) as $code => $candidate) {
-                    $identity = ['source' => $source, 'rule_code' => $code, 'rule_version' => $version, 'anchor_attempt_id' => $a->id];
-                    $flag = AnomalyFlag::where($identity)->first();
-                    if (! $flag) {
-                        try {
-                            // A savepoint keeps a PostgreSQL unique-key conflict
-                            // from aborting the surrounding detection transaction.
-                            $flag = DB::transaction(fn () => AnomalyFlag::create([...$identity, 'public_id' => (string) Str::uuid(), 'policy' => $policy, 'severity' => $candidate['severity'], 'explanation' => $candidate['explanation'], 'occurred_at' => $a->received_at, 'created_at' => now()]));
-                        } catch (UniqueConstraintViolationException $error) {
-                            // Under MySQL REPEATABLE READ the earlier snapshot can
-                            // miss another administrator's committed winner. A
-                            // shared locking read sees it without UPDATE grants.
-                            $flag = AnomalyFlag::where($identity)->tap([DatabaseLocks::class, 'immutableRead'])->first();
-                            if (! $flag) {
-                                throw $error;
-                            }
-                        }
-                    }
-                    if ($flag->wasRecentlyCreated) {
-                        $flag->evidence()->attach($candidate['ids']);
-                        $created++;
-                        app(AuditLogger::class)->record('anomaly.detected', $admin, $flag, ['source' => $source, 'reason' => $code, 'policy_version' => $version]);
-                    }
-                }
+                $created += $this->inspect($a, $admin, $policy);
             }
+            $created += $this->missingExits($f, $source);
             app(AuditLogger::class)->record('anomaly.evaluated', $admin, metadata: ['source' => $source, 'row_count' => $checked, 'period_start' => $f->values['from'], 'period_end' => $f->values['to'], 'policy_version' => $version]);
 
             return ['checked' => $checked, 'created' => $created];
         }, 3);
+    }
+
+    public function inspect(ScanAttempt $attempt, User $actor, ?array $policy = null): int
+    {
+        if (DB::transactionLevel() < 1) {
+            throw new \LogicException('Activity checks require the scan transaction.');
+        }
+        if ($attempt->person_id) {
+            Person::withTrashed()->whereKey($attempt->person_id)->lockForUpdate()->firstOrFail();
+        }
+        $rules = app(Rules::class);
+        $policy ??= $rules->policy();
+        $version = $rules->version($policy);
+        $created = 0;
+        foreach ($rules->evaluate($attempt, $policy) as $code => $candidate) {
+            $identity = ['source' => $attempt->source, 'rule_code' => $code, 'rule_version' => $version, 'anchor_attempt_id' => $attempt->id];
+            $flag = AnomalyFlag::where($identity)->tap([DatabaseLocks::class, 'immutableRead'])->first();
+            if ($flag) {
+                continue;
+            }
+            if (str_starts_with($attempt->policy_version, 'gate-state-v1-')
+                && in_array($code, ['rapid_scans', 'revoked_use', 'unavailable_credential', 'denied_burst', 'duplicate_burst'], true)) {
+                $recent = AnomalyFlag::where('source', $attempt->source)->where('rule_code', $code)->where('rule_version', $version)
+                    ->where('occurred_at', '>', $attempt->received_at->subSeconds($policy['window_seconds'])->format('Y-m-d H:i:s.u'))
+                    ->where('occurred_at', '<=', $attempt->received_at->format('Y-m-d H:i:s.u'))
+                    ->whereHas('anchor', function ($query) use ($attempt, $code): void {
+                        $query->where('gate_id', $attempt->gate_id);
+                        if ($code !== 'denied_burst') {
+                            $query->where('person_id', $attempt->person_id);
+                        }
+                    })->tap([DatabaseLocks::class, 'immutableRead'])->first();
+                if ($recent) {
+                    continue;
+                }
+            }
+            try {
+                $flag = DB::transaction(fn () => AnomalyFlag::create([...$identity, 'public_id' => (string) Str::uuid(), 'policy' => $policy, 'severity' => $candidate['severity'], 'explanation' => $candidate['explanation'], 'occurred_at' => $attempt->received_at, 'created_at' => now()]));
+            } catch (UniqueConstraintViolationException $error) {
+                $flag = AnomalyFlag::where($identity)->tap([DatabaseLocks::class, 'immutableRead'])->first();
+                if (! $flag) {
+                    throw $error;
+                }
+            }
+            if ($flag->wasRecentlyCreated) {
+                $flag->evidence()->attach($candidate['ids']);
+                $created++;
+                app(AuditLogger::class)->record('anomaly.detected', $actor, $flag, ['source' => $attempt->source, 'reason' => $code, 'policy_version' => $version]);
+            }
+        }
+
+        return $created;
+    }
+
+    private function missingExits(ReportFilters $filters, string $source): int
+    {
+        $entries = AccessEvent::effective()->where('source', $source)->where('direction', 'entry')->where('policy_version', 'like', 'gate-state-v1-%')
+            ->where('confirmed_at', '>=', $filters->from->subDay()->format('Y-m-d H:i:s.u'))
+            ->where('confirmed_at', '<', $filters->until->format('Y-m-d H:i:s.u'))->orderBy('id')->limit(1001)->get();
+        if ($entries->count() > 1000) {
+            throw ValidationException::withMessages(['detection' => 'Narrow the dates to at most 1,000 Entry records.']);
+        }
+        $created = 0;
+        foreach ($entries as $entry) {
+            $cutoff = substr($entry->policy_version, -4, 2).':'.substr($entry->policy_version, -2);
+            $day = app(OperatingDay::class)->containing($entry->confirmed_at, $cutoff);
+            if ($day['ends_at']->lessThan($filters->from) || ! $day['ends_at']->lessThan($filters->until) || $day['ends_at']->greaterThan($filters->asOf)) {
+                continue;
+            }
+            Person::withTrashed()->whereKey($entry->person_id)->lockForUpdate()->firstOrFail();
+            $flag = app(MissingExits::class)->recordLocked($entry, $filters->asOf);
+            $created += $flag?->wasRecentlyCreated ? 1 : 0;
+        }
+
+        return $created;
     }
 
     public function context(AnomalyFlag $flag): string

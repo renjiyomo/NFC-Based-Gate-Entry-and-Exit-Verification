@@ -192,7 +192,7 @@ $run = static function (array $inputs, string $lockTable, int|string $lockId) us
             }
             usleep(20000);
         } while (microtime(true) < $deadline);
-        $check($waiters >= 2, 'Could not establish two concurrent blocked transactions.');
+        $check($waiters >= 2, 'Could not establish two concurrent blocked transactions: '.implode('/', array_column($inputs, 'action')).' on '.$lockTable.' ('.$waiters.' waiters).');
     } finally {
         $maintenance->rollBack();
     }
@@ -273,7 +273,8 @@ try {
     $exit = app(GateOperations::class)->scan($guard1, $gate, ['request_id' => (string) Str::uuid(), 'payload' => $receipt['payload'], 'direction' => 'exit'], 'first-exit', 'physical');
     $exitAttempt = ScanAttempt::where('public_id', $exit['id'])->sole();
     app(GateOperations::class)->review($guard1, $gate, $exitAttempt, ['action' => 'confirm', 'identity_checked' => true, 'identity_method' => 'campus_document'], 'first-exit', 'physical');
-    $output = $run([['actor' => $admin->id, 'action' => 'detect'], ['actor' => $admin2->id, 'action' => 'detect']], 'anomaly_flags', 0);
+    $firstPerson = ScanAttempt::whereNotNull('person_id')->orderBy('received_at')->orderBy('id')->value('person_id');
+    $output = $run([['actor' => $admin->id, 'action' => 'detect'], ['actor' => $admin2->id, 'action' => 'detect']], 'persons', $firstPerson);
     $check(AnomalyFlag::where('anchor_attempt_id', $exitAttempt->id)->count() === 1 && array_sum(array_column($output, 'created')) === AnomalyFlag::count(), 'Concurrent detection did not preserve unique flags.');
     $results[] = 'different administrators / overlapping detection: one flag per detection key';
     $flag = AnomalyFlag::where('anchor_attempt_id', $exitAttempt->id)->sole();
@@ -307,6 +308,14 @@ try {
     $output = $run([$one, $one], 'users', $guard1->id);
     $check(AccessEvent::where('person_id', $person->id)->count() === 1 && ScanAttempt::where('person_id', $person->id)->count() === 1 && $output[0]['passage'] === $output[1]['passage'], 'Automatic same-request retry was not idempotent.');
     $results[] = 'gate account / concurrent same scan ID: one attempt and one automatic passage';
+
+    [$person,$receipt] = $fixture();
+    app(AutomaticPassages::class)->automaticScan($guard1, $gate, ['request_id' => (string) Str::uuid(), 'payload' => $receipt['payload']], 'rapid-race', 'physical');
+    $one = [...$one, 'request' => (string) Str::uuid(), 'payload' => $receipt['payload']];
+    $run([$one, [...$one, 'request' => (string) Str::uuid()]], 'users', $guard1->id);
+    $flag = AnomalyFlag::where('rule_code', 'rapid_scans')->whereHas('anchor', fn ($q) => $q->where('person_id', $person->id))->sole();
+    $check(ScanAttempt::where('person_id', $person->id)->count() === 3 && AccessEvent::where('person_id', $person->id)->count() === 1 && $flag->evidence()->count() === 3, 'Concurrent scans did not produce exactly one repeated-scan flag with three witnesses.');
+    $results[] = 'automatic activity / concurrent scans: one repeated-scan flag, three attempts and one passage';
 
     [$person, $receipt, $credential] = $fixture();
     $one = [...$one, 'request' => (string) Str::uuid(), 'payload' => $receipt['payload']];

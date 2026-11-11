@@ -12,7 +12,7 @@ class ConfiguredProvider implements Provider
     {
         $c = config('ai_summaries');
         // Tests never load private workstation keys. No key is accepted by a web form.
-        if (! app()->environment('testing')) {
+        if (app()->environment('local')) {
             $path = base_path('.tools/secrets/ai-provider.json');
             if (is_readable($path)) {
                 $raw = @file_get_contents($path);
@@ -20,7 +20,7 @@ class ConfiguredProvider implements Provider
                 if (! is_array($file)) {
                     return [...$c, 'enabled' => false];
                 }
-                $c = [...$c, ...array_intersect_key($file, array_flip(['enabled', 'provider', 'model', 'api_key', 'project_id', 'free_tier_confirmed']))];
+                $c = [...$c, ...array_intersect_key($file, array_flip(['enabled', 'provider', 'model', 'api_key', 'project_id', 'free_tier_confirmed', 'allow_aggregate_workspaces']))];
             }
         }
 
@@ -30,10 +30,16 @@ class ConfiguredProvider implements Provider
     public function configuration(): array
     {
         $c = $this->settings();
+        $name = DatabaseIdentity::name();
+        $lab = app()->environment(['local', 'testing']) && in_array($name, ['nfcheck_simulator', 'nfcheck_hardware', 'nfcheck_testing'], true);
+        $aggregate = ($c['allow_aggregate_workspaces'] ?? false) === true && (
+            (app()->environment(['local', 'testing']) && $name === 'nfcheck')
+            || (app()->environment('production') && config('cloud.enabled') && config('database.default') === 'pgsql' && $name === 'nfcheck_online')
+        );
         $reason = null;
         if ($c['enabled'] !== true) {
             $reason = 'disabled';
-        } elseif (! app()->environment(['local', 'testing']) || ! in_array(DatabaseIdentity::name(), ['nfcheck_simulator', 'nfcheck_hardware', 'nfcheck_testing'], true)) {
+        } elseif (! $lab && ! $aggregate) {
             $reason = 'workspace_not_approved';
         } elseif ($c['provider'] !== 'gemini_free' || $c['model'] !== 'gemini-3.1-flash-lite') {
             $reason = 'unsupported_provider';
@@ -45,7 +51,7 @@ class ConfiguredProvider implements Provider
             $reason = 'not_configured';
         }
 
-        return ['ready' => $reason === null, 'provider' => 'gemini_free', 'model' => 'gemini-3.1-flash-lite', 'reason' => $reason, 'daily_limit' => 3, 'billing' => 'Free Tier only; project billing must remain disabled.'];
+        return ['ready' => $reason === null, 'scope' => $aggregate ? 'anonymous_aggregates' : 'synthetic_lab', 'provider' => 'gemini_free', 'model' => 'gemini-3.1-flash-lite', 'reason' => $reason, 'daily_limit' => 3, 'billing' => 'Free Tier only; project billing must remain disabled.'];
     }
 
     public function generate(array $snapshot): array
@@ -59,7 +65,7 @@ class ConfiguredProvider implements Provider
             'fact_ids' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => array_keys($snapshot['facts'])], 'minItems' => 5, 'maxItems' => 12],
             'limitation_ids' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => array_keys(Aggregates::LIMITATIONS)], 'minItems' => 3, 'maxItems' => 3],
         ], 'required' => ['fact_ids', 'limitation_ids'], 'additionalProperties' => false];
-        $prompt = 'Select and order 5 to 12 distinct fact IDs for a concise gate activity summary. Always include entries, exits, attempts, denied and flags. Prefer other informative counts and gate observations. Return every limitation ID. Never return prose, new figures, identities, incident claims or extra fields. All inputs are synthetic aggregate facts.';
+        $prompt = 'Select and order 5 to 12 distinct fact IDs for a concise administrator summary of recorded gate activity. Begin with entries, exits, attempts and denied. Include flags. Prefer informative nonzero facts about distinct people, peak hours, missing exits and repeated scans. Avoid redundant zero-valued breakdowns. Return every limitation ID. Return only supplied fact IDs, never prose, new figures, identities, explanations of causes or extra fields. Inputs contain aggregate counts and anonymous gate aliases.';
         $body = ['systemInstruction' => ['parts' => [['text' => $prompt]]], 'contents' => [['role' => 'user', 'parts' => [['text' => json_encode($snapshot, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)]]]], 'generationConfig' => ['responseMimeType' => 'application/json', 'responseJsonSchema' => $schema, 'maxOutputTokens' => 600, 'thinkingConfig' => ['thinkingLevel' => 'minimal']]];
         if (strlen(json_encode($body, JSON_THROW_ON_ERROR)) > 20000) {
             throw new \UnexpectedValueException('request_too_large');

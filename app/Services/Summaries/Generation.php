@@ -71,7 +71,8 @@ class Generation
 
                 return false;
             }
-            $allowed = in_array(DatabaseIdentity::name(), ['nfcheck_simulator', 'nfcheck_hardware', 'nfcheck_testing'], true);
+            $allowed = in_array(DatabaseIdentity::name(), ['nfcheck_simulator', 'nfcheck_hardware', 'nfcheck_testing'], true)
+                || (($configuration['scope'] ?? '') === 'anonymous_aggregates' && in_array(DatabaseIdentity::name(), ['nfcheck', 'nfcheck_online'], true));
             if (! $allowed) {
                 $this->complete($r, 'unavailable', error: 'workspace_not_approved');
 
@@ -92,8 +93,8 @@ class Generation
         if (! $claimed) {
             return false;
         }
-        // The worker performs the request outside a transaction and outside gate HTTP
-        // serving. A claimed task is never automatically retried after uncertainty.
+        // Provider requests run after the claim transaction commits. A claimed task
+        // is never automatically retried after an uncertain response.
         try {
             if ($r->snapshot_hash !== $this->aggregates->hash($r->snapshot) || $r->contract_version !== Aggregates::VERSION) {
                 throw new \UnexpectedValueException('snapshot_mismatch');

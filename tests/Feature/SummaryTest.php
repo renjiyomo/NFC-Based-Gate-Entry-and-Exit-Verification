@@ -43,6 +43,22 @@ class SummaryTest extends MonitoringTestCase
         return app(Generation::class)->request($this->admin, new ReportFilters(['date' => '2026-11-09']), 'physical', $key ?? (string) Str::uuid());
     }
 
+    public function test_inline_generation_completes_from_the_page_without_a_worker_or_duplicate_call(): void
+    {
+        config(['ai_summaries.inline_generation' => true]);
+        $this->fake();
+        $this->finishTime();
+        $key = (string) Str::uuid();
+        $this->post('/admin/summaries', ['period' => 'daily', 'date' => '2026-11-09', 'request_key' => $key])->assertRedirect();
+        $summary = SummaryRequest::sole();
+        $this->assertSame('ready', $summary->result->status);
+        Http::assertSentCount(1);
+        $this->post('/admin/summaries', ['period' => 'daily', 'date' => '2026-11-09', 'request_key' => $key])->assertRedirect();
+        $this->assertSame(1, SummaryRequest::count());
+        Http::assertSentCount(1);
+        $this->get('/admin/summaries/'.$summary->public_id)->assertInertia(fn (Assert $page) => $page->where('summary.status', 'ready')->has('summary.selectedFacts', 6));
+    }
+
     public function test_one_shot_worker_command_observes_limits_and_leaves_completed_tasks_alone(): void
     {
         $this->finishTime();

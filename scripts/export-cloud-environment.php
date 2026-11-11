@@ -18,6 +18,16 @@ try {
         'AWS_ENDPOINT' => $settings['supabase']['endpoint'], 'AWS_DEFAULT_REGION' => $settings['supabase']['region'], 'AWS_BUCKET' => $settings['supabase']['bucket'],
         'NFCHECK_S3_ACCESS_KEY_ID' => $settings['supabase']['access_key_id'], 'NFCHECK_S3_SECRET_ACCESS_KEY' => $settings['supabase']['secret_access_key'],
     ]);
+    $providerPath = $root.'/.tools/secrets/ai-provider.json';
+    $provider = is_file($providerPath) ? json_decode(file_get_contents($providerPath), true, 32, JSON_THROW_ON_ERROR) : [];
+    if (($provider['enabled'] ?? false) === true && ($provider['free_tier_confirmed'] ?? false) === true && ($provider['allow_aggregate_workspaces'] ?? false) === true) {
+        if (($provider['provider'] ?? '') !== 'gemini_free' || ($provider['model'] ?? '') !== 'gemini-3.1-flash-lite'
+            || preg_match('/^[a-z][a-z0-9-]{4,61}[a-z0-9]$/D', $provider['project_id'] ?? '') !== 1
+            || preg_match('/^[\x21-\x7E]{20,1024}$/D', $provider['api_key'] ?? '') !== 1) {
+            throw new RuntimeException('The approved summary provider settings are incomplete.');
+        }
+        $values = array_replace($values, ['AI_SUMMARIES_ENABLED' => 'true', 'AI_SUMMARIES_ALLOW_AGGREGATES' => 'true', 'AI_SUMMARIES_FREE_TIER_CONFIRMED' => 'true', 'AI_SUMMARIES_INLINE' => 'true', 'AI_SUMMARIES_API_KEY' => $provider['api_key'], 'AI_SUMMARIES_PROJECT_ID' => $provider['project_id']]);
+    }
     $path = $root.'/.tools/secrets/cloud-production.env';
     if (is_file($path)) {
         $old = Dotenv\Dotenv::parse(file_get_contents($path));
@@ -38,6 +48,10 @@ try {
     }
     if (file_put_contents($path, $text, LOCK_EX) === false) {
         throw new RuntimeException('Cannot save the private cloud environment.');
+    }
+    $aiLines = array_filter($lines, static fn (string $line): bool => str_starts_with($line, 'AI_SUMMARIES_'));
+    if (file_put_contents($root.'/.tools/secrets/vercel-ai.env', implode("\n", $aiLines)."\n", LOCK_EX) === false) {
+        throw new RuntimeException('Cannot save the private summary environment.');
     }
     echo json_encode(['saved' => true, 'private_file' => '.tools/secrets/cloud-production.env', 'app_url_set' => $values['APP_URL'] !== '', 'variable_count' => count($values)], JSON_PRETTY_PRINT), PHP_EOL;
 } catch (Throwable $error) {

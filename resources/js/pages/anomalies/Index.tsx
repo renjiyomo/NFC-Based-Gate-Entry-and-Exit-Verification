@@ -49,14 +49,21 @@ export default function Index({
         <ManagementPage
             page="anomalies"
             title="Activity checks"
-            description="Review unusual scan patterns and possible missing records. A flag is a prompt to check, not a finding of wrongdoing."
+            description="Review repeated scans, rejected coins and missing Exit records."
         >
             <div className="report-period">
                 <div>
                     <strong>{openCount} open or in review</strong>
                     <span>Across all dates · {source} records</span>
                 </div>
-                <Badge>Administrator review</Badge>
+                <Badge>
+                    {policy.threshold_rules ? 'Automatic checks active' : 'Checks paused'}
+                </Badge>
+            </div>
+            <div className="activity-rule-strip" aria-label="Active activity checks">
+                <span>Repeated scans · {String(policy.rapid_count)} in 60 seconds</span>
+                <span>Revoked coin · first rejected scan</span>
+                <span>Missing Exit · after the day cutoff</span>
             </div>
             <section className="activity-section">
                 <div className="section-caption">
@@ -71,7 +78,7 @@ export default function Index({
                     }}
                 >
                     <FormErrors errors={filter.errors} />
-                    <div className="report-filter-grid">
+                    <div className="report-filter-grid activity-filter-grid">
                         <Field
                             name="from"
                             label="Start date"
@@ -111,16 +118,6 @@ export default function Index({
                                     {v}
                                 </option>
                             ))}
-                        </Select>
-                        <Select
-                            name="severity"
-                            label="Review priority"
-                            value={filter.data.severity}
-                            onChange={(e) => filter.setData('severity', e.target.value)}
-                        >
-                            <option value="">All priorities</option>
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
                         </Select>
                     </div>
                     <Button type="submit">Apply filters</Button>
@@ -179,10 +176,7 @@ export default function Index({
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={6}>
-                                        No flags match this selection. Run checks for the relevant
-                                        dates to evaluate saved records.
-                                    </td>
+                                    <td colSpan={6}>No activity needs review for these dates.</td>
                                 </tr>
                             )}
                         </tbody>
@@ -190,81 +184,47 @@ export default function Index({
                 </div>
                 <Pagination records={flags} />
             </Panel>
-            <details className="insight-details">
-                <summary>Check another period</summary>
-                <Panel
-                    className="anomaly-panel"
-                    title="Check saved records"
-                    subtitle="Find patterns that may need review. Entry and Exit records stay unchanged."
+
+            <Panel
+                className="anomaly-panel"
+                title="Check earlier records"
+                subtitle="Recheck a date range, including overdue Missing Exit records."
+            >
+                <form
+                    className="report-filters"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        detection.post('/admin/anomalies/detect');
+                    }}
                 >
-                    <details className="compact-help">
-                        <summary>Rules used for these checks</summary>{' '}
-                        <p>
-                            Sequence checks detect repeated Entry and Exit without a preceding
-                            recorded Entry. Missing scans can explain both.{' '}
-                            {policy.threshold_rules
-                                ? 'Development threshold rules are enabled.'
-                                : 'Threshold rules are disabled pending policy approval.'}{' '}
-                            After-hours checks are{' '}
-                            {policy.open_hour === null
-                                ? 'disabled; university hours have not been supplied'
-                                : 'enabled for configured Manila hours'}
-                            .
-                        </p>
-                        <details className="chart-data">
-                            <summary>View current rule configuration</summary>
-                            <dl className="record-facts">
-                                {Object.entries(policy).map(([k, v]) => (
-                                    <div key={k}>
-                                        <dt>{readable(k)}</dt>
-                                        <dd>{String(v ?? 'not configured')}</dd>
-                                    </div>
-                                ))}
-                            </dl>
-                            <p>
-                                Denied bursts describe a station pattern, not an identified person.
-                                Short intervals between gates do not establish impossible travel.
-                                Each qualifying threshold anchor can produce a flag; rerunning the
-                                same rule version does not duplicate it.
-                            </p>
-                        </details>
-                    </details>
-                    <form
-                        className="report-filters"
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            detection.post('/admin/anomalies/detect');
-                        }}
-                    >
-                        <FormErrors errors={detection.errors} />
-                        <div className="report-filter-grid">
-                            <Field
-                                name="detect_from"
-                                label="Start date"
-                                type="date"
-                                required
-                                value={detection.data.from}
-                                onChange={(e) => detection.setData('from', e.target.value)}
-                            />
-                            <Field
-                                name="detect_to"
-                                label="End date"
-                                type="date"
-                                required
-                                value={detection.data.to}
-                                onChange={(e) => detection.setData('to', e.target.value)}
-                            />
-                        </div>
-                        <Button type="submit" disabled={detection.processing}>
-                            {detection.processing ? 'Checking records…' : 'Run checks'}
-                        </Button>
-                        <p className="field-hint">
-                            Up to 31 days and 1,000 attempts per run. Earlier passages still provide
-                            sequence context. Narrow dates if the selection exceeds the limit.
-                        </p>
-                    </form>
-                </Panel>
-            </details>
+                    <FormErrors errors={detection.errors} />
+                    <div className="report-filter-grid">
+                        <Field
+                            name="detect_from"
+                            label="Start date"
+                            type="date"
+                            required
+                            value={detection.data.from}
+                            onChange={(e) => detection.setData('from', e.target.value)}
+                        />
+                        <Field
+                            name="detect_to"
+                            label="End date"
+                            type="date"
+                            required
+                            value={detection.data.to}
+                            onChange={(e) => detection.setData('to', e.target.value)}
+                        />
+                    </div>
+                    <Button type="submit" disabled={detection.processing}>
+                        {detection.processing ? 'Checking records…' : 'Run checks'}
+                    </Button>
+                    <p className="field-hint">
+                        Up to 31 days and 1,000 attempts per run. Earlier passages still provide
+                        sequence context. Narrow dates if the selection exceeds the limit.
+                    </p>
+                </form>
+            </Panel>
         </ManagementPage>
     );
 }

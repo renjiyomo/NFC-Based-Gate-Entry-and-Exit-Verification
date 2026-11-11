@@ -51,8 +51,11 @@ class SummaryController
         $f = $this->filters($r);
         $v = $r->validate(['request_key' => ['required', 'uuid'], 'provider' => ['prohibited'], 'model' => ['prohibited'], 'api_key' => ['prohibited'], 'prompt' => ['prohibited']]);
         $request = $generation->request($r->user(), $f, MonitoringSource::for($r), $v['request_key']);
+        if (config('ai_summaries.inline_generation')) {
+            $generation->process($request->task);
+        }
 
-        return redirect('/admin/summaries/'.$request->public_id)->with('status', 'Summary request saved. Generation cannot change gate decisions.');
+        return redirect('/admin/summaries/'.$request->public_id)->with('status', 'Summary request saved.');
     }
 
     public function show(Request $r, SummaryRequest $summary, Aggregates $aggregates)
@@ -66,7 +69,7 @@ class SummaryController
             $current = $aggregates->build(new ReportFilters(['period' => $summary->period, 'date' => $summary->period_from]), $summary->source);
             app(AuditLogger::class)->record('summary.details_viewed', $r->user(), $summary, ['source' => $summary->source]);
 
-            return Inertia::render('summaries/Show', ['summary' => [...$this->row($summary), 'snapshot' => $summary->snapshot, 'hash' => $summary->snapshot_hash, 'contract' => $summary->contract_version, 'changed' => $aggregates->hash($current) !== $summary->snapshot_hash, 'sentences' => $summary->result?->sentences, 'error' => $summary->result?->error_code, 'provider' => $summary->result?->provider, 'model' => $summary->result?->model, 'tokens' => ['input' => $summary->result?->input_tokens, 'output' => $summary->result?->output_tokens], 'recoverable' => $summary->task?->claimed_at?->lessThanOrEqualTo(now()->subMinutes(2)) && ! $summary->result],
+            return Inertia::render('summaries/Show', ['summary' => [...$this->row($summary), 'snapshot' => $summary->snapshot, 'hash' => $summary->snapshot_hash, 'contract' => $summary->contract_version, 'changed' => $aggregates->hash($current) !== $summary->snapshot_hash, 'sentences' => $summary->result?->sentences, 'selectedFacts' => $summary->result?->selected_facts ?? [], 'error' => $summary->result?->error_code, 'provider' => $summary->result?->provider, 'model' => $summary->result?->model, 'tokens' => ['input' => $summary->result?->input_tokens, 'output' => $summary->result?->output_tokens], 'recoverable' => $summary->task?->claimed_at?->lessThanOrEqualTo(now()->subMinutes(2)) && ! $summary->result],
                 'revision' => $summary->latestReview?->id ?? 0, 'reviews' => $summary->reviews()->with('actor')->paginate(20)->through(fn ($v) => ['decision' => $v->decision, 'reason' => $v->reason, 'at' => $v->created_at->toIso8601String(), 'actor' => $v->actor->name])]);
         });
     }
