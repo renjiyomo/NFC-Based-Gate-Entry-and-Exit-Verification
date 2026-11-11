@@ -37,6 +37,14 @@ export default function Index({
 }) {
     const filter = useForm({ ...filters });
     const generation = useForm({ ...filters, request_key: requestKey });
+    const unavailableMessage =
+        {
+            disabled: 'AI summaries are turned off for this deployment.',
+            workspace_not_approved: 'AI summaries have not been enabled for this database.',
+            unsupported_provider: 'The AI provider configuration needs attention.',
+            free_tier_unconfirmed: 'Free Tier confirmation is required before generation.',
+            not_configured: 'The Gemini provider settings are incomplete.',
+        }[availability.reason ?? ''] ?? 'The summary service is currently unavailable.';
     useEffect(() => {
         filter.setData({ ...filters });
         generation.setData({ ...filters, request_key: requestKey });
@@ -115,9 +123,7 @@ export default function Index({
                 <p className="summary-availability">
                     {availability.ready
                         ? 'Gemini Free Tier is ready.'
-                        : 'AI generation is unavailable in this workspace. ' +
-                          readable(availability.reason ?? 'not configured') +
-                          '. Recorded numbers remain available above.'}
+                        : unavailableMessage + ' Recorded figures remain available above.'}
                 </p>
 
                 <form
