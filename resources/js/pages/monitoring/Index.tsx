@@ -18,6 +18,7 @@ import {
     type Period,
     type ReportFilters,
     type Summary,
+    type Presence,
 } from '../../lib/monitoring';
 import { manilaTime, type Paginated } from '../../lib/management';
 import { reasonLabel } from '../../lib/operations';
@@ -30,6 +31,7 @@ interface Props {
     gates: { id: number; code: string; name: string }[];
     guards: { id: number; name: string }[];
     summary?: Summary;
+    currentPresence?: Presence;
     directory?: {
         students: number;
         employees: number;
@@ -77,7 +79,16 @@ const datasets = [
     },
 ];
 export default function Index(props: Props) {
-    const { section, filters, period, summary: s, directory, records, recent } = props;
+    const {
+        section,
+        filters,
+        period,
+        summary: s,
+        currentPresence,
+        directory,
+        records,
+        recent,
+    } = props;
     const [dataset, setDataset] = useState('summary');
     const [live, setLive] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -87,7 +98,15 @@ export default function Index(props: Props) {
         active.current = true;
         setRefreshing(true);
         router.reload({
-            only: ['summary', 'recent', 'records', 'directory', 'period', 'exports'],
+            only: [
+                'summary',
+                'currentPresence',
+                'recent',
+                'records',
+                'directory',
+                'period',
+                'exports',
+            ],
             onFinish: () => {
                 active.current = false;
                 setRefreshing(false);
@@ -114,6 +133,30 @@ export default function Index(props: Props) {
             }
         >
             <CurrentErrors />
+            {section === 'dashboard' && currentPresence && (
+                <section className="presence-section" aria-labelledby="presence-title">
+                    <div className="section-caption">
+                        <h2 id="presence-title">Estimated inside campus</h2>
+                        <span>Updated {manilaTime(currentPresence.as_of)}</span>
+                    </div>
+                    <dl className="presence-grid">
+                        {[
+                            ['Total people', currentPresence.inside],
+                            ['Students', currentPresence.students_inside],
+                            ['Employees', currentPresence.employees_inside],
+                        ].map(([label, value], index) => (
+                            <div key={label} className={index === 0 ? 'presence-total' : undefined}>
+                                <dt>{label}</dt>
+                                <dd>{number(Number(value))}</dd>
+                            </div>
+                        ))}
+                    </dl>
+                    <p className="presence-note">
+                        Latest recorded Entry or Exit per person · All gates · Independent of
+                        activity filters
+                    </p>
+                </section>
+            )}
             {section === 'history' && (
                 <nav className="history-tabs" aria-label="History record type">
                     {[
@@ -191,17 +234,7 @@ export default function Index(props: Props) {
                             ['Entries', s.entries, 'Recorded in this period'],
                             ['Exits', s.exits, 'Recorded in this period'],
                             ['Rejected scans', s.denied, 'No passage recorded'],
-                            section === 'dashboard'
-                                ? [
-                                      'Estimated inside',
-                                      s.presence.inside,
-                                      'Based on the latest recorded direction',
-                                  ]
-                                : [
-                                      'People with passages',
-                                      s.unique_people,
-                                      'Each person counted once',
-                                  ],
+                            ['People with passages', s.unique_people, 'Each person counted once'],
                         ].map(([label, value, note]) => (
                             <div className="metric-card" key={String(label)}>
                                 <div className="metric-label">{label}</div>

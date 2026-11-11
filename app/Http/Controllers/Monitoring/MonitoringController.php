@@ -43,6 +43,7 @@ class MonitoringController
             } else {
                 $props['summary'] = $queries->summary($f, $source);
                 if ($page === 'dashboard') {
+                    $props['currentPresence'] = $queries->presence(new ReportFilters(asOf: $f->asOf), $source);
                     $props['directory'] = $queries->directoryCounts($source);
                     $props['recent'] = $queries->attempts($f, $source)->with(['person', 'credential', 'gate', 'guardUser', 'passage.latestDecision', 'duplicate'])->latest('received_at')->latest('id')->limit(8)->get()->map(fn ($r) => HistoryData::row($r, $f))->all();
                 }

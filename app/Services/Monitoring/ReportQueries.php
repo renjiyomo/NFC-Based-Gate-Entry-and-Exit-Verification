@@ -119,10 +119,10 @@ class ReportQueries
             $like = DirectoryData::like($f->values['q']);
             $people->where(fn ($q) => $q->whereRaw("LOWER(full_name) LIKE LOWER(?) ESCAPE '!'", [$like])->orWhereRaw("LOWER(campus_number) LIKE LOWER(?) ESCAPE '!'", [$like]));
         }
-        $row = DB::query()->fromSub($people->select('id'), 'people')->leftJoinSub($ranked, 'last_event', fn ($j) => $j->on('last_event.person_id', '=', 'people.id')->where('last_event.position_number', 1))
-            ->selectRaw("COALESCE(SUM(CASE WHEN last_event.direction='entry' THEN 1 ELSE 0 END),0) inside_count, COALESCE(SUM(CASE WHEN last_event.direction='exit' THEN 1 ELSE 0 END),0) outside_count, COALESCE(SUM(CASE WHEN last_event.person_id IS NULL THEN 1 ELSE 0 END),0) unknown_count")->first();
+        $row = DB::query()->fromSub($people->select(['id', 'person_type']), 'people')->leftJoinSub($ranked, 'last_event', fn ($j) => $j->on('last_event.person_id', '=', 'people.id')->where('last_event.position_number', 1))
+            ->selectRaw("COALESCE(SUM(CASE WHEN last_event.direction='entry' THEN 1 ELSE 0 END),0) inside_count, COALESCE(SUM(CASE WHEN last_event.direction='exit' THEN 1 ELSE 0 END),0) outside_count, COALESCE(SUM(CASE WHEN last_event.person_id IS NULL THEN 1 ELSE 0 END),0) unknown_count, COALESCE(SUM(CASE WHEN last_event.direction='entry' AND people.person_type='student' THEN 1 ELSE 0 END),0) students_inside, COALESCE(SUM(CASE WHEN last_event.direction='entry' AND people.person_type='employee' THEN 1 ELSE 0 END),0) employees_inside")->first();
 
-        return ['inside' => (int) $row->inside_count, 'outside' => (int) $row->outside_count, 'unknown' => (int) $row->unknown_count, 'as_of' => $f->cutoff()->toIso8601String()];
+        return ['inside' => (int) $row->inside_count, 'students_inside' => (int) $row->students_inside, 'employees_inside' => (int) $row->employees_inside, 'outside' => (int) $row->outside_count, 'unknown' => (int) $row->unknown_count, 'as_of' => $f->cutoff()->toIso8601String()];
     }
 
     public function directoryCounts(string $source): array

@@ -40,6 +40,14 @@ export interface Comparison {
     entries: number;
     exits: number;
 }
+export interface Presence {
+    inside: number;
+    students_inside: number;
+    employees_inside: number;
+    outside: number;
+    unknown: number;
+    as_of: string;
+}
 export interface Summary {
     entries: number;
     exits: number;
@@ -54,7 +62,7 @@ export interface Summary {
     kinds: Comparison[];
     hourly: { label: string; value: number }[];
     denied_reasons: { label: string; value: number }[];
-    presence: { inside: number; outside: number; unknown: number; as_of: string };
+    presence: Presence;
 }
 export interface Period {
     timezone: string;

@@ -12,4 +12,8 @@ Sign in with a local or hosted administrator account for the intended workspace.
 
 Private portraits are served through authorized application routes. Avoid institutional personal data in test datasets or public exports. Do not share administrator passwords with gate users.
 
+Overview shows **Estimated inside campus**: total people, students and employees. Each person counts once when their latest effective passage is Entry; a later Exit removes them. Student and employee counts add up to the total. Rejected, duplicate and unfinished scans do not add people. Voiding or reinstating a passage recalculates the latest effective direction.
+
+These current counts cover all gates in the workspace and stay independent of the activity filters below. Live updates refresh them every 30 seconds while the page is visible, or use Refresh. Local and online records remain separate. Missed scans can affect the estimate: a Missing Exit flag, midnight, an inactive record or an archived record does not invent an Exit or automatically subtract someone.
+
 Students and employees are records, not additional login roles. Optional AI summaries use restricted aggregates and a separately configured provider; core scanning does not need AI.
